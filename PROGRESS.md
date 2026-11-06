@@ -82,7 +82,7 @@ Stages (§13.1); a stage starts only when the previous one passes its tests. Tag
 | --- | --- | --- | --- | --- |
 | 0 | Mom installed in .claude, git init, vendored Three + esbuild, bundle skeleton | Orchestrator | — | passing |
 | 1 | `config.js`, `state.js`, `rng.js`, action list, audit skeleton | Contract (Opus low) | 11 (values) | passing (orchestrator ran tools/contract-check.mjs) |
-| 2 | `hydraulics`, `reservoirs`, `wear`, `plant` | Physics (Opus low) | 1, 2, 3, 4, 8, 11, 14 | todo |
+| 2 | `hydraulics`, `reservoirs`, `wear`, `plant` | Physics (Opus low) | 1, 2, 3, 4, 8, 11, 14 | passing (62/62, orchestrator ran) |
 | 2 | `climate`, `renewables`, `market` | Climate & market (Opus low) | 5, 6, 7, 9, 13 | market passing (9, 13: 19/19); renewables, climate todo |
 | 2 | `economy`, `construction`, `canyon` | Economy (Sonnet med) | 10, 15, 16, 21, 22, 24 | todo |
 | 2 | `engine` (step pipeline §2.7, hour/day jobs) | Physics / Orchestrator glue | 4, 12, 15, 23, 25 | todo |
@@ -159,3 +159,10 @@ mkdir -p .claude/mom && cp tools/mom/mom.sh tools/mom/mom-ask.sh .claude/ && cp 
 - Next: dispatch Stage 2 in parallel — Physics (Opus low: Tests 1,2,3,4,8,11,14), Climate & market (Opus low: 5,6,7,9,13), Economy (Sonnet medium: 10,16,21,22; tests 15 and 24 wait for engine). Shared brief: common rules in ORCHESTRATOR.md + each owner writes only `src/config/<physics|climate|economy>.js` (merged into CONFIG), `src/sim/*`, `tests/<name>.test.mjs`, `decisions/<name>.md`.
 - Stage 1 skipped the Reviewer pass (tiny scope). Weekly usage ~76% at stop; Pro plan, no extra usage. Weekly window resets 2026-11-06 ~15:59 UTC.
 - Open for agents to confirm: z_lower_floor=0 and 80%-of-V_max (Physics); solar cleaning $0.80/kW scaled or not (Economy).
+
+## 12. Physics hand-offs for other agents (from decisions/physics.md)
+
+- Damage in `unit.wear` (0–1), health = 100·(1−wear). Offline if health <5% or `site.jobs` has `{type:'repair', unitId}`.
+- Tabulated reservoirs need `reservoir.table = buildTable(areaFn, D_max)` (dam builder attaches it).
+- `solvePlant(site, dt)` returns Q_up + hydraulic/cavitation results; engine then calls `stepReservoirs(upper, lower, {Q_up, ...weather}, dt)`. Engine/contract must decide state keys for Hf, σ and NPSH margins.
+- `lowRe` flag once per episode; $0.50/m³ fine applied by Economy on `finedVolume`; §9.5 charge uses `envUnmet`.
