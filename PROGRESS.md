@@ -81,7 +81,7 @@ Stages (§13.1); a stage starts only when the previous one passes its tests. Tag
 | Stage | Module(s) | Owner (default model) | Tests | Status |
 | --- | --- | --- | --- | --- |
 | 0 | Mom installed in .claude, git init, vendored Three + esbuild, bundle skeleton | Orchestrator | — | passing |
-| 1 | `config.js`, `state.js`, `rng.js`, action list, audit skeleton | Contract (Opus low) | 11 (values) | todo |
+| 1 | `config.js`, `state.js`, `rng.js`, action list, audit skeleton | Contract (Opus low) | 11 (values) | passing (orchestrator ran tools/contract-check.mjs) |
 | 2 | `hydraulics`, `reservoirs`, `wear`, `plant` | Physics (Opus low) | 1, 2, 3, 4, 8, 11, 14 | todo |
 | 2 | `climate`, `renewables`, `market` | Climate & market (Opus low) | 5, 6, 7, 9, 13 | todo |
 | 2 | `economy`, `construction`, `canyon` | Economy (Sonnet med) | 10, 15, 16, 21, 22, 24 | todo |
@@ -127,7 +127,8 @@ I recomputed the core starting-state numbers with Node (frustum + inversion):
 
 ## 7. Deviations from spec
 
-_None yet._
+- Added `src/package.json` (`{"type":"module"}`) so Node loads src/*.js as ESM; root stays commonjs. Orchestrator contract change.
+- Contract set `z_lower_floor`=0, 80% full = 80% of V_max, square-frustum A(d)=(√A_bot+2sd)²; Economy to confirm solar cleaning $0.80/kW is/isn't CAPEX-scaled.
 
 ## 8. Next steps (for the orchestrator)
 
