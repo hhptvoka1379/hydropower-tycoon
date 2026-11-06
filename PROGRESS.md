@@ -84,7 +84,7 @@ Stages (§13.1); a stage starts only when the previous one passes its tests. Tag
 | 1 | `config.js`, `state.js`, `rng.js`, action list, audit skeleton | Contract (Opus low) | 11 (values) | passing (orchestrator ran tools/contract-check.mjs) |
 | 2 | `hydraulics`, `reservoirs`, `wear`, `plant` | Physics (Opus low) | 1, 2, 3, 4, 8, 11, 14 | passing (62/62, orchestrator ran) |
 | 2 | `climate`, `renewables`, `market` | Climate & market (Opus low) | 5, 6, 7, 9, 13 | passing (61/61, orchestrator ran); Test 7 band ruled event-free days only |
-| 2 | `economy`, `construction`, `canyon` | Economy (Sonnet med) | 10, 15, 16, 21, 22, 24 | todo |
+| 2 | `economy`, `construction`, `canyon` | Economy (Sonnet med) | 10, 15, 16, 21, 22, 24 | 10, 16, 21, 22 passing (79/79, orchestrator ran); 15, 24 wait for engine |
 | 2 | `engine` (step pipeline §2.7, hour/day jobs) | Physics / Orchestrator glue | 4, 12, 15, 23, 25 | todo |
 | 3 | `services`, `battery`, `environment`, `sites`, `automation`, `quests`, `alerts` | Gameplay (Sonnet med) | 17, 18, 19, 20, 12 | todo |
 | 3 | `selftest.js`, robustness sweep, replay, `saveload.js` | Tests (Sonnet med) | all, 12, 23 | todo |
@@ -174,3 +174,14 @@ mkdir -p .claude/mom && cp tools/mom/mom.sh tools/mom/mom-ask.sh .claude/ && cp 
 - `evapFn = m => penmanEvaporation(m.T, m.RH, m.u2, m.Rs)` (Physics). Prices via `market.priceAt/forecastAt`; settlement via `lambdaImpact/effectivePrice/impactCost`.
 - Turbines/arrays need `.parcel` and `.tile` (default parcel 1). Blade damage: `climate.bladeDamaged(seed, day, turbineId)` (hash, not a stream).
 - Cold-snap 50% runoff hold is the engine's job: `current.snowHoldFrac`. One shared snowpack across sites.
+
+## 14. Economy hand-offs for the engine (from decisions/economy.md)
+
+- Per step: `economy.accumulateStep(state.finance, {P_gen,P_wind,P_solar,P_pump,P_bat_dis,P_bat_ch,lambda,dt,finedVolume})` (engine adds Physics `envUnmet` to `finedVolume`). Per hour: `economy.settleHour(state, {price,day,hour,services,C_MW?})` → record with `bankrupt`.
+- Construction: `construction.soilingDayAll(site, rainMm)` daily; `construction.advanceJobs(site, dt)` every step. Actions: startClassicRaise/startExcavation/startCleaning/startRepair, `canyon.startProceduralRaise`; finance takeLoan/repayLoan/signContract/availableBudget/creditLimit. Engine charges `job.cost`.
+- Decisions: cleaning $0.80/kW is NOT CAPEX-scaled; rain day skips dust loss. Canyon noise is untuned own design (97.5% first-try over 40 seeds, median V_max(10 m) 209,684 vs spec ~197k) — Reviewer should look.
+- Still unowned: battery specs, permit/BUY_SITE prices (gameplay stage), engine pipeline (§2.7) + Tests 4,12,15,23,25, 24.
+
+## 15. Stage 2 status (end of session 2 segment)
+
+Modules passing: physics 62/62, climate 61/61, economy 79/79. Remaining for stage 2: engine pipeline + Tests 15, 24 and the Reviewer pass; then tag `stage-2-core`. Weekly usage was 90% at this point (resets ~16:00 UTC).
