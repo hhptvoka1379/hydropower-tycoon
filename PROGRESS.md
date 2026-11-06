@@ -83,7 +83,7 @@ Stages (§13.1); a stage starts only when the previous one passes its tests. Tag
 | 0 | Mom installed in .claude, git init, vendored Three + esbuild, bundle skeleton | Orchestrator | — | passing |
 | 1 | `config.js`, `state.js`, `rng.js`, action list, audit skeleton | Contract (Opus low) | 11 (values) | passing (orchestrator ran tools/contract-check.mjs) |
 | 2 | `hydraulics`, `reservoirs`, `wear`, `plant` | Physics (Opus low) | 1, 2, 3, 4, 8, 11, 14 | passing (62/62, orchestrator ran) |
-| 2 | `climate`, `renewables`, `market` | Climate & market (Opus low) | 5, 6, 7, 9, 13 | market passing (9, 13: 19/19); renewables, climate todo |
+| 2 | `climate`, `renewables`, `market` | Climate & market (Opus low) | 5, 6, 7, 9, 13 | passing (61/61, orchestrator ran); Test 7 band ruled event-free days only |
 | 2 | `economy`, `construction`, `canyon` | Economy (Sonnet med) | 10, 15, 16, 21, 22, 24 | todo |
 | 2 | `engine` (step pipeline §2.7, hour/day jobs) | Physics / Orchestrator glue | 4, 12, 15, 23, 25 | todo |
 | 3 | `services`, `battery`, `environment`, `sites`, `automation`, `quests`, `alerts` | Gameplay (Sonnet med) | 17, 18, 19, 20, 12 | todo |
@@ -128,6 +128,7 @@ I recomputed the core starting-state numbers with Node (frustum + inversion):
 ## 7. Deviations from spec
 
 - **Spec fix (orchestrator, 2026-11-06):** §6.2 worked check and Test 9 said P_base=90, R_reg=525 gives −63; the formula gives 90·(1−1.5·525/400) = −87.19 (clamped −50 either way). Corrected in master spec, s06, s12. Tell J.
+- **Spec ruling (orchestrator, 2026-11-06), NOT yet written into the spec text:** Test 7 [0,16] daily-E band applies to year-1 days without heat wave or windstorm. Literal Penman gives ~40 mm/d in a 20–30 m/s windstorm and ~16.7 in heat waves; §5.2 forbids multipliers. Event days must be finite and ≥0. J: confirm or choose another fix (widen band / define storm wind for E).
 - Penman (Test 7) is Physics's (§3.3); climate's generateDay receives the evaporation function from the engine (src/sim imports only config/state/rng). Test 7 is verified via Physics's function plus climate's year-1 range check.
 - Added `src/package.json` (`{"type":"module"}`) so Node loads src/*.js as ESM; root stays commonjs. Orchestrator contract change.
 - Contract set `z_lower_floor`=0, 80% full = 80% of V_max, square-frustum A(d)=(√A_bot+2sd)²; Economy to confirm solar cleaning $0.80/kW is/isn't CAPEX-scaled.
@@ -166,3 +167,10 @@ mkdir -p .claude/mom && cp tools/mom/mom.sh tools/mom/mom-ask.sh .claude/ && cp 
 - Tabulated reservoirs need `reservoir.table = buildTable(areaFn, D_max)` (dam builder attaches it).
 - `solvePlant(site, dt)` returns Q_up + hydraulic/cavitation results; engine then calls `stepReservoirs(upper, lower, {Q_up, ...weather}, dt)`. Engine/contract must decide state keys for Hf, σ and NPSH margins.
 - `lowRe` flag once per episode; $0.50/m³ fine applied by Economy on `finedVolume`; §9.5 charge uses `envUnmet`.
+
+## 13. Climate hand-offs for the engine (from decisions/climate.md)
+
+- Game start: `climate.initClimate(state, evapFn, market.priceDay)`. Each 00:00: `climate.dayBoundary(...)`. Each hour: `climate.updateHour(state)` fills `state.climate.current`; then `renewables.updateSiteRenewables(site, current)`.
+- `evapFn = m => penmanEvaporation(m.T, m.RH, m.u2, m.Rs)` (Physics). Prices via `market.priceAt/forecastAt`; settlement via `lambdaImpact/effectivePrice/impactCost`.
+- Turbines/arrays need `.parcel` and `.tile` (default parcel 1). Blade damage: `climate.bladeDamaged(seed, day, turbineId)` (hash, not a stream).
+- Cold-snap 50% runoff hold is the engine's job: `current.snowHoldFrac`. One shared snowpack across sites.

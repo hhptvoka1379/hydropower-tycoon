@@ -81,3 +81,14 @@ export function auditHour(state, hourIndex) {
   return r ? { P_base: r.Pb, R_reg: r.R_reg, unclamped: r.unclamped, price: r.price } : null;
 }
 export { clampPrice };
+
+// §6 price all 24 hours of a freshly generated climate day (call right after climate.generateDay).
+// Keeps the last 96 hours so saves stay small.
+export function priceDay(state, dayRec) {
+  const out = state.market.prices;
+  for (let h = 0; h < 24; h++) {
+    const x = dayRec.hours[h];
+    out.push(priceHour(state.rng, (dayRec.day - 1) * 24 + h, { G: x.G, u2: x.u2, T: x.T }));
+  }
+  while (out.length > 96) out.shift();
+}

@@ -35,11 +35,13 @@ check(13, 'revenue max P', 133.3333, 90 / (2 * lam));
 check(13, 'import 10MW @20 cost', 233.75, 20 * 10 + mk.impactCost(lam, -10, 3600));
 check(13, 'Price_eff export', 60 - 3.375, mk.effectivePrice(60, lam, 10));
 
-export { rows, check, checkBool };
 
 // Further modules append rows via dynamic import below.
-const extra = [];
-try { extra.push(await import('./climate.renew.part.mjs')); } catch (e) { if (e.code !== 'ERR_MODULE_NOT_FOUND') throw e; }
+for (const f of ['./climate.renew.part.mjs', './climate.weather.part.mjs']) {
+  let mod = null;
+  try { mod = await import(f); } catch (e) { if (e.code !== 'ERR_MODULE_NOT_FOUND') throw e; }
+  if (mod) await mod.default(check, checkBool);
+}
 
 console.table(rows);
 const failed = rows.filter(r => !r.pass).length;
