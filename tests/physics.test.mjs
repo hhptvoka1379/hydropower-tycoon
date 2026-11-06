@@ -94,6 +94,29 @@ import * as Wr from '../src/sim/wear.js';
   check(0, 'repair hours', 10, Wr.repairHours(50));
 }
 
+// ---- Test 2 sim: Tier-1 pump asked for 2 m³/s is limited to 0.80 m³/s ----
+import { solvePlant } from '../src/sim/plant.js';
+{
+  const site = createInitialState(12345).sites[0];
+  const p = site.pumps[0];
+  p.targetPct = 2 / CONFIG.pumps[1].Q_max;         // request 2 m³/s
+  let r;
+  for (let t = 0; t < 120; t++) { r = solvePlant(site, 1); R.stepReservoirs(site.reservoirs.upper, site.reservoirs.lower, { Q_up: r.Q_up }, 1); }
+  check(2, 'sim pump Q', 0.80, p.Q);
+  check(2, 'sim pump P<=rated', 1, p.P <= CONFIG.pumps[1].P_rated ? 1 : 0);
+  check(2, 'sim mode pump', 1, r.mode === 'pump' ? 1 : 0);
+  // start wear applied once
+  { const s1 = createInitialState(12345).sites[0]; s1.pumps[0].targetPct = 1; const r1 = solvePlant(s1, 1);
+    const run = 0.05 * (s1.pumps[0].P / 500e3) ** 2 / 3600;
+    check(0, 'start wear pts', 0.02, 100 * s1.pumps[0].wear - run, 1e-9); }
+  // Turbine from rest: 45 s → Q = 1.65 (ramp), power ≈ 659 kW (Test 17 numbers, informative)
+  const s2 = createInitialState(12345).sites[0];
+  s2.turbines[0].targetPct = 1;
+  for (let t = 0; t < 45; t++) r = solvePlant(s2, 1);
+  check(17, 'ramp Q 45 s', 1.65, s2.turbines[0].Q);
+  check(17, 'P 45 s kW', 659, s2.turbines[0].P / 1e3, 3.3);
+}
+
 // @@MORE@@
 
 console.table(rows);
