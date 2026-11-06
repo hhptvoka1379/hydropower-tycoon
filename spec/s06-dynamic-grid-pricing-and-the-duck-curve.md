@@ -32,7 +32,7 @@ Price = P_{base}\,m_T\left(1 - k_{merit}\,\frac{R_{reg}}{D_{total}\,f_D}\right) 
 
 ε is uniform noise in \[−3, +3\] $/MWh, one draw per hour from the `market` stream. The final price is clamped to \[−50, +500\] $/MWh. Negative prices therefore occur when R\_reg exceeds D\_total / k\_merit ≈ 267 MW, which needs a sunny and windy hour together and is mostly a winter event, with occasional spring midday cases (the wind blows harder at night, so a windy and sunny hour is rare in summer).
 
-Worked check (Test 9): at 13:00 with G = 900 W/m², u₂ = 12 m/s and T = 15 °C (so m\_T = f\_D = 1), R\_reg = 225 + 300 = 525 MW, so the noise-free price is 27 · (1 − 1.5 · 525 / 400) = −26.16 $/MWh. A flooded winter hour with P\_base = 90 and the same R\_reg would give −63 and clamp at −50.
+Worked check (Test 9): at 13:00 with G = 900 W/m², u₂ = 12 m/s and T = 15 °C (so m\_T = f\_D = 1), R\_reg = 225 + 300 = 525 MW, so the noise-free price is 27 · (1 − 1.5 · 525 / 400) = −26.16 $/MWh. A flooded winter hour with P\_base = 90 and the same R\_reg would give −87.19 and clamp at −50.
 
 ### 6.3 Forecast
 
