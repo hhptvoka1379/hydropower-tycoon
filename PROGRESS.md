@@ -1,7 +1,7 @@
 # PROGRESS — Hydropower Tycoon
 
 > Goal tracker and shared memory for the build swarm (spec §13.4). **Read this first when resuming.**
-> Status as of 2026-11-06: **Stage 0 — exploration done. No code exists yet.**
+> Status as of 2026-11-06: **Stages 0–1 closed (tags `stage-0-setup`, `stage-1-contract`). Stage 2 NOT started: three agents were dispatched then stopped before writing any files, to save weekly usage (was 76%). Resume by re-dispatching them.**
 
 ---
 
@@ -151,3 +151,9 @@ mkdir -p .claude/mom && cp tools/mom/mom.sh tools/mom/mom-ask.sh .claude/ && cp 
 ## 10. Build order decision
 
 **Physics first, not UI.** §0.2 and §13.1 require the headless core (stages 1–2) to pass its tests before the UI or 3D starts, because the UI only reads `getSnapshot()` and dispatches actions. Physics and climate & market run in parallel right after the contract.
+
+## 11. Resume point (end of session 1)
+
+- Next: dispatch Stage 2 in parallel — Physics (Opus low: Tests 1,2,3,4,8,11,14), Climate & market (Opus low: 5,6,7,9,13), Economy (Sonnet medium: 10,16,21,22; tests 15 and 24 wait for engine). Shared brief: common rules in ORCHESTRATOR.md + each owner writes only `src/config/<physics|climate|economy>.js` (merged into CONFIG), `src/sim/*`, `tests/<name>.test.mjs`, `decisions/<name>.md`.
+- Stage 1 skipped the Reviewer pass (tiny scope). Weekly usage ~76% at stop; Pro plan, no extra usage. Weekly window resets 2026-11-06 ~15:59 UTC.
+- Open for agents to confirm: z_lower_floor=0 and 80%-of-V_max (Physics); solar cleaning $0.80/kW scaled or not (Economy).
