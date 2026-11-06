@@ -2,7 +2,12 @@
 // Owned by the Contract agent. Section-owned constants not listed here are added by
 // the owning agent (see decisions/contract.md). No DOM / window access in this file.
 
+import physicsCfg from './config/physics.js';
+import climateCfg from './config/climate.js';
+import economyCfg from './config/economy.js';
+
 export const CONFIG = Object.freeze({
+  ...physicsCfg, ...climateCfg, ...economyCfg,  // owner blocks; must not collide with contract keys
   // §1.3 physical constants
   physics: Object.freeze({
     rho: 1000,          // water density, kg/m³ (§1.3)
