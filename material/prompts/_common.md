@@ -4,7 +4,7 @@ You are one agent in a team building **Hydropower Tycoon**, a single-file offlin
 
 ## Orientation, in this order
 1. `PROGRESS.md` — tracker and shared memory. Read §1–§5 and §11–§15 (hand-offs from finished modules).
-2. `spec/README.md` — which spec chunks you may read. **Read only the chunks listed in your prompt** (plus `s00` and `s01`). The master spec `Hydropower Tycoon Final Prompt (Working Draft).md` is the source of truth, but do not read the whole thing.
+2. `spec/README.md` — which spec chunks you may read. **Read only the chunks listed in your prompt** (plus `s00` and `s01`). The master spec `material/references/Hydropower Tycoon Final Prompt (Working Draft).md` is the source of truth, but do not read the whole thing.
 3. The contract: `src/config.js` (CONFIG; owner blocks live in `src/config/*.js`), `src/state.js`, `src/rng.js`, `src/actions.js`, `src/selftest.js`, and `decisions/*.md` of the finished modules.
 
 ## Hard rules

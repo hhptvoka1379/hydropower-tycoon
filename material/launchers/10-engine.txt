@@ -1,0 +1,10 @@
+Your task is to work on `material/prompts/10-engine.md` in this repository (the simulation engine).
+Start by reading `material/prompts/_common.md` (rules every agent follows), then `material/prompts/10-engine.md` (your brief: mission, spec chunks you may read, files you own, tests you must pass).
+The rest of the project is context you may read as the brief allows: `PROGRESS.md`, `spec/`, `src/`, `decisions/`, and `material/references/` (master spec, reference images).
+Prerequisite: Stage 2 modules merged into master.
+Before starting, run `git pull` and confirm master is green: `node tests/*.test.mjs`, `node tools/contract-check.mjs`, `node build/bundle.mjs --check`.
+Work on branch `agent/engine`; push only that branch.
+When finished, open a PR to master whose body follows the "Deliverable (PR body)" section of `_common.md`, with actual test numbers.
+Edit only the files listed as yours in the brief.
+If the spec is silent or contradicts a test value, write the question to `decisions/engine-questions.md` instead of guessing.
+Work incrementally and keep the `## Resume` section of `decisions/engine.md` current, because you may be cut off at any time.

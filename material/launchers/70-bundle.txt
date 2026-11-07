@@ -1,0 +1,10 @@
+Your task is to work on `material/prompts/70-bundle.md` in this repository (the bundle and audit step that produces the single offline HTML file).
+Start by reading `material/prompts/_common.md` (rules every agent follows), then `material/prompts/70-bundle.md` (your brief: mission, spec chunks you may read, files you own, steps).
+The rest of the project is context you may read as the brief allows: `PROGRESS.md`, `spec/`, `src/`, `decisions/`, and `material/references/` (master spec, reference images).
+Prerequisite: wave C merged to master (`40-ui.md` and `50-world3d.md`).
+Before starting run `git pull` and confirm master is green: `node tests/*.test.mjs`, `node tools/contract-check.mjs`, `node build/bundle.mjs --check`.
+Work on branch `agent/bundle` and push only that branch; when finished open a PR to master whose body follows the "Deliverable (PR body)" section of `_common.md`, with actual test numbers.
+Edit only the files listed as yours in the brief.
+If the spec is silent or contradicts a test value, write the question to `decisions/bundle-questions.md` instead of guessing.
+Work incrementally and keep the `## Resume` section of `decisions/bundle.md` current, because you may be cut off at any time.
+Never install anything, and never push tags.

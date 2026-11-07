@@ -1,0 +1,9 @@
+Your task is to work on `material/prompts/60-reviewer.md` in this repository (the read-only reviewer that checks finished modules against the spec).
+Start by reading `material/prompts/_common.md` (rules every agent follows), then `material/prompts/60-reviewer.md` (your brief: mission, what to read, output format).
+The rest of the project is context you may read as the brief allows: `PROGRESS.md`, `spec/`, `src/`, `decisions/`, and `material/references/` (master spec, reference images).
+Prerequisite: the wave under review is merged to master.
+Before starting run `git pull` and confirm master is green: `node tests/*.test.mjs`, `node tools/contract-check.mjs`, `node build/bundle.mjs --check`.
+Ask the human which wave to review, then work on branch `agent/review-<wave>`.
+You write only `reviews/<module>.md`: no code, and no edits to module files or tests.
+If the spec is silent or contradicts a test value, write the question inside `reviews/<module>.md` instead of guessing.
+Work incrementally and save `reviews/<module>.md` as you go, because you may be cut off at any time.

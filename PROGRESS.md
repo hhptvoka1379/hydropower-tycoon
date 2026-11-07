@@ -9,8 +9,8 @@
 
 | File | What it is |
 | --- | --- |
-| `Hydropower Tycoon Final Prompt (Working Draft).md` | **The spec** (~1,130 lines, Nov 5 2026, by Alessandro Di Benedetto). The single source of truth. All section numbers (§) below refer to it. |
-| `Hydropower Tycoon Final Prompt (Working Draft).pdf` | PDF export of the same spec (2 MB). Do not edit; the `.md` wins if they differ. |
+| `material/references/Hydropower Tycoon Final Prompt (Working Draft).md` | **The spec** (~1,130 lines, Nov 5 2026, by Alessandro Di Benedetto). The single source of truth. All section numbers (§) below refer to it. |
+| `material/references/Hydropower Tycoon Final Prompt (Working Draft).pdf` | PDF export of the same spec (2 MB). Do not edit; the `.md` wins if they differ. |
 | `SCADA-screen-of-hydropower-plant.png`, `inteliscada-view-water-power-plant-ii.png.webp`, `scada-laview3.jpg`, `images.png` | Reference screenshots of real hydropower SCADA screens. Mood/reference for the SCADA drawer and the hydraulic grade line widget (§10.2). **Not to be embedded** — the deliverable may contain no image files (§0, §10.1). |
 
 Not present yet: no `src/`, no `vendor/`, no git repo, no `package.json`. The folder is **not a git repository** (spec §13.3 requires one from the first step).
