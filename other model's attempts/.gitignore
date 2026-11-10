@@ -1,0 +1,4 @@
+# Only reconstructed/ and NOTES.md are versioned; raw sources stay local.
+*.zip
+*.webarchive
+max-router.1h.txt
