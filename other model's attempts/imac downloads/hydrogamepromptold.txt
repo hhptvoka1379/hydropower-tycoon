@@ -1,0 +1,231 @@
+# ROLE AND OBJECTIVE
+You are an expert civil engineer, power systems engineer, and game developer. Your task is to build a fully-functional, browser-based pumped-storage hydropower management simulation game ("HYDROPOWER TYCOON"). 
+
+The game must be built entirely using HTML5, CSS3, and vanilla JavaScript (ES6+). It must run in a single file in the browser without external dependencies. The game uses an isometric 2D Canvas for the game world and HTML/CSS for a modern-style control room UI. 
+
+**CRITICAL DIRECTIVE:** The simulation must use real-world physics, fluid dynamics, and structural engineering formulas. No abstracted game math. Every system (hydro, wind, solar, wear, evaporation) must be driven by the specific equations provided in this prompt.
+
+# DEVELOPMENT RULES & TRACKING
+Before writing any code, you must print the "GOAL TRACKER" section at the end of this prompt. As you build the game step-by-step in your response, check off the items you have completed. You must also mentally execute the "Self-Tests" provided at the end of this prompt to ensure your physics and math logic are correct before outputting the final code. Complex math is evaluated on a 1-second tick, while rendering uses requestAnimationFrame.
+
+---
+
+# 1. CORE PHYSICS & FLUID DYNAMICS ENGINE (REAL MATH)
+
+## 1.1 Hydropower Generation & Pumping
+Gross Head ($H_g$) = Elevation_Upper - Elevation_Lower (meters).
+Net Head ($H_n$) must account for friction:
+$H_n = H_g - H_f$
+Where friction head loss ($H_f$) uses Darcy-Weisbach:
+$H_f = f \cdot \frac{L}{D} \cdot \frac{v^2}{2g}$
+- $f$ = Darcy friction factor (~0.015 for smooth concrete/steel)
+- $L$ = Penstock length (m)
+- $D$ = Penstock diameter (m)
+- $v$ = Flow velocity (m/s) = $Q / A_{pipe}$ where $A_{pipe} = \pi \cdot (D/2)^2$
+- $g$ = 9.81 m/s²
+
+**Turbine Power (W):** $P_{gen} = \rho \cdot g \cdot H_n \cdot Q \cdot \eta_t$
+**Pump Power Required (W):** $P_{pump} = \frac{\rho \cdot g \cdot H_g \cdot Q}{\eta_p}$
+- $\rho$ = 1000 kg/m³
+- $\eta_t$ = Turbine efficiency (0.85-0.92)
+- $\eta_p$ = Pump efficiency (0.80-0.88)
+
+## 1.2 Reservoir Volumetrics & Mass Conservation
+Reservoirs are modeled as inverted frustums (truncated pyramids) to simulate natural topography.
+Volume at depth $d$: $V(d) = \frac{d}{3} \cdot (A_{top} + A_{bottom} + \sqrt{A_{top} \cdot A_{bottom}})$
+Depth from Volume: Solve quadratic equation derived from frustum volume.
+**Mass Conservation:** $\Delta V_{upper} = -Q_{flow} \cdot \Delta t + A_{surface} \cdot (P_{rain} - E_{evap})$
+$\Delta V_{lower} = +Q_{flow} \cdot \Delta t + A_{surface} \cdot (P_{rain} - E_{evap})$
+
+## 1.3 Equipment Wear & Cavitation (Softened for Gameplay)
+Cavitation occurs when Thoma's Cavitation Parameter ($\sigma$) drops below critical $\sigma_c$:
+$\sigma = \frac{H_{atm} - H_{vapor} - H_{suction}}{H_n}$
+Where $H_{suction}$ is the height of turbine above tailwater. 
+**Wear Accumulation Rate per tick:**
+$Wear = BaseWear \cdot (\frac{P_{current}}{P_{rated}})^2 \cdot (1 + CavitationPenalty)$
+Where $CavitationPenalty = 10$ if $\sigma < \sigma_c$, else $0$.
+Health drops by Wear % per hour.
+
+## 1.4 Structural Limits (Dam Raising)
+When player raises dam wall, hydrostatic pressure on the dam base increases:
+$P_{max} = 0.5 \cdot \rho \cdot g \cdot H_g^2$ (Force per unit width)
+Construction cost must scale exponentially with $H_g^2$ to reflect real civil engineering limits.
+
+---
+
+# 2. RENEWABLE ENERGY & METEOROLOGICAL MATH
+
+## 2.1 Wind Power Generation
+Power extracted by wind turbine (W):
+$P_{wind} = 0.5 \cdot \rho_{air} \cdot A_{swept} \cdot v^3 \cdot C_p \cdot \eta_{mech}$
+- $\rho_{air}$ = 1.225 kg/m³
+- $A_{swept} = \pi \cdot R^2$ (Blade length = R)
+- $v$ = Wind speed (m/s) at hub height
+- $C_p$ = Power coefficient (Betz limit = 0.593, use 0.40)
+- $\eta_{mech}$ = 0.95
+
+**Wind Shear (Height scaling):** $v_{hub} = v_{ref} \cdot (\frac{H_{hub}}{H_{ref}})^\alpha$
+- $\alpha$ = 0.143 (1/7th power law for open terrain)
+If $v > 25$ m/s (cut-out), $P_{wind} = 0$ (safety shutdown).
+
+## 2.2 Solar PV Generation
+DC Power output of a panel:
+$P_{dc} = A_{panel} \cdot G \cdot \eta_{panel}$
+- $G$ = Solar Irradiance (W/m²). Peaks at 1000 W/m² at solar noon.
+- $\eta_{panel}$ = 0.20 (20% efficiency)
+**Temperature Derating:** Panels lose efficiency as they heat up.
+$P_{ac} = P_{dc} \cdot [1 - \gamma \cdot (T_{cell} - 25)]$
+- $\gamma$ = Temperature coefficient (~0.004 / °C)
+- $T_{cell} = T_{ambient} + \frac{G}{800} \cdot 25$
+
+## 2.3 Evaporation (Penman-Monteith Simplified)
+Evaporation rate (mm/day) based on temperature, wind, and solar radiation:
+$E = 0.408 \cdot \Delta \cdot (R_n - G) + \gamma \cdot \frac{900}{T+273} \cdot u_2 \cdot (e_s - e_a) / (\Delta + \gamma \cdot (1 + 0.34 \cdot u_2))$
+(You may simplify this to a mass-transfer model for game performance: $E = k \cdot (e_s - e_a) \cdot (1 + 0.5 \cdot u_2)$, where $e_s$ is saturation vapor pressure at temp $T$, $e_a$ is actual vapor pressure).
+
+---
+
+# 3. ECONOMIC SYSTEM & GRID SIMULATION
+
+## 3.1 Dynamic Pricing & Duck Curve
+Base Price per hour $P_{base}(h)$ follows the demand curve. 
+Renewable supply impacts price dynamically (Merit Order effect):
+$Price(t) = P_{base}(t) \cdot (1 - k \cdot \frac{RenewableGen(t)}{TotalDemand(t)}) + Noise(t)$
+- If $Price(t) < 0$, allow negative pricing (player pays to take power - great for pumping).
+- $k$ = price elasticity factor (use 1.5).
+
+## 3.2 Financial Mathematics
+**Net Present Value (NPV) for Upgrades:**
+$NPV = -CapEx + \sum_{t=1}^{N} \frac{R_t - O\&M_t}{(1+r)^t}$
+(Player should see projected NPV in the Build Menu to evaluate upgrades).
+**Levelized Cost of Storage (LCOS):**
+$LCOS = \frac{CapEx + \sum \frac{O\&M_t}{(1+r)^t}}{\sum \frac{E_{discharged}}{(1+r)^t}}$ (Track this stat for the player).
+
+**Profit Tick (per hour):**
+$Profit = (P_{gen} \cdot Price_{sell} - P_{pump} \cdot Price_{buy}) - Maintenance - LoanPayment$
+
+## 3.3 Equipment Tiers (Real Models)
+- Pumps: Tier 1: Sulzer APT 51-8 (500kW, $\eta=0.80$); Tier 2: KSB RPH 100-5 (5MW, $\eta=0.84$); Tier 3: Voith Hydro Shaft (50MW, $\eta=0.87$)
+- Turbines: Tier 1: Andritz FR-15 (1MW, $\eta=0.85$); Tier 2: Voith Pelton P25 (20MW, $\eta=0.90$); Tier 3: GE Hydro-Francis 150 (150MW, $\eta=0.92$)
+
+---
+
+# 4. GAMEPLAY MECHANICS & PROGRESSION
+**Game Modes:**
+1. Real-Time: 1 real min = 1 game hour (24 mins = 1 day)
+2. Turn-Based: Advance time in 1-hour increments.
+
+**Player Actions:**
+- Manual Control: Toggle pump/generate/idle, set flow rate sliders (0-100% of $Q_{max}$).
+- Automation Logic: Program conditional rules (e.g., "IF grid_price < $30/MWh AND upper_reservoir < 80% THEN pump_at_max").
+- Construction: Raise dam wall (increases max $H_g$), excavate reservoirs (changes frustum $A_{top}/A_{bot}$), buy higher-tier pumps/turbines, upgrade penstocks (larger $D$, lower $H_f$).
+- Renewables: Build Wind/Solar to offset grid pumping costs.
+- Financials: Take loans (5-8% APR), apply for Federal Grants via quests.
+
+**Progression & Quests:**
+- Start: Small canyon, 50m head, 1x Sulzer pump, 1x Andritz turbine, $50k capital.
+- Main Goal: Stay profitable through all 4 seasons (1 game year).
+- Quests: Tutorial steps, seasonal survival (e.g., "Summer Scorcher"), and Grant quests.
+
+**Failure States:**
+- Bankruptcy: Emergency loans (12% APR) or game over.
+- Reservoir Dry: Cannot generate, grid contract penalty.
+- Reservoir Overflow: Wasted energy, environmental fine.
+- Cavitation Failure: Equipment drops below 0% health -> offline for repairs.
+
+---
+
+# 5. USER INTERFACE & VISUALS
+**Isometric Game View (HTML5 Canvas):**
+- Clean, modern isometric style. Water visibly flows through penstocks (flow speed scales with $Q$).
+- Upper/lower reservoirs show dynamic water depth (interpolate volume to depth).
+- Wind turbines spin at RPM proportional to wind $v$. Solar panels glow proportional to $G$.
+- Day/night lighting changes. Weather effects (rain, snow).
+
+**Control Room Dashboard (Right Panel - SCADA Style):**
+- Real-Time Stats: Time/Season, Grid Price ($/MWh), Mode, Power Output, Revenue Rate, Reservoir % & Volume, Flow Rate, Net Head $H_n$, Friction Loss $H_f$.
+- Live Graphs: 24-Hour Price Chart (Duck Curve), Reservoir Volumes, Power Flow.
+- Controls: Mode toggles, active equipment sliders, Automation rule editor.
+
+**Left Sidebar (Financials & Alerts):**
+- Cash, Today's Profit, LCOS, Monthly Expenses, Loans.
+- Alerts (heat wave forecast, cavitation warning, grants available).
+
+**Top Menu Bar:**
+- [Dashboard] [Build/Upgrade] [Automation] [Financials] [Quests] [Settings] [Save/Load]
+
+---
+
+# SELF-TEST PROTOCOLS (Mental Validation Before Output)
+Before outputting your final code block, verify the following logic in your implementation:
+1. **Hydro Check:** $H_g=50$m, $Q=2$ m³/s, Penstock $D=1$m, $L=60$m, $f=0.015$. Area=0.785 m². $v=2.54$ m/s. $H_f = 0.015 \cdot (60/1) \cdot (2.54^2 / 19.62) = 0.296$m. $H_n = 49.7$m. $P = 1000 \cdot 9.81 \cdot 49.7 \cdot 2 \cdot 0.85 = 828.8$ kW. Ensure this math executes exactly in code.
+2. **Wind Check:** $v=10$ m/s, $R=20$m (Area=1256m²). $P = 0.5 \cdot 1.225 \cdot 1256 \cdot 1000 \cdot 0.4 \cdot 0.95 = 292 kW$. Ensure cubic power curve is implemented.
+3. **Conservation of Mass:** Verify $\Delta V_{upper} = -\Delta V_{lower}$ (excluding rain/evap). Verify frustum depth-to-volume mapping accurately updates both surface area and depth.
+4. **Economic Check:** If $Price = -10$ $/MWh (negative), player pumps 1MW for 1hr, cost should be -$10 (player makes $10). 
+5. **UI Check:** Ensure Canvas scales properly and doesn't overlap HTML. Verify `requestAnimationFrame` renders graphics, while a `setInterval` or accumulator calculates the heavy physics tick at 1Hz.
+
+---
+
+# GOAL TRACKER (Print this at the top of your response and check off as you build)
+[ ] 1. HTML/CSS scaffolding and SCADA UI layout established
+[ ] 2. Isometric Canvas engine initialized with terrain, frustum reservoirs, dam
+[ ] 3. Core fluid dynamics engine implemented (P, Hg, Hf, Q, eta)
+[ ] 4. Reservoir state management (frustum volumes, mass conservation, Penman evap)
+[ ] 5. Wind & Solar PV math implemented (cubic wind, temp derated solar)
+[ ] 6. Dynamic grid pricing & Merit Order duck curve algorithm
+[ ] 7. Time management (Real-time compressed & Turn-based modes)
+[ ] 8. Player operations (manual controls, sliders, pump/generate logic)
+[ ] 9. Equipment wear, Thoma cavitation, maintenance logic
+[ ] 10. Build/Upgrade system (structural limits, real models, NPV/LCOS)
+[ ] 11. Financial system (cash, loans, grants, profit tracking)
+[ ] 12. Weather & Seasonal system implemented
+[ ] 13. Quest system and failure states defined
+[ ] 14. Save/Load to LocalStorage implemented
+[ ] 15. Visual feedback (water flow scaling, turbine RPM, day/night)
+[ ] 16. Automation rule engine implemented
+
+---
+
+# DELIVERABLE
+Output the complete, fully playable game in a single HTML file containing all HTML, CSS, and JavaScript. Ensure the code is clean, well-commented, and modular. Adhere strictly to the Self-Test Protocols. Begin your response with the Goal Tracker, then provide the code.
+
+
+
+
+GOD mode" — an optimized arbitrage controller that reads the duck-curve price shape and auto-pumps at troughs / generates at peaks (smarter than the rule editor).
+God mode should be as optimised as can be in its behaviour, purchasing new equipment if it has the money to do so, choosing when to sell, setting its own profitability rules and so on and so forth, it should be a very sophisticated modality
+Power Flow dashboard — visualize exactly how much wind/solar/hydro/battery produces and where each watt goes (grid sell / pump / battery), with animated flow lines.
+Lithium battery storage — a 2nd reservoir (electrical) that charges from cheap/excess energy and discharges to sell.
+Renewables → pump direct coupling — wind/solar physically drive the pump, and this can run concurrently with the turbine generating.
+
+also, there should be a grid system like I see the grid and I also see squares where the solar and the wind would go, but why shouldn’t they go in the squares of the grid that you made?
+
+
+The UI shouldn't be heavily cluttered
+The UI should work on both desktop (with keyboard shortcuts) and mobile devices (iPad)
+The code should be efficient, it shouldn't lag even on older hardware while still looking great
+The reservoir should be refilled by weather events (like mm of rainfall) and shown in its own data metric thing
+The game should keep things as true to life (with reasonable price ranges so even negative energy pricing) but keep things reasonable when it comes to the initial player budget or the pricing for the components
+The "solar panel" and "wind turbine" should appear placed in the fields surrounding the pumped hydro plant automatically placed in the landscape
+Rain/evaporation - there should be a counter of the panels/turbines purchased which counts up as they get set up in the background
+
+Seasonal events, harsher rains in the spring and autumn, maybe a heavy downpour in august and spring months, same goes for sunshine and wind (evaporation) as well as rainfall (filling both the basin and reservoir (the area should vary as they get filled
+
+REALLY IMPORTANT 
+Set the reservoir and basin into the landscape! the reservoir could either be in a high plain or canyon, the basin at a set amount of meters below (pressure)
+
+There should also be the possibility to have multiple turbines in the plant, multiplying the energy generating capacity of the plant
+
+the battery storage should allow for the pump to run to refill the reservoir while the turbine spins to generate more money at the higher price, theres no setting to control where the battery should send its energy
+
+Each energy source should be able to feed another (wind feeding the battery, hydro feeding the battery, solar to the grid and grid to the battery/hydro
+The pump and turbine are separate, the pump can pump water back up (thanks to user set rules) at a certain reservoir level, refilling it from a cheaper energy source such as the renewables or the battery storage
+
+There should be a way to speed up time, simulated:real 1m:1s 1h:2s 1d:10s 1mo:10s 1yr:1min
+The calculations shouldn't be done dynamically, the duck curve of the energy demands per season should be baked in and calculated deterministically based on what the user has (basin volume, battery storage, wind turbines, solar) 
+The duck curve should be true to real duck curves and the maximum and minimum of such curves must be realistic
+
+The UI:
+- the layout should be original, organic and honest, buttons should be placed where they belong
+- forget mass produced website design criteria, this is an artisanal game
+- put your heart into it, but remember to keep it aesthetically functional 

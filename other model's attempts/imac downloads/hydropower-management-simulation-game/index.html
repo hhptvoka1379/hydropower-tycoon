@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>HYDROPOWER TYCOON — Pumped Storage & Renewables</title>
+<style>
+/* =====================================================================
+   HYDROPOWER TYCOON  —  compact SCADA control-room UI
+   Real physics (Darcy-Weisbach, frustum volumes, Thoma, cubic wind,
+   temp-derated solar, Penman evap, merit-order duck curve).
+   Economy tuned for visible, watchable growth at monthly/yearly speed.
+   ===================================================================== */
+:root{
+  --bg:#070b14; --panel:#0e1626; --panel2:#16223a; --panel3:#1d2c49;
+  --line:#243450; --line2:#33476e;
+  --txt:#cfe0f5; --mut:#6f86a8; --mut2:#4f6585;
+  --green:#22e6a0; --green-d:#0c5f43; --amber:#ffb627; --red:#ff5566;
+  --blue:#3aa0ff; --cyan:#36e0ff; --water:#2f8fd0; --water-d:#15547f;
+  --wind:#36e0ff; --solar:#ffb627; --hydro:#22e6a0; --bat:#b06bff;
+  --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);color:var(--txt);font-size:13px;
+  display:flex;flex-direction:column;
+  user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;
+}
+button{font-family:inherit;color:inherit;cursor:pointer;border:none;background:none}
+.mono{font-family:var(--mono)}
+::-webkit-scrollbar{width:7px;height:7px}::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
+
+/* ---------- TOP BAR ---------- */
+#topbar{height:46px;flex:0 0 46px;display:flex;align-items:center;gap:10px;padding:0 12px;
+  background:linear-gradient(180deg,#0c1424,#080d18);border-bottom:1px solid var(--line);z-index:30}
+.brand{font-weight:800;letter-spacing:1.5px;font-size:13px;color:var(--green);text-shadow:0 0 12px rgba(34,230,160,.35);white-space:nowrap}
+.brand span{color:var(--amber)}
+.navtabs{display:flex;gap:2px}
+.ntab{height:32px;padding:0 11px;border-radius:6px;color:var(--mut);font-size:11.5px;font-weight:600;letter-spacing:.4px;display:flex;align-items:center;border:1px solid transparent}
+.ntab:hover{background:var(--panel2);color:var(--txt)}
+.ntab.on{background:var(--panel3);color:var(--green);border-color:var(--line2)}
+.ntab .dot{width:6px;height:6px;border-radius:50%;background:var(--amber);margin-left:6px;display:none}
+.ntab .dot.on{display:block;animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.topright{margin-left:auto;display:flex;align-items:center;gap:8px}
+.chip{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--mut);white-space:nowrap}
+.chip b{color:var(--txt);font-family:var(--mono)}
+.drawbtn{display:none;width:34px;height:34px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);color:var(--green);font-size:16px;align-items:center;justify-content:center}
+
+/* ---------- LAYOUT ---------- */
+#main{flex:1;display:flex;min-height:0;position:relative}
+#left{width:264px;flex:0 0 264px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+#stage{flex:1;position:relative;min-width:0;background:#050810}
+#stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#right{width:262px;flex:0 0 262px;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+.pane{padding:10px 12px;border-bottom:1px solid var(--line)}
+.pane h3{font-size:9.5px;letter-spacing:1.4px;color:var(--mut);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.pane h3::before{content:'';width:3px;height:10px;background:var(--green);border-radius:2px}
+.pane h3.am::before{background:var(--amber)} .pane h3.cy::before{background:var(--cyan)}
+.scroll{overflow-y:auto;flex:1;min-height:0}
+
+/* energy-flow rows */
+.eflow{display:flex;flex-direction:column;gap:5px}
+.efrow{display:flex;align-items:center;gap:8px;font-size:11px}
+.efrow .ico{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;flex:0 0 22px}
+.efrow .nm{flex:0 0 52px;color:var(--mut);font-size:10.5px}
+.efrow .mw{font-family:var(--mono);font-weight:700;min-width:52px;text-align:right}
+.efbar{flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden}
+.efbar>i{display:block;height:100%;border-radius:3px;transition:width .3s}
+.bus{height:0;border-top:1px dashed var(--line2);margin:7px 0;position:relative}
+.bus::after{content:'BUS';position:absolute;left:50%;top:-7px;transform:translateX(-50%);background:var(--panel);padding:0 6px;font-size:9px;color:var(--mut2);letter-spacing:1px}
+.kpi{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}
+.kpi .b{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+.kpi .b .l{font-size:9px;letter-spacing:.5px;color:var(--mut);text-transform:uppercase}
+.kpi .b .v{font-family:var(--mono);font-size:14px;font-weight:700;margin-top:2px}
+.kpi .b .v small{font-size:9px;color:var(--mut);font-weight:400}
+.kpi .b.full{grid-column:1/3}
+.good .v{color:var(--green)} .bad .v{color:var(--red)} .warn .v{color:var(--amber)}
+
+/* mode + controls */
+.modebtns{display:flex;gap:5px;margin-bottom:8px}
+.mbtn{flex:1;height:38px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);color:var(--mut);font-weight:700;font-size:11px;letter-spacing:.4px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.mbtn small{font-size:9px;font-weight:500;opacity:.65}
+.mbtn:hover{color:var(--txt)}
+.mbtn.on.idle{background:#1a2438;color:var(--cyan);border-color:var(--cyan)}
+.mbtn.on.gen{background:#0d2f23;color:var(--green);border-color:var(--green)}
+.mbtn.on.pmp{background:#3a2510;color:var(--amber);border-color:var(--amber)}
+.slrow{display:flex;align-items:center;gap:8px;margin:7px 0}
+.slrow label{font-size:10.5px;color:var(--mut);min-width:60px}
+input[type=range]{flex:1;-webkit-appearance:none;height:5px;border-radius:3px;background:var(--line2);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--green);cursor:pointer;box-shadow:0 0 8px rgba(34,230,160,.6)}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border:none;border-radius:50%;background:var(--green);cursor:pointer}
+.slval{font-family:var(--mono);font-size:11px;color:var(--green);min-width:46px;text-align:right}
+.seg{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:2px;gap:2px}
+.seg button{flex:1;height:26px;border-radius:5px;font-size:10px;font-weight:700;color:var(--mut);letter-spacing:.3px}
+.seg button.on{background:var(--green-d);color:var(--green)}
+.seg button:hover{color:var(--txt)}
+.toggle{display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:7px 10px;margin-top:6px}
+.toggle .tl{font-size:11.5px;font-weight:600}
+.toggle .tl small{display:block;color:var(--mut);font-weight:400;font-size:9.5px}
+.sw{width:38px;height:21px;border-radius:11px;background:var(--line2);position:relative;transition:.2s;flex:0 0 38px}
+.sw.on{background:var(--green-d)} .sw i{position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:#cfe0f5;transition:.2s} .sw.on i{left:19px;background:var(--green)}
+
+/* equipment health mini */
+.eqrow{display:flex;align-items:center;gap:8px;font-size:10.5px;margin:5px 0}
+.eqrow .nm{flex:1;color:var(--mut)} .eqrow .hp{font-family:var(--mono);min-width:44px;text-align:right}
+.bar{height:5px;background:var(--bg);border-radius:3px;overflow:hidden;border:1px solid var(--line)}
+.bar>i{display:block;height:100%;border-radius:3px;transition:width .4s}
+.bar.hp>i{background:linear-gradient(90deg,#ff5566,#ffb627,#22e6a0)}
+.bar.water>i{background:linear-gradient(90deg,var(--water-d),var(--water))}
+.bar.bat>i{background:linear-gradient(90deg,var(--bat),#d49bff)}
+
+/* charts */
+.chartwrap{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:6px 7px 2px;margin-bottom:7px}
+.chartwrap .ct{display:flex;justify-content:space-between;font-size:9.5px;color:var(--mut);letter-spacing:.4px;margin-bottom:2px}
+.chartwrap canvas{width:100%;height:46px;display:block}
+
+/* bottom control bar on the stage */
+#bottombar{position:absolute;left:0;right:0;bottom:0;z-index:8;display:flex;align-items:center;gap:8px;padding:7px 12px;
+  background:linear-gradient(180deg,rgba(8,12,20,0),rgba(8,12,20,.92) 40%)}
+.pricepill{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:5px 12px;display:flex;align-items:center;gap:8px}
+.pricepill .lab{font-size:9px;color:var(--mut);letter-spacing:.5px}
+.pricepill .val{font-family:var(--mono);font-size:18px;font-weight:800;line-height:1}
+.spdgrp{margin-left:auto;display:flex;gap:3px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:3px}
+.spdgrp button{height:30px;min-width:40px;padding:0 8px;border-radius:6px;font-size:11px;font-weight:700;color:var(--mut);font-family:var(--mono)}
+.spdgrp button.on{background:var(--green-d);color:var(--green)}
+.legend{position:absolute;top:10px;left:10px;z-index:5;display:flex;gap:6px;align-items:center;max-width:60vw;flex-wrap:wrap}
+.tag{background:rgba(14,22,38,.85);border:1px solid var(--line2);border-radius:6px;padding:5px 8px;font-size:10px;font-family:var(--mono);color:var(--mut)}
+.tag b{color:var(--cyan)}
+.toolhint{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:6;background:rgba(14,22,38,.94);border:1px solid var(--green);color:var(--green);border-radius:8px;padding:6px 12px;font-size:11.5px;font-weight:600;display:none;box-shadow:0 6px 18px rgba(0,0,0,.5)}
+.toolhint.show{display:block}
+
+/* modal */
+#overlay{position:absolute;inset:0;background:rgba(3,7,14,.74);backdrop-filter:blur(3px);z-index:40;display:none}
+#overlay.show{display:flex;align-items:center;justify-content:center}
+.modal{width:760px;max-width:94vw;max-height:86vh;background:var(--panel);border:1px solid var(--line2);border-radius:12px;box-shadow:0 30px 80px rgba(0,0,0,.6);display:flex;flex-direction:column;overflow:hidden}
+.modal .mh{padding:13px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;background:linear-gradient(180deg,#132036,#0e1626)}
+.modal .mh h2{font-size:14px;letter-spacing:1px;color:var(--green)} .modal .mh h2 small{color:var(--mut);font-weight:400;font-size:11px;margin-left:8px;letter-spacing:0}
+.modal .mh .x{margin-left:auto;width:30px;height:30px;border-radius:7px;color:var(--mut);font-size:18px;display:flex;align-items:center;justify-content:center}
+.modal .mh .x:hover{background:var(--panel3);color:var(--red)}
+.modal .mb{padding:16px 18px;overflow-y:auto}
+.bcat{font-size:10px;letter-spacing:1.3px;color:var(--amber);font-weight:700;margin:16px 0 9px}
+.bcat:first-child{margin-top:0}
+.bcard{display:flex;gap:12px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:11px 12px;margin-bottom:8px;align-items:center}
+.bcard.cur{border-color:var(--green);box-shadow:inset 0 0 0 1px var(--green-d)}
+.bcard .ic{width:40px;height:40px;border-radius:9px;background:var(--panel3);display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 40px}
+.bcard .info{flex:1;min-width:0}
+.bcard .info .n{font-weight:700;font-size:12.5px}
+.bcard .info .d{font-size:10.5px;color:var(--mut);margin-top:2px;line-height:1.35}
+.bcard .info .stats{font-family:var(--mono);font-size:10px;color:var(--cyan);margin-top:4px}
+.bcard .info .npv{font-family:var(--mono);font-size:10px;margin-top:3px}
+.npv.pos{color:var(--green)} .npv.neg{color:var(--red)}
+.bcard .act{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.price{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--amber)}
+.buy{height:30px;padding:0 14px;border-radius:7px;background:var(--green-d);color:var(--green);font-weight:700;font-size:11px}
+.buy:hover{background:#0e7553}.buy:disabled{background:var(--panel3);color:var(--mut2);cursor:not-allowed}
+
+.finrow{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:12px}
+.finrow .k{color:var(--mut)} .finrow .v{font-family:var(--mono)}
+.btnline{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.btn{height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--line2);background:var(--panel2);color:var(--txt);font-weight:600;font-size:11.5px}
+.btn:hover{border-color:var(--green);color:var(--green)}
+.btn.pri{background:var(--green-d);color:var(--green);border-color:var(--green-d)}.btn.pri:hover{background:#0e7553}
+.btn.dng{color:var(--red);border-color:#5a2530}
+
+.rule{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px}
+.rule .rh{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.rule .rh .rn{font-weight:700;font-size:11.5px;flex:1}
+.rule-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;font-size:11px}
+select,input[type=number]{background:var(--bg);border:1px solid var(--line2);color:var(--txt);border-radius:5px;padding:5px 7px;font-family:var(--mono);font-size:11px;outline:none}
+.tiny{font-size:10px;padding:3px 5px}
+.addbtn{height:34px;width:100%;border:1px dashed var(--line2);border-radius:8px;color:var(--mut);font-size:11px;font-weight:600}
+.addbtn:hover{border-color:var(--green);color:var(--green)}
+
+.q{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:11px 12px;margin-bottom:8px}
+.q.done{opacity:.55}
+.q .qh{display:flex;align-items:center;gap:8px}
+.q .qn{font-weight:700;font-size:12.5px;flex:1}
+.q .rew{font-family:var(--mono);font-size:11px;color:var(--green)}
+.q .qd{font-size:11px;color:var(--mut);margin-top:5px;line-height:1.4}
+.q .qchk{width:22px;height:22px;border-radius:6px;border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-size:13px}
+.q.done .qchk{background:var(--green-d);color:var(--green);border-color:var(--green)}
+
+.setrow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+
+/* toast */
+#toasts{position:absolute;top:54px;right:12px;z-index:50;display:flex;flex-direction:column;gap:7px;pointer-events:none;max-width:280px}
+.toast{background:var(--panel3);border:1px solid var(--line2);border-left:3px solid var(--green);border-radius:7px;padding:8px 11px;font-size:11.5px;box-shadow:0 8px 24px rgba(0,0,0,.5);animation:sl .25s}
+.toast.bad{border-left-color:var(--red)} .toast.warn{border-left-color:var(--amber)} .toast.info{border-left-color:var(--cyan)}
+.toast b{display:block;font-size:10.5px;letter-spacing:.4px;color:var(--green);margin-bottom:1px}
+.toast.bad b{color:var(--red)} .toast.warn b{color:var(--amber)} .toast.info b{color:var(--cyan)}
+@keyframes sl{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+
+/* start */
+#start{position:absolute;inset:0;z-index:60;background:radial-gradient(circle at 50% 35%,#0d1830,#050810);display:flex;align-items:center;justify-content:center;flex-direction:column;padding:30px;text-align:center}
+#start h1{font-size:clamp(28px,5vw,44px);letter-spacing:5px;font-weight:900;color:var(--green);text-shadow:0 0 30px rgba(34,230,160,.4)}
+#start h1 span{color:var(--amber)}
+#start p{color:var(--mut);max-width:560px;margin-top:14px;line-height:1.6;font-size:13px}
+#start .pts{display:flex;gap:16px;margin-top:22px;flex-wrap:wrap;justify-content:center}
+#start .pt{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 16px;max-width:150px}
+#start .pt .e{font-size:22px} #start .pt .t{font-size:11px;color:var(--mut);margin-top:6px;line-height:1.4}
+#start .go{margin-top:26px;height:48px;padding:0 38px;border-radius:10px;background:var(--green);color:#06241a;font-weight:800;font-size:15px;letter-spacing:2px;box-shadow:0 0 30px rgba(34,230,160,.5)}
+#start .go:hover{background:#3dfbbb}
+.hidden{display:none!important}
+
+/* ---------- RESPONSIVE ---------- */
+@media(max-width:1180px){
+  #left{width:240px;flex-basis:240px} #right{width:248px;flex-basis:248px}
+}
+@media(max-width:1024px){
+  body.app #left,body.app #right{position:absolute;top:0;bottom:0;width:300px;max-width:86vw;z-index:25;box-shadow:0 0 40px rgba(0,0,0,.7);transition:transform .26s ease}
+  body.app #left{left:0} body.app #right{right:0}
+  body.app #left.hide{transform:translateX(-102%)} body.app #right.hide{transform:translateX(102%)}
+  body.app .drawbtn{display:flex}
+  body.app #stage{width:100%}
+  .navtabs{display:none}
+}
+@media(max-width:640px){
+  #topbar{gap:6px;padding:0 8px} .brand{font-size:11px;letter-spacing:1px}
+  .chip:not(.keep){display:none}
+  #bottombar{flex-wrap:wrap;gap:6px}
+  .spdgrp button{min-width:34px;padding:0 6px;font-size:10px}
+}
+</style>
+</head>
+<body class="app">
+
+<!-- ===================== TOP BAR ===================== -->
+<div id="topbar">
+  <button class="drawbtn" id="dleft">◀</button>
+  <div class="brand">HYDRO<span>POWER</span> TYCOON</div>
+  <div class="navtabs">
+    <button class="ntab" data-panel="build">🏗 Build</button>
+    <button class="ntab" data-panel="auto">⚙ Rules</button>
+    <button class="ntab" data-panel="fin">💰 Finance</button>
+    <button class="ntab" data-panel="quests">🎯 Quests<span class="dot" id="qdot"></span></button>
+    <button class="ntab" data-panel="settings">⚙ Settings</button>
+    <button class="ntab" data-panel="save">💾 Save</button>
+  </div>
+  <div class="topright">
+    <div class="chip keep">🌼 <b id="t-season">Spring</b></div>
+    <div class="chip keep">🌤️ <b id="t-wx">Clear</b></div>
+    <div class="chip">Day <b id="t-day">1</b></div>
+    <div class="chip keep"><b id="t-clock">06:00</b></div>
+    <button class="drawbtn" id="dright">▶</button>
+  </div>
+</div>
+
+<div id="main">
+  <!-- LEFT: ENERGY FLOW (compact, Tesla-style) -->
+  <div id="left" class="hide">
+    <div class="scroll">
+      <div class="pane">
+        <h3 class="cy">Energy Flow — Sources</h3>
+        <div class="eflow" id="efsrc"></div>
+        <div class="bus"></div>
+        <h3 class="am" style="margin-top:2px">Where it goes</h3>
+        <div class="eflow" id="efsink"></div>
+      </div>
+      <div class="pane">
+        <h3>Production &amp; Margin</h3>
+        <div class="kpi">
+          <div class="b full good"><div class="l">Cash</div><div class="v" id="k-cash">$0</div></div>
+          <div class="b"><div class="l">Today net</div><div class="v" id="k-today">—</div></div>
+          <div class="b"><div class="l">Margin</div><div class="v" id="k-margin">—</div></div>
+          <div class="b full"><div class="l">Energy generated (total)</div><div class="v" id="k-gen">0<small> MWh</small></div></div>
+          <div class="b full"><div class="l">Avg sell / buy ($/MWh)</div><div class="v" id="k-prices">—</div></div>
+        </div>
+      </div>
+      <div class="pane">
+        <h3>24h Grid Price</h3>
+        <div class="chartwrap"><canvas id="ch-price"></canvas></div>
+        <h3>Reservoir Volumes</h3>
+        <div class="chartwrap"><canvas id="ch-vol"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER: ISOMETRIC SCENE -->
+  <div id="stage">
+    <div class="legend">
+      <div class="tag">Drag/scroll · Build→click <b>green</b> tiles</div>
+    </div>
+    <div class="toolhint" id="toolhint"></div>
+    <canvas id="cv"></canvas>
+    <!-- bottom control bar -->
+    <div id="bottombar">
+      <div class="pricepill"><span class="lab">GRID</span><span class="val" id="bp-price">$0</span></div>
+      <div class="spdgrp">
+        <button id="spd-pause" title="Pause">⏸</button>
+        <button data-spd="0.4" title="1 min = 1 day">Day</button>
+        <button data-spd="2.8" title="1 min = 1 week">Wk</button>
+        <button class="on" data-spd="12.2" title="1 min = 1 month">Mo</button>
+        <button data-spd="146" title="1 min = 1 year">Yr</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: CONTROL -->
+  <div id="right" class="hide">
+    <div class="scroll">
+      <div class="pane">
+        <h3>Hydro Operation</h3>
+        <div class="modebtns">
+          <button class="mbtn on idle" data-mode="idle">IDLE<small>standby</small></button>
+          <button class="mbtn gen" data-mode="generate">GENERATE<small>discharge</small></button>
+          <button class="mbtn pmp" data-mode="pump">PUMP<small>charge</small></button>
+        </div>
+        <div class="slrow"><label>Flow</label><input type="range" id="flow" min="0" max="100" value="100"><span class="slval" id="flowv">100%</span></div>
+      </div>
+      <div class="pane">
+        <h3 class="am">Renewable Routing</h3>
+        <div class="seg" id="routeseg">
+          <button data-route="GRID">Grid</button>
+          <button data-route="PUMP">Pump</button>
+          <button data-route="BATTERY">Battery</button>
+          <button class="on" data-route="AUTO">Auto</button>
+        </div>
+        <div style="font-size:10px;color:var(--mut);margin-top:6px;line-height:1.4">Where wind &amp; solar go: <b style="color:var(--wind)">Grid</b> sells, <b style="color:var(--amber)">Pump</b> lifts water free, <b style="color:var(--bat)">Battery</b> charges the lithium bank, <b>Auto</b> splits by price.</div>
+      </div>
+      <div class="pane">
+        <h3>Storage &amp; Autopilot</h3>
+        <div class="slrow" style="margin-top:0"><label>Battery</label>
+          <div class="seg" style="flex:1" id="batseg">
+            <button data-bat="charge">CHG</button><button class="on" data-bat="idle">HOLD</button><button data-bat="discharge">DIS</button>
+          </div></div>
+        <div class="slrow"><label>Send DIS →</label>
+          <div class="seg" style="flex:1" id="batroute">
+            <button class="on" data-br="GRID">Grid (sell)</button><button data-br="PUMP">Pump (refill)</button>
+          </div></div>
+        <div style="font-size:10px;color:var(--mut);margin:2px 0 6px;line-height:1.4"><b style="color:var(--bat)">Pump</b> route: battery lifts water uphill — the turbine can keep generating at peak price while the battery refills the reservoir.</div>
+        <div class="toggle" id="autotg"><div class="tl">Rule Automation<small>your rules drive the pump/turbine</small></div><div class="sw"><i></i></div></div>
+        <button class="btn" style="width:100%;margin-top:6px" data-panel="auto">⚙ Edit Rules</button>
+        <div class="toggle" id="godtg"><div class="tl">GOD Mode<small>full autopilot (overrides rules)</small></div><div class="sw"><i></i></div></div>
+      </div>
+      <div class="pane">
+        <h3>Equipment</h3>
+        <div class="eqrow"><span class="nm">🌀 <span id="eq-tn">—</span></span><span class="hp" id="eq-th">100%</span></div>
+        <div class="bar hp"><i id="eq-tb"></i></div>
+        <div class="eqrow"><span class="nm">🔁 <span id="eq-pn">—</span></span><span class="hp" id="eq-ph">100%</span></div>
+        <div class="bar hp"><i id="eq-pb"></i></div>
+        <div class="eqrow"><span class="nm">🔋 Battery SOC</span><span class="hp" id="eq-bh">—</span></div>
+        <div class="bar bat"><i id="eq-bb"></i></div>
+        <div class="eqrow"><span class="nm">💧 Upper / Lower</span><span class="hp" id="eq-rh">—</span></div>
+        <div class="bar water"><i id="eq-ru"></i></div>
+        <div class="bar water" style="margin-top:4px"><i id="eq-rl"></i></div>
+      </div>
+      <div class="pane">
+        <h3>Telemetry</h3>
+        <div class="kpi">
+          <div class="b"><div class="l">Net Head Hn</div><div class="v" id="t-hn">—</div></div>
+          <div class="b"><div class="l">Friction Hf</div><div class="v" id="t-hf">—</div></div>
+          <div class="b"><div class="l">Flow Q</div><div class="v" id="t-q">—</div></div>
+          <div class="b"><div class="l">Wind / Solar</div><div class="v" id="t-re">—</div></div>
+        </div>
+        <button class="btn pri" style="width:100%;margin-top:10px" data-panel="build">🏗 Build / Upgrade</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="overlay"><div class="modal">
+  <div class="mh"><h2 id="m-title">Panel</h2><button class="x" id="m-close">✕</button></div>
+  <div class="mb" id="m-body"></div>
+</div></div>
+<div id="toasts"></div>
+
+<!-- START -->
+<div id="start">
+  <h1>HYDRO<span>POWER</span> TYCOON</h1>
+  <p>A real-physics energy simulator. Pump water uphill when power is cheap, release it through turbines when prices spike — and route your wind &amp; solar wherever they earn most. Build a renewable + storage fleet and grow it profitably through all four seasons.</p>
+  <div class="pts">
+    <div class="pt"><div class="e">⚡</div><div class="t">Real Darcy-Weisbach &amp; frustum hydro physics</div></div>
+    <div class="pt"><div class="e">🛣️</div><div class="t">Route renewables: grid, pump, or split</div></div>
+    <div class="pt"><div class="e">📊</div><div class="t">Live energy-flow &amp; profitability dashboards</div></div>
+    <div class="pt"><div class="e">🤖</div><div class="t">GOD autopilot trades &amp; grows for you</div></div>
+  </div>
+  <button class="go" id="startbtn">START SIMULATION</button>
+  <p style="margin-top:18px;font-size:11px">Starting capital <b style="color:var(--amber)">$4,000,000</b> · 50 m head · click <b style="color:var(--green)">Mo</b> (1 min ≈ 1 month) to watch a year fly by.</p>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   0 — CONSTANTS (real SI units; economy tuned for watchable growth)
+   ============================================================ */
+const PHYS={rho:1000,g:9.81,rhoAir:1.225,Cp:0.40,etaMech:0.95,etaPanel:0.20,gammaTemp:0.004,
+  alphaWind:0.143,fDefault:0.015,Hatm:10.33,Hvapor:0.30,sigmaC:0.18,kEm:1.35,r:0.06};
+const SUBSIDY=0.30;          // 30% renewable investment tax credit (real US ITC)
+
+const PUMPS=[
+  {id:0,name:"Sulzer APT 51-8",  kW:500,  eta:0.80,cost:0},       // starter, owned
+  {id:1,name:"KSB RPH 100-5",    kW:5000, eta:0.84,cost:1200000},
+  {id:2,name:"Voith Hydro Shaft",kW:50000,eta:0.87,cost:15000000}];
+const TURBINES=[
+  {id:0,name:"Andritz FR-15",        kW:1000,  eta:0.85,cost:0},
+  {id:1,name:"Voith Pelton P25",     kW:20000, eta:0.90,cost:2600000},
+  {id:2,name:"GE Hydro-Francis 150", kW:150000,eta:0.92,cost:22000000}];
+const PENSTOCKS=[{D:1.0,cost:0},{D:1.6,cost:480000},{D:2.6,cost:1600000},{D:4.0,cost:6200000}];
+const WIND_COST=1200000, WIND_R=22, WIND_HUB=80, WIND_RATED_MW=2.2;
+const SOLAR_COST=820000, SOLAR_AREA=4200, SOLAR_PEAK_MW=0.84;
+const BATTERY_COST=850000, BATTERY_MWH=10;
+
+/* ============================================================
+   1 — STATE
+   ============================================================ */
+let state;
+function newGame(){
+  state={
+    seed:(Math.random()*1e9)|0, time:6, dayOfYear:0, season:"Spring",
+    paused:true, gameOver:false, won:false, speed:12.2,
+    // finance
+    cash:4000000, profitToday:0, dayCumProfit:0, monthExpenses:0,
+    capExTotal:0, loan:{balance:0,rate:0.07,minPayment:0}, grants:0,
+    // reservoirs (frustums) — sized so tier-0 cycles ~daily
+    upper:{Atop:6000,Abot:3000,maxDepth:12,depth:10,elev:50},
+    lower:{Atop:12000,Abot:5500,maxDepth:16,depth:6,elev:0},
+    penstock:{D:1.0,L:60,f:PHYS.fDefault},
+    pump:{tier:0,health:100}, turbine:{tier:0,health:100}, hSuction:-2,
+    mode:"idle", flowRate:1.0, route:"AUTO", lastQ:0,lastHn:0,lastHf:0,lastP:0,
+    // renewables (tile-placed)
+    wind:[], solar:[], windMW:0, solarMW:0,
+    // battery
+    battery:{capMWh:0,socMWh:0,cRate:0.5,eff:0.92,mode:"idle",route:"GRID"},
+    // controllers
+    godMode:false, priceEMA:45, god:{phase:'empty',basis:0,cycles:0,autoBuild:true,lastInvestDay:null,profitEMA:null},
+    // live power-flow snapshot (MW)
+    flow:{wind:0,solar:0,hydro:0,batDis:0,reToGrid:0,reToPump:0,pumpGrid:0,batChg:0,gridSell:0,gridBuy:0},
+    // cumulative tracking (separated so avg buy/sell stay realistic)
+    gen:{wind:0,solar:0,hydro:0,bat:0},        // MWh generated per source
+    totals:{sold:0,bought:0,sellRev:0,buyCost:0,om:0,loan:0},
+    today:{gen:0,profit:0},
+    weather:{G:0,temp:14,windRef:5,rain:0,evap:0,cloud:0.2,rh:0.55,type:"clear"},
+    dailyWeather:null,_lastDay:-1,_lastHour:-1,price:45,priceHist:[],volHistU:[],volHistL:[],powHist:[],
+    autoOn:false, rules:[], quests:[], alerts:[], buildTool:null,hoverTile:null,
+    _overflow:false,_dry:false,_cavWarn:false,_bankrupt:false,_tfail:false,_pfail:false,
+  };
+  initRules(); initQuests();
+}
+function initRules(){
+  state.rules=[
+    {on:true,m:"price",op:"<",v:25,act:"pump",f:1},
+    {on:true,m:"price",op:">",v:80,act:"generate",f:1},
+  ];
+}
+
+/* ============================================================
+   2 — MATH HELPERS
+   ============================================================ */
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const lerp=(a,b,t)=>a+(b-a)*t;
+function fmtMoney(n){const s=n<0;n=Math.abs(n);let str;
+  if(n>=1e9)str=(n/1e9).toFixed(2)+"B";else if(n>=1e6)str=(n/1e6).toFixed(2)+"M";
+  else if(n>=1e3)str=(n/1e3).toFixed(1)+"k";else str=n.toFixed(0);
+  return(s?"-$":"$")+str;}
+function fmtMoneyFull(n){return(n<0?"-$":"$")+Math.abs(n).toLocaleString("en-US",{maximumFractionDigits:0});}
+function fmtMW(w){w=Math.abs(w);return w>=1000?(w/1000).toFixed(2)+" GW":w.toFixed(2)+" MW";}
+function fmtkW(w){w=Math.abs(w);return w>=1000?(w/1e3).toFixed(2)+" MW":w.toFixed(0)+" kW";}
+function fmtWh(mwh){if(mwh>=1000)return(mwh/1000).toFixed(2)+" GWh";if(mwh>=1)return mwh.toFixed(1)+" MWh";return(mwh*1000).toFixed(0)+" kWh";}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function noiseF(t){return Math.sin(t*0.7)*0.45+Math.sin(t*1.31+1.7)*0.32+Math.sin(t*2.13+0.4)*0.23;}
+function hex(h){h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+function lerpCol(a,b,t){const pa=hex(a),pb=hex(b);return`rgb(${(pa[0]+(pb[0]-pa[0])*t)|0},${(pa[1]+(pb[1]-pa[1])*t)|0},${(pa[2]+(pb[2]-pa[2])*t)|0})`;}
+
+/* ============================================================
+   3 — FLUID DYNAMICS (Darcy-Weisbach, frustum volumes, mass conservation)
+   ============================================================ */
+function pipeArea(D){return Math.PI*(D/2)*(D/2);}
+function flowVelocity(Q,D){const A=pipeArea(D);return A>1e-9?Q/A:0;}
+function frictionHead(f,L,D,v){if(D<=0||v<=0)return 0;return f*(L/D)*(v*v/(2*PHYS.g));}
+function grossHead(){return(state.upper.elev+state.upper.depth)-(state.lower.elev+state.lower.depth);}
+function netHead(Hg,Q){const D=state.penstock.D;const v=flowVelocity(Q,D);const Hf=frictionHead(state.penstock.f,state.penstock.L,D,v);return{Hn:Math.max(0,Hg-Hf),Hf};}
+function powerGenW(Hn,Q,eta){return PHYS.rho*PHYS.g*Hn*Q*eta;}
+function powerPumpW(Hg,Q,eta){return PHYS.rho*PHYS.g*Math.max(1,Hg)*Q/eta;}
+function turbineMaxQ(Hg){const t=TURBINES[state.turbine.tier];return(t.kW*1000)/(PHYS.rho*PHYS.g*Math.max(2,Hg)*t.eta);}
+function pumpMaxQ(Hg){const p=PUMPS[state.pump.tier];return(p.kW*1000)*p.eta/(PHYS.rho*PHYS.g*Math.max(2,Hg));}
+function resVolume(r){const k=(r.Atop-r.Abot)/(2*r.maxDepth);return r.Abot*r.depth+k*r.depth*r.depth;}
+function resMaxVolume(r){const k=(r.Atop-r.Abot)/(2*r.maxDepth);return r.Abot*r.maxDepth+k*r.maxDepth*r.maxDepth;}
+function resDepthAt(r,V){const k=(r.Atop-r.Abot)/(2*r.maxDepth);if(Math.abs(k)<1e-9)return r.Abot>0?V/r.Abot:0;const disc=r.Abot*r.Abot+4*k*V;return(-r.Abot+Math.sqrt(Math.max(0,disc)))/(2*k);}
+function resSurfaceArea(r){return r.Abot+(r.Atop-r.Abot)*clamp(r.depth/r.maxDepth,0,1);}
+function moveWater(Q,ds,dir){const dV=Q*ds;
+  if(dir>0){const vu=resVolume(state.upper),vl=resVolume(state.lower);const take=Math.min(dV,vu,resMaxVolume(state.lower)-vl);
+    state.upper.depth=clamp(resDepthAt(state.upper,vu-take),0,state.upper.maxDepth);
+    state.lower.depth=clamp(resDepthAt(state.lower,vl+take),0,state.lower.maxDepth);return take;}
+  const vu=resVolume(state.upper),vl=resVolume(state.lower);const take=Math.min(dV,resMaxVolume(state.upper)-vu,vl);
+  state.upper.depth=clamp(resDepthAt(state.upper,vu+take),0,state.upper.maxDepth);
+  state.lower.depth=clamp(resDepthAt(state.lower,vl-take),0,state.lower.maxDepth);return take;}
+
+/* ============================================================
+   4 — WEATHER / WIND / SOLAR / EVAPORATION
+   ============================================================ */
+function seasonOf(d){if(d>=60&&d<151)return"Spring";if(d>=151&&d<243)return"Summer";if(d>=243&&d<334)return"Autumn";return"Winter";}
+const SEASONTEMP={Spring:14,Summer:26,Autumn:15,Winter:3};
+function rollDailyWeather(day){const rnd=mulberry32((state.seed^Math.imul(day+1,2654435761))>>>0);const r=rnd();const s=seasonOf(day%365);
+  let type="clear",cloud=0.3,rain=0,tOff=0,windBase=5,rh=0.55;
+  if(s==="Summer"){if(r<0.16){type="heatwave";tOff=8;cloud=0.05;rh=0.30;windBase=3;}else if(r<0.40){type="thunderstorm";cloud=0.92;rain=34;windBase=11;rh=0.85;}else if(r<0.55){type="rain";cloud=0.7;rain=22;windBase=7;rh=0.75;}else{cloud=0.3;windBase=5;rh=0.5;}}
+  else if(s==="Winter"){if(r<0.45){type="snow";cloud=0.85;rain=5;windBase=7;tOff=-3;rh=0.8;}else if(r<0.62){type="blizzard";cloud=0.95;rain=7;windBase=16;tOff=-6;rh=0.85;}else{cloud=0.5;windBase=6;tOff=-2;rh=0.6;}}
+  else if(s==="Spring"){if(r<0.45){type="rain";cloud=0.78;rain=24;windBase=8;rh=0.8;}else if(r<0.58){type="storm";cloud=0.88;rain=26;windBase=12;rh=0.85;}else{cloud=0.4;windBase=6;rh=0.55;}}
+  else{if(r<0.35){type="storm";cloud=0.9;rain=28;windBase=13;rh=0.85;}else if(r<0.55){type="rain";cloud=0.72;rain=20;windBase=8;rh=0.78;}else{cloud=0.45;windBase=7;rh=0.6;}}
+  state.dailyWeather={type,cloud,rain,tOff,windBase,rh};}
+function updateWeather(){const t=state.time;const day=Math.floor(t/24);const h=((t%24)+24)%24;
+  state.dayOfYear=day%365;state.season=seasonOf(state.dayOfYear);
+  if(day!==state._lastDay){state._lastDay=day;rollDailyWeather(day);}
+  const dw=state.dailyWeather;
+  const Gclear=950*(state.season==="Winter"?0.55:state.season==="Summer"?1.0:0.82);
+  const daylight=(h>=6&&h<=18)?Math.sin(Math.PI*(h-6)/12):0;
+  state.weather.G=Math.max(0,Gclear*daylight*(1-dw.cloud));
+  state.weather.temp=SEASONTEMP[state.season]+dw.tOff+6*Math.sin((h-9)*Math.PI/12);
+  state.weather.windRef=Math.max(0,dw.windBase*(0.75+0.45*noiseF(day*7+h*0.4)));
+  state.weather.rain=Math.max(0,dw.rain*(0.55+0.6*Math.max(0,noiseF(h*1.3))));
+  const es=0.6108*Math.exp(17.27*state.weather.temp/(state.weather.temp+237.3));
+  state.weather.evap=clamp(PHYS.kEm*(es-es*dw.rh)*(1+0.5*state.weather.windRef),0,16);
+  state.weather.cloud=dw.cloud;state.weather.rh=dw.rh;state.weather.type=dw.type;}
+function turbineWindMW(w){if(!w||w.health<=0)return 0;const vHub=state.weather.windRef*Math.pow(w.Hhub/10,PHYS.alphaWind);
+  if(vHub<2.5||vHub>25)return 0;const A=Math.PI*w.R*w.R;
+  const rated=0.5*PHYS.rhoAir*A*Math.pow(13,3)*PHYS.Cp*PHYS.etaMech;
+  let P=Math.min(0.5*PHYS.rhoAir*A*Math.pow(vHub,3)*PHYS.Cp*PHYS.etaMech,rated);
+  return P*(w.health/100)/1e6;}
+function totalWindMW(){let s=0;for(const w of state.wind)s+=turbineWindMW(w);return s;}
+function solarMWof(p){if(p.health<=0)return 0;const G=state.weather.G;const Pdc=p.area*G*PHYS.etaPanel;
+  const Tcell=state.weather.temp+G/800*25;const Pac=Pdc*(1-PHYS.gammaTemp*(Tcell-25));return Math.max(0,Pac*(p.health/100))/1e6;}
+function totalSolarMW(){let s=0;for(const p of state.solar)s+=solarMWof(p);return s;}
+
+/* ============================================================
+   5 — GRID PRICE (realistic duck curve, $15–140/MWh)
+   ============================================================ */
+function regionalDemandMW(h){return 300+90*Math.exp(-Math.pow((h-7.5)/2.0,2))+150*Math.exp(-Math.pow((h-19)/2.2,2));}
+function regionalSolarMW(h){if(h<6||h>18)return 0;const sf=state.season==="Summer"?1.15:state.season==="Winter"?0.5:0.85;return 180*sf*Math.sin(Math.PI*(h-6)/12)*(1-state.weather.cloud);}
+function regionalWindMW(h){return 55*(0.6+0.6*Math.max(0,noiseF(Math.floor(state.time/24)*9+h*0.5)));}
+function computePrice(){const h=((state.time%24)+24)%24;
+  const evening=Math.exp(-Math.pow((h-19)/2.2,2));
+  const morning=Math.exp(-Math.pow((h-7.5)/2.0,2));
+  const belly=Math.exp(-Math.pow((h-13)/2.6,2));
+  let base=32+108*evening+22*morning-18*belly;       // night ~32, evening peak ~140, midday dip
+  const demand=regionalDemandMW(h);
+  const renew=regionalSolarMW(h)+regionalWindMW(h)+state.windMW+state.solarMW;
+  const renewFrac=clamp(renew/Math.max(1,demand),0,1.1);
+  base*=1-0.78*renewFrac*belly*1.5;                   // solar specifically crushes midday price
+  base+=noiseF(state.time*3)*3.5;
+  state.regionalRenew=renew;return base;}
+
+/* ============================================================
+   6 — WEAR / CAVITATION
+   ============================================================ */
+function thomaSigma(Hn){if(Hn<=0)return 99;return(PHYS.Hatm-PHYS.Hvapor-state.hSuction)/Hn;}
+function addWear(which,Pcur,headRef,dtH){const eq=which==="turbine"?state.turbine:state.pump;
+  const rated=(which==="turbine"?TURBINES:PUMPS)[eq.tier].kW*1000;
+  const sigma=thomaSigma(headRef);const cavPen=sigma<PHYS.sigmaC?10:0;
+  const wear=0.045*Math.pow(clamp(Pcur/Math.max(1,rated),0,1.1),2)*(1+cavPen);
+  eq.health=clamp(eq.health-wear*dtH,0,100);}
+
+/* ============================================================
+   7 — ECONOMICS HELPERS
+   ============================================================ */
+function equipmentCapEx(){let c=TURBINES[state.turbine.tier].cost+PUMPS[state.pump.tier].cost;
+  const ps=PENSTOCKS.find(p=>Math.abs(p.D-state.penstock.D)<0.01)||PENSTOCKS[0];c+=ps.cost;
+  c+=state.wind.length*WIND_COST+state.solar.length*SOLAR_COST+state.battery.capMWh*BATTERY_COST;
+  return Math.max(190000,c);}                         // floor so O&M never vanishes
+function omRatePerHour(){return equipmentCapEx()*0.025/8760;}   // 2.5% of CapEx/yr
+function npvUpgrade(capex,annualNet){let npv=-capex;for(let y=1;y<=20;y++)npv+=annualNet/Math.pow(1+PHYS.r,y);return npv;}
+function avgSell(){const t=state.totals;return t.sold>0.5?t.sellRev/t.sold:0;}
+function avgBuy(){const t=state.totals;return t.bought>0.5?t.buyCost/t.bought:0;}
+function marginPct(){const t=state.totals;const rev=t.sellRev;const cost=t.buyCost+t.om+t.loan;return rev>0?(rev-cost)/rev*100:0;}
+
+/* ---- Renewable routing: decide where wind+solar power goes (MW) ---- */
+/* Renewable routing: where wind+solar power goes.
+   GRID → sell at price; PUMP → lift water free; BATTERY → charge the lithium bank;
+   AUTO → smart split by price (charge battery when mid & cheap, sell at peaks). */
+function resolveRoute(price){const wind=state.windMW,solar=state.solarMW,total=wind+solar;const r=state.route||"AUTO";
+  let toGrid=0,toPump=0,toBat=0;
+  if(r==="GRID")toGrid=total;
+  else if(r==="PUMP")toPump=total;
+  else if(r==="BATTERY")toBat=total;
+  else if(r==="SPLIT"){toGrid=wind;toPump=solar;}
+  else{ // AUTO: sell high, pump low, fill battery in between
+    if(price>=70)toGrid=total;
+    else if(price<=35){toBat=total*0.5;toPump=total*0.5;}
+    else{toBat=total*0.6;toGrid=total*0.4;}}
+  return{toGridMW:toGrid,toPumpMW:toPump,toBatMW:toBat};}
+
+/* ============================================================
+   8 — PHYSICS TICK (routing + separated cost tracking)
+   ============================================================ */
+function physicsStep(dtH){if(state.gameOver)return;
+  const prevTime=state.time, ds=dtH*3600; state.time+=dtH;
+  updateWeather();
+  const price=computePrice(); state.price=price;
+  state.windMW=totalWindMW(); state.solarMW=totalSolarMW();
+  state.priceEMA=(state.priceEMA||price)*0.97+price*0.03;
+  if(state.godMode) godStep(price); else if(state.autoOn) applyAutomation(price);
+
+  const Hg=grossHead(), tEta=TURBINES[state.turbine.tier].eta, pEta=PUMPS[state.pump.tier].eta;
+  const turbineOk=state.turbine.health>0, pumpOk=state.pump.health>0;
+  const flowFrac=clamp(state.flowRate,0,1), pumpCapMW=PUMPS[state.pump.tier].kW/1000;
+  const route=resolveRoute(price);
+
+  // TURBINE (hydro generation)
+  let hydroGenW=0,Qgen=0;
+  if(state.mode==="generate"&&turbineOk&&Hg>1&&state.upper.depth>0.02){
+    Qgen=flowFrac*turbineMaxQ(Hg);const{Hn,Hf}=netHead(Hg,Qgen);
+    hydroGenW=Math.min(powerGenW(Hn,Qgen,tEta),TURBINES[state.turbine.tier].kW*1000);
+    const act=moveWater(Qgen,ds,+1); if(Qgen>0)hydroGenW*=act/(Qgen*ds);
+    state.lastHn=Hn;state.lastHf=Hf;state.lastQ=Qgen;addWear("turbine",hydroGenW,Hn,dtH);
+  }else{state.lastHn=0;state.lastHf=0;if(state.mode!=="pump")state.lastQ=0;}
+
+  // BATTERY — decided FIRST so its discharge can drive the pump motor concurrently.
+  // Charging sources: RENEWABLES routed to battery (free) + grid when mode=charge.
+  // Discharge destination: GRID (sell) or PUMP (refill while turbine generates).
+  let batChgMW=0,reToBatMW=0,batDisMW=0,batToPumpMW=0;const bat=state.battery;
+  if(bat.capMWh>0){const rateMW=bat.capMWh*bat.cRate;
+    // 1) renewables charge the battery first (free energy, regardless of mode)
+    if(route.toBatMW>0.001&&bat.socMWh<bat.capMWh-1e-4){
+      const headroom=(bat.capMWh-bat.socMWh)/Math.max(dtH,1e-3);
+      reToBatMW=Math.min(route.toBatMW,rateMW,headroom);
+      bat.socMWh=clamp(bat.socMWh+reToBatMW*dtH*bat.eff,0,bat.capMWh);}
+    // 2) explicit grid-charge tops it up if mode=charge and renewables didn't fill it
+    if(bat.mode==="charge"&&bat.socMWh<bat.capMWh-1e-4){
+      const headroom=(bat.capMWh-bat.socMWh)/Math.max(dtH,1e-3);
+      batChgMW=Math.min(rateMW,headroom);
+      bat.socMWh=clamp(bat.socMWh+batChgMW*dtH*bat.eff,0,bat.capMWh);}
+    // 3) discharge to grid or pump
+    if(bat.mode==="discharge"&&bat.socMWh>1e-4){batDisMW=Math.min(rateMW,bat.socMWh/Math.max(dtH,1e-3));bat.socMWh=clamp(bat.socMWh-batDisMW*dtH/bat.eff,0,bat.capMWh);
+      if((bat.route||"GRID")==="PUMP")batToPumpMW=batDisMW;}
+  }
+
+  // PUMP: grid-driven (mode) + renewable/battery-coupled (routing) — all concurrent with turbine
+  let pumpGridW=0,pumpRenW=0,Qpump=0;
+  if(state.mode==="pump"&&pumpOk&&Hg>1&&state.lower.depth>0.02){
+    const Qg=flowFrac*pumpMaxQ(Hg);pumpGridW=Math.min(powerPumpW(Hg,Qg,pEta),PUMPS[state.pump.tier].kW*1000);
+    Qpump+=Qg;const{Hf}=netHead(Hg,Qg);state.lastHf=Hf;state.lastQ=Qg;}
+  if(pumpOk&&Hg>1&&state.lower.depth>0.02&&(route.toPumpMW>0.001||batToPumpMW>0.001)){  // renewables + battery → pump
+    const rpMW=Math.min(route.toPumpMW+batToPumpMW,pumpCapMW-pumpGridW/1e6);
+    const rpW=rpMW*1e6;
+    if(rpW>0){const Qr=rpW*pEta/(PHYS.rho*PHYS.g*Hg);pumpRenW+=rpW;Qpump+=Qr;state.lastQ=Math.max(state.lastQ||0,Qr);}}
+  // renew→battery energy is diverted from grid sale (it stays in the battery, not sold)
+  const reGridMW=route.toGridMW;
+  if(Qpump>0){const act=moveWater(Qpump,ds,-1);const cap=Qpump*ds;if(cap>0){const tp=act/cap;pumpGridW*=tp;pumpRenW*=tp;}
+    addWear("pump",pumpGridW+pumpRenW,Hg,dtH);}
+  state.lastP=hydroGenW-(pumpGridW+pumpRenW);
+  if(state.mode==="pump"&&!pumpOk){state.mode="idle";if(!DIAG)updateModeButtons();}
+  if(state.mode==="generate"&&!turbineOk){state.mode="idle";if(!DIAG)updateModeButtons();}
+
+  // POWER-FLOW SNAPSHOT + economics (separated so averages stay realistic)
+  const rePumpMW=pumpRenW/1e6;
+  const batGridMW=batDisMW-batToPumpMW;                 // battery discharge sold to grid (rest drove the pump)
+  const gridSellMW=hydroGenW/1e6+reGridMW+batGridMW;
+  const gridBuyMW=pumpGridW/1e6+batChgMW;
+  state.flow={wind:state.windMW,solar:state.solarMW,hydro:hydroGenW/1e6,batDis:batDisMW,
+    reToGrid:reGridMW,reToPump:rePumpMW,reToBat:reToBatMW,pumpGrid:pumpGridW/1e6,batChg:batChgMW,batToPump:batToPumpMW,gridSell:gridSellMW,gridBuy:gridBuyMW};
+  applyMeteor(ds);
+  // revenue/cost (energy only)
+  const sellRev=gridSellMW*price*dtH, buyCost=gridBuyMW*price*dtH;
+  const om=omRatePerHour();const omCost=om*dtH;let loanCost=0;
+  if(state.loan.balance>0){const interest=state.loan.balance*state.loan.rate/8760*dtH;state.loan.balance+=interest;loanCost=interest;}
+  const profit=sellRev-buyCost-omCost-loanCost;
+  state.cash+=profit;state.profitToday+=profit;state.dayCumProfit+=profit;
+  // tracking
+  state.gen.wind+=state.windMW*dtH;state.gen.solar+=state.solarMW*dtH;state.gen.hydro+=hydroGenW/1e6*dtH;state.gen.bat+=batDisMW*dtH;
+  state.today.gen+=(state.windMW+state.solarMW+hydroGenW/1e6+batDisMW)*dtH;state.today.profit+=profit;
+  const T=state.totals;T.sold+=gridSellMW*dtH;T.bought+=gridBuyMW*dtH;T.sellRev+=Math.max(0,sellRev);T.buyCost+=Math.max(0,buyCost);T.om+=omCost;T.loan+=loanCost;
+  recordHistory(price);
+  if(!DIAG){checkDayBoundary(prevTime);checkFailures();checkQuests();}
+}
+
+function applyMeteor(ds){const WX=15; // gameplay scale: rain refills & evap drains reservoirs visibly (m/s of depth)
+  const eMs=state.weather.evap/1000/86400*WX, rMs=state.weather.rain/1000/86400*WX;
+  for(const r of[state.upper,state.lower]){const A=resSurfaceArea(r);const Vold=resVolume(r);let Vnew=Vold+A*(rMs-eMs)*ds;const Vmax=resMaxVolume(r);
+    if(Vnew>Vmax){const spill=Vnew-Vmax;if(spill>50&&!state._overflow){pushAlert("Reservoir overflow — spillway fine.","warn","ovf");state._overflow=true;}state.cash-=spill*0.02;Vnew=Vmax;}
+    r.depth=clamp(resDepthAt(r,Vnew),0,r.maxDepth);
+    if(r.depth<0.02&&r===state.upper&&state.mode==="generate"&&!state._dry){pushAlert("Upper reservoir empty — generation halted.","bad","dry");state._dry=true;}
+    if(r.depth>0.1&&r===state.upper)state._dry=false;if(Vnew<Vmax-50)state._overflow=false;}}
+function recordHistory(price){const hr=Math.floor(state.time);if(hr!==state._lastHour){state._lastHour=hr;
+  state.priceHist.push(price);state.volHistU.push(resVolume(state.upper));state.volHistL.push(resVolume(state.lower));state.powHist.push(state.lastP/1e6);
+  const c=48;if(state.priceHist.length>c){state.priceHist.shift();state.volHistU.shift();state.volHistL.shift();state.powHist.shift();}}}
+function checkDayBoundary(prev){const pd=Math.floor(prev/24),cd=Math.floor(state.time/24);
+  if(cd>pd){state.profitToday=0;state.dayCumProfit=0;state.today={gen:0,profit:0};
+    if(Math.floor(cd/30)>Math.floor(pd/30))state.monthExpenses=0;
+    if(state.loan.balance>0){const pay=Math.min(state.loan.balance,Math.max(state.loan.minPayment,state.loan.balance*0.02));
+      if(state.cash>=pay){state.cash-=pay;state.loan.balance-=pay;}else{state.loan.balance+=pay*0.5;pushAlert("Missed loan payment — penalty.","warn","loan");}}
+    maybeForecast();}}
+function checkFailures(){
+  if(state.cash<-200000&&!state.gameOver){state.gameOver=true;state.paused=true;toast("GAME OVER","Your operation went bankrupt.","bad");showGameOver(false);}
+  if(state.cash<0&&!state._bankrupt){state._bankrupt=true;pushAlert("CASH NEGATIVE — take a loan or enable GOD.","bad","bk");}
+  if(state.cash>0)state._bankrupt=false;
+  if(state.time>=24*365&&!state.gameOver){state.gameOver=true;state.paused=true;state.won=state.cash>0;toast(state.won?"YEAR COMPLETE — WIN":"YEAR COMPLETE","Cash "+fmtMoneyFull(state.cash),state.won?"good":"warn");showGameOver(state.won);}}
+
+/* ============================================================
+   9 — GOD MODE (profitable-by-construction trading + safe growth)
+   ============================================================ */
+function etaRT(){return PUMPS[state.pump.tier].eta*TURBINES[state.turbine.tier].eta;}
+function godStep(price){const eta=etaRT();
+  const up=resVolume(state.upper)/resMaxVolume(state.upper),lo=resVolume(state.lower)/resMaxVolume(state.lower);
+  const bat=state.battery,g=state.god||(state.god={phase:'empty',basis:0,cycles:0,autoBuild:true});
+  let pLow,pHigh;const h=state.priceHist;
+  if(h&&h.length>=12){const a=[...h].sort((x,y)=>x-y);const q=p=>a[clamp(Math.floor(p*a.length),0,a.length-1)];pLow=q(0.25);pHigh=q(0.70);}
+  else{pLow=25;pHigh=90;}
+  if(g.phase==='fill')g.basis=g.basis>0?g.basis*0.88+price*0.12:price;
+  const buyTrig=pLow*1.08;
+  const sellTrig=Math.max(pHigh*0.9,(g.basis||price)/eta*1.04);
+  // route renewables smartly: high price→grid(sell), low price→pump/battery(free), mid→battery
+  const bHasHead = bat.capMWh>0 && bat.socMWh<bat.capMWh-0.05;
+  if(price>=pHigh*0.85) state.route="GRID";
+  else if(bHasHead && price<pHigh*0.6) state.route="BATTERY";   // fill the bank from wind/solar
+  else if(price<=pLow*1.3) state.route="PUMP";
+  else state.route="AUTO";
+  if(!DIAG)syncRouteUI();
+  switch(g.phase){
+    case'fill': if(up>0.96||lo<0.04||price>buyTrig){g.phase='hold';state.mode='idle';}else{state.mode='pump';state.flowRate=1;}break;
+    case'hold': state.mode='idle'; if(price>=sellTrig&&up>0.10)g.phase='drain';else if(price<=buyTrig&&up<0.93&&lo>0.05)g.phase='fill';break;
+    case'drain': if(up<0.05||lo>0.96||price<(g.basis||price)/eta){g.phase='empty';g.basis=0;g.cycles++;state.mode='idle';}else{state.mode='generate';state.flowRate=1;}break;
+    case'empty': state.mode='idle'; if(price<=buyTrig&&lo>0.05)g.phase='fill';break;}
+  if(bat.capMWh>0){
+    // charge cheaply; discharge at peaks. Route discharge to PUMP (refill) if the
+    // reservoir is draining fast while prices stay high (keep the turbine earning).
+    if(price<=pLow&&bat.socMWh<bat.capMWh-0.01)bat.mode='charge';
+    else if(price>=pHigh&&bat.socMWh>0.01){bat.mode='discharge';bat.route=(up<0.4&&lo>0.3&&price>=pHigh)?"PUMP":"GRID";}
+    else bat.mode='idle';}
+  if(!DIAG){updateModeButtons();updateFlowUI();updateBatUI();syncBatRouteUI();}
+  godManage(price,pLow,pHigh);
+}
+/* GOD growth manager — debt-safe by construction: invests from profit; a loan is taken
+   ONLY when debt-free and the upgrade's annual profit clearly covers annual loan cost. */
+function godManage(price,pLow,pHigh){
+  const g=state.god;if(!g||g.autoBuild===false)return;
+  const day=Math.floor(state.time/24);
+  if(g.lastInvestDay!=null&&day-g.lastInvestDay<3)return;
+  // effective estimates: use history once available, else realistic defaults so GOD can
+  // evaluate & start building from day 1 (before sell/buy averages have populated).
+  const eSell=avgSell()>0?avgSell():55, eBuy=avgBuy()>0?avgBuy():18;
+  const spread=Math.max(0,eSell-eBuy);
+  g.profitEMA=g.profitEMA!=null?g.profitEMA*0.7+state.dayCumProfit*0.3:state.dayCumProfit;
+  const reserve=Math.max(80000,omRatePerHour()*24*14);
+  // repay debt when flush
+  if(state.loan.balance>0&&state.cash>reserve+state.loan.balance){const pay=Math.min(state.loan.balance,state.cash-reserve);state.cash-=pay;state.loan.balance-=pay;
+    if(!DIAG)godSay("repaid "+fmtMoney(pay)+" debt");return;}
+  if(state.loan.balance>0)return;                       // never stack debt
+  // candidate upgrades ranked by NPV/$
+  const cands=[];
+  const add=(cost,annual,fn,name)=>cands.push({cost,npv:npvUpgrade(cost,Math.max(0,annual)),fn,name});
+  // hydro throughput is capped by RESERVOIR energy (not just equipment kW), so credit
+  // hydro upgrades against actual storable energy — renewables (uncapped) win early.
+  const resMWh=Math.max(1,resVolume(state.upper)*PHYS.rho*PHYS.g*Math.max(2,grossHead())*TURBINES[state.turbine.tier].eta/3.6e9);
+  add(damRaiseCost(),spread*resMWh*0.2*365,qRaiseDam,"Dam +2.5m");   // raises capacity → more cycled energy
+  const pt=PENSTOCKS.findIndex(p=>Math.abs(p.D-state.penstock.D)<0.01);if(PENSTOCKS[pt+1])add(PENSTOCKS[pt+1].cost,spread*1.5*365,()=>qUpgradePenstock(),"Penstock D="+PENSTOCKS[pt+1].D);
+  const wc=WIND_COST*(1-SUBSIDY);add(wc,eSell*WIND_RATED_MW*0.40*8760,qPlaceWind,"Wind turbine");
+  const sc=SOLAR_COST*(1-SUBSIDY);add(sc,eSell*SOLAR_PEAK_MW*0.20*8760,qPlaceSolar,"Solar array");
+  if(state.turbine.tier<TURBINES.length-1){const t=TURBINES[state.turbine.tier+1];
+    const daily=Math.min((t.kW-TURBINES[state.turbine.tier].kW)/1000*6,resMWh*0.8);
+    add(t.cost,spread*daily*365,()=>qBuyTurbine(t.id),t.name);}
+  if(state.pump.tier<PUMPS.length-1){const p=PUMPS[state.pump.tier+1];
+    const daily2=Math.min((p.kW-PUMPS[state.pump.tier].kW)/1000*8,resMWh*0.8);
+    add(p.cost,spread*daily2*365,()=>qBuyPump(p.id),p.name);}
+  const good=cands.filter(c=>c.npv>0).sort((a,b)=>(b.npv/b.cost)-(a.npv/a.cost));if(!good.length)return;
+  const spendable=state.cash-reserve;
+  const aff=good.find(c=>c.cost<=spendable);
+  if(aff){g.lastInvestDay=day;aff.fn();if(!DIAG)godSay("built "+aff.name+" ("+fmtMoney(aff.cost)+")");return;}
+  // safe loan: only if profitable AND shortfall ≤ ~3 months of profit AND within debt cap
+  const top=good[0];const shortfall=top.cost-spendable;
+  const maxLoan=Math.max(0,Math.min(top.cost,g.profitEMA>0?g.profitEMA*90:0));
+  if(shortfall>0&&shortfall<=maxLoan&&g.profitEMA>0&&top.cost<=spendable+maxLoan&&annualDebtServiceOK(top.cost,shortfall,spread)){
+    g.lastInvestDay=day;const la=Math.ceil(shortfall/1000)*1000;
+    state.cash+=la;state.loan.balance+=la;state.loan.rate=0.07;state.loan.minPayment=la*0.012;
+    top.fn();if(!DIAG)godSay("loan "+fmtMoney(la)+" → built "+top.name);}
+}
+function annualDebtServiceOK(cost,loanAmt,spread){const annualPay=loanAmt*0.12+loanAmt*0.07;const annualGain=spread*(cost/1e6)*4*365*0.3;return annualGain>annualPay;}
+function godSay(msg){pushAlert("GOD: "+msg,"good","ginv");if(state.speed<50)toast("GOD autopilot",msg,"good");}
+
+/* ============================================================
+   10 — RULE AUTOMATION
+   ============================================================ */
+function metricVal(m){switch(m){case"price":return state.price;case"upper":return resVolume(state.upper)/resMaxVolume(state.upper)*100;
+  case"lower":return resVolume(state.lower)/resMaxVolume(state.lower)*100;case"hour":return((state.time%24)+24)%24;case"wind":return state.weather.windRef;}return 0;}
+function applyAutomation(price){for(const r of state.rules){if(!r.on)continue;const v=metricVal(r.m);let hit=false;
+  if(r.op==="<")hit=v<r.v;else if(r.op===">")hit=v>r.v;else if(r.op==="<=")hit=v<=r.v;else if(r.op===">=")hit=v>=r.v;
+  if(hit){state.mode=r.act;state.flowRate=clamp(r.f,0,1);if(!DIAG){updateModeButtons();updateFlowUI();}return;}}}
+
+/* ============================================================
+   11 — QUESTS / ALERTS / FORECAST / TOAST
+   ============================================================ */
+function initQuests(){state.quests=[
+  {id:"gen",name:"First Power",desc:"Generate via turbine (GENERATE).",reward:25000,grant:true,check:()=>state.gen.hydro>0.1},
+  {id:"pmp",name:"Charge Up",desc:"Pump water uphill (PUMP).",reward:25000,grant:true,check:()=>state.totals.bought>0.5},
+  {id:"arb",name:"Arbitrage",desc:"Earn $100k in one day.",reward:100000,grant:true,check:()=>state.dayCumProfit>=100000},
+  {id:"wind",name:"Go Wind",desc:"Build your first wind turbine.",reward:0,grant:false,check:()=>state.wind.length>0},
+  {id:"sol",name:"Harvest Sun",desc:"Build a solar array.",reward:0,grant:false,check:()=>state.solar.length>0},
+  {id:"route",name:"Power Router",desc:"Change renewable routing.",reward:15000,grant:true,check:()=>state.route!=="AUTO"||state.godMode},
+  {id:"upg",name:"Scale Up",desc:"Upgrade to Tier-2 turbine.",reward:0,grant:false,check:()=>state.turbine.tier>=1},
+  {id:"bat",name:"Storage",desc:"Install a lithium battery.",reward:0,grant:false,check:()=>state.battery.capMWh>0},
+  {id:"yr",name:"Four-Season Survivor",desc:"Reach Day 365 with cash > $0.",reward:0,grant:false,check:()=>state.time>=24*365&&state.cash>0},
+];}
+function checkQuests(){let ch=false;for(const q of state.quests){if(!q.done&&q.check&&q.check()){q.done=true;ch=true;
+  if(q.grant&&q.reward>0){state.cash+=q.reward;state.grants+=q.reward;toast("Quest: "+q.name,"Grant +"+fmtMoney(q.reward),"good");}
+  else toast("Quest: "+q.name,q.reward>0?"+"+fmtMoney(q.reward):"Milestone","good");}}
+  if(ch){updateQuestDot();if(currentPanel==="quests")renderQuests();}}
+function updateQuestDot(){const has=state.quests.some(q=>!q.done);const d=document.getElementById("qdot");if(d)d.classList.toggle("on",has);}
+function pushAlert(text,level,key){if(key){const ex=state.alerts.find(a=>a.key===key);if(ex){ex.text=text;ex.level=level;ex.t=state.time;return;}}
+  state.alerts.unshift({text,level:level||"info",key,t:state.time});if(state.alerts.length>7)state.alerts.pop();}
+function maybeForecast(){const nd=Math.floor(state.time/24)+1;rollDailyWeather(nd);const dw=state.dailyWeather;rollDailyWeather(Math.floor(state.time/24));
+  if(dw.type==="heatwave")pushAlert("Forecast: heatwave — high solar & demand.","warn","fc");
+  else if(dw.type==="blizzard"||dw.type==="storm")pushAlert("Forecast: storm — strong wind yield.","warn","fc");
+  else if(dw.type==="rain")pushAlert("Forecast: rain — free reservoir recharge.","info","fc");}
+function toast(title,msg,level){const c=document.getElementById("toasts");const d=document.createElement("div");
+  d.className="toast "+(level||"info");d.innerHTML="<b>"+title+"</b>"+(msg||"");c.appendChild(d);
+  setTimeout(()=>{d.style.transition="opacity .4s";d.style.opacity=0;setTimeout(()=>d.remove(),400);},5000);}
+
+/* ============================================================
+   12 — ISOMETRIC RENDERING
+   ============================================================ */
+const cv=document.getElementById("cv"),ctx=cv.getContext("2d");
+let DPR=Math.min(window.devicePixelRatio||1,2);
+const TILE=34,ZC=0.62;const cam={x:0,y:0,zoom:1};
+function iso(x,y,z){const s=cam.zoom;return[(x-y)*TILE*0.5*s+cam.x,(x+y)*TILE*0.25*s-z*s*ZC+cam.y];}
+const SC={upper:{cx:7,cy:7,hw:3,hh:3},lower:{cx:16,cy:8,hw:4,hh:4},dam:{cx:10.5,cy:7.5},ph:{cx:12.5,cy:11}};
+let W=800,H=600;
+function resizeCanvas(){const r=cv.parentElement.getBoundingClientRect();cv.width=r.width*DPR;cv.height=r.height*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);W=r.width;H=r.height;cam.x=W*0.5;cam.y=H*0.42;}
+function fillPoly(p,f){ctx.beginPath();ctx.moveTo(p[0][0],p[0][1]);for(let i=1;i<p.length;i++)ctx.lineTo(p[i][0],p[i][1]);ctx.closePath();ctx.fillStyle=f;ctx.fill();}
+function strokePoly(p,w,c){ctx.beginPath();ctx.moveTo(p[0][0],p[0][1]);for(let i=1;i<p.length;i++)ctx.lineTo(p[i][0],p[i][1]);ctx.closePath();ctx.lineWidth=w;ctx.strokeStyle=c;ctx.stroke();}
+function block(cx,cy,w,d,z0,z1,top,L,R){const hw=w/2,hd=d/2;
+  const base=[iso(cx-hw,cy+hd,z0),iso(cx+hw,cy+hd,z0),iso(cx+hw,cy-hd,z0),iso(cx-hw,cy-hd,z0)];
+  const top2=[iso(cx-hw,cy+hd,z1),iso(cx+hw,cy+hd,z1),iso(cx+hw,cy-hd,z1),iso(cx-hw,cy-hd,z1)];
+  fillPoly([base[3],base[0],top2[0],top2[3]],L);fillPoly([base[0],base[1],top2[1],top2[0]],R);fillPoly(top2,top);return{base,top:top2};}
+function isoRect(cx,cy,hw,hd,z){return[iso(cx-hw,cy+hd,z),iso(cx+hw,cy+hd,z),iso(cx+hw,cy-hd,z),iso(cx-hw,cy-hd,z)];}
+
+const SEASON_PAL={Spring:{ground:"#1f3322",grid:"95,135,80",tint:"rgba(120,200,90,0.06)"},Summer:{ground:"#2a3320",grid:"120,128,72",tint:"rgba(225,190,80,0.07)"},
+  Autumn:{ground:"#33281d",grid:"160,105,55",tint:"rgba(210,110,40,0.09)"},Winter:{ground:"#2a3640",grid:"165,185,205",tint:"rgba(225,240,255,0.12)"}};
+function seasonPal(s){return SEASON_PAL[s]||SEASON_PAL.Spring;}
+let groundCache=null,groundZoom=-1,groundSeason=null,groundOff={x:0,y:0};
+function buildGroundCache(){const s=cam.zoom,ext=22,pal=seasonPal(state.season);
+  const wp=(x,y)=>[(x-y)*TILE*0.5*s,(x+y)*TILE*0.25*s];
+  const cs=[[-ext,-ext],[ext,-ext],[ext,ext],[-ext,ext]].map(([x,y])=>wp(x,y));const pad=6;
+  const ox=Math.min(...cs.map(c=>c[0]))-pad,oy=Math.min(...cs.map(c=>c[1]))-pad;
+  const w=Math.max(...cs.map(c=>c[0]))-ox+pad,h=Math.max(...cs.map(c=>c[1]))-oy+pad;
+  const oc=document.createElement('canvas');oc.width=Math.ceil(w);oc.height=Math.ceil(h);const o=oc.getContext('2d');
+  const sp=(x,y)=>{const p=wp(x,y);return[p[0]-ox,p[1]-oy];};
+  o.beginPath();cs.forEach((c,i)=>{i?o.lineTo(c[0]-ox,c[1]-oy):o.moveTo(c[0]-ox,c[1]-oy);});o.closePath();o.fillStyle=pal.ground;o.fill();
+  o.strokeStyle="rgba("+pal.grid+",0.28)";o.lineWidth=1;
+  for(let i=-ext;i<=ext;i++){let a=sp(i,-ext),b=sp(i,ext);o.beginPath();o.moveTo(a[0],a[1]);o.lineTo(b[0],b[1]);o.stroke();a=sp(-ext,i);b=sp(ext,i);o.beginPath();o.moveTo(a[0],a[1]);o.lineTo(b[0],b[1]);o.stroke();}
+  groundCache=oc;groundZoom=s;groundSeason=state.season;groundOff={x:ox,y:oy};}
+function isBuildable(tx,ty){if(tx<-6||tx>23||ty<-6||ty>17)return false;
+  if(Math.hypot(tx-SC.upper.cx,ty-SC.upper.cy)<3.8)return false;if(Math.hypot(tx-SC.lower.cx,ty-SC.lower.cy)<4.8)return false;
+  if(Math.hypot(tx-SC.dam.cx,ty-SC.dam.cy)<2.3)return false;if(Math.hypot(tx-SC.ph.cx,ty-SC.ph.cy)<2.1)return false;return true;}
+function tileOccupied(tx,ty){return state.wind.some(w=>w.tx===tx&&w.ty===ty)||state.solar.some(s=>s.tx===tx&&s.ty===ty);}
+function drawGround(){if(groundZoom!==cam.zoom||groundSeason!==state.season)buildGroundCache();
+  ctx.drawImage(groundCache,cam.x+groundOff.x,cam.y+groundOff.y);
+  if(state.buildTool){for(let x=-6;x<=23;x++)for(let y=-6;y<=17;y++){if(!isBuildable(x,y)||tileOccupied(x,y))continue;fillPoly(isoRect(x,y,0.5,0.5,0.02),"rgba(34,230,160,0.10)");}
+    const h=state.hoverTile;if(h&&isBuildable(h.x,h.y)&&!tileOccupied(h.x,h.y)){const p=isoRect(h.x,h.y,0.5,0.5,0.05);fillPoly(p,"rgba(34,230,160,0.45)");strokePoly(p,1.6,"#22e6a0");}}}
+function drawSky(){const h=((state.time%24)+24)%24;const day=Math.max(0,Math.sin(Math.PI*(h-6)/12));let topC,botC;
+  if(h>=6&&h<=18){if(state.weather.cloud>0.6){topC="#3a4659";botC="#5a6a80";}else{topC=lerpCol("#1a3a6b","#3d7fc4",day);botC=lerpCol("#5a86b8","#9fc4e8",day);}}
+  else{topC="#070d1c";botC="#10182e";}
+  const g=ctx.createLinearGradient(0,0,0,H*0.72);g.addColorStop(0,topC);g.addColorStop(1,botC);ctx.fillStyle=g;ctx.fillRect(0,0,W,H*0.72);
+  if(h>=6&&h<=18){const sx=W*(0.2+0.6*(h-6)/12),sy=H*0.18*(1.4-0.9*Math.sin(Math.PI*(h-6)/12));const rr=state.weather.cloud>0.6?0.3:1;
+    ctx.globalAlpha=0.9*rr;ctx.fillStyle="#ffe9a8";ctx.beginPath();ctx.arc(sx,sy,22,0,7);ctx.fill();ctx.globalAlpha=0.18*rr;ctx.beginPath();ctx.arc(sx,sy,46,0,7);ctx.fill();ctx.globalAlpha=1;}
+  else{ctx.fillStyle="#dfe8ff";ctx.globalAlpha=0.85;ctx.beginPath();ctx.arc(W*0.8,H*0.14,12,0,7);ctx.fill();ctx.globalAlpha=1;
+    ctx.fillStyle="#cfe0f5";for(let i=0;i<40;i++){const rng=mulberry32(i*97+3);ctx.globalAlpha=0.3+rng()*0.5;ctx.fillRect(rng()*W,rng()*H*0.5,1.4,1.4);}ctx.globalAlpha=1;}}
+function drawReservoir(r,sc,rimZ,floorZ){const hw=sc.hw,hd=sc.hh;
+  const floorPts=isoRect(sc.cx,sc.cy,hw,hd,floorZ);fillPoly(floorPts,"#243049");
+  const rimPts=isoRect(sc.cx,sc.cy,hw,hd,rimZ);
+  fillPoly([floorPts[3],floorPts[0],rimPts[0],rimPts[3]],"#19243a");fillPoly([floorPts[0],floorPts[1],rimPts[1],rimPts[0]],"#101a2c");fillPoly([floorPts[1],floorPts[2],rimPts[2],rimPts[1]],"#19243a");
+  const dRatio=clamp(r.depth/r.maxDepth,0,1),surfZ=floorZ+r.depth,shrink=lerp(0.86,1.0,dRatio);
+  const wp=isoRect(sc.cx,sc.cy,hw*shrink,hd*shrink,surfZ);
+  if(dRatio>0.02){fillPoly([iso(sc.cx-hw*shrink,sc.cy+hd*shrink,floorZ),iso(sc.cx+hw*shrink,sc.cy+hd*shrink,floorZ),wp[1],wp[0]],"#0e3a5c");
+    fillPoly([iso(sc.cx-hw*shrink,sc.cy+hd*shrink,floorZ),iso(sc.cx-hw*shrink,sc.cy-hd*shrink,floorZ),wp[3],wp[0]],"#123049");}
+  const t=performance.now()/1000;ctx.save();fillPoly(wp,"#1f6fa8");ctx.clip();
+  ctx.globalAlpha=0.18;ctx.strokeStyle="#bfe6ff";ctx.lineWidth=1.4;
+  for(let i=0;i<5;i++){const off=((i*0.31+t*0.25*(0.4+state.lastQ*0.2))%1);ctx.beginPath();const yy=wp[0][1]+(wp[3][1]-wp[0][1])*off;ctx.moveTo(wp[0][0],yy);ctx.lineTo(wp[1][0]+(wp[2][0]-wp[1][0])*off,yy);ctx.stroke();}
+  ctx.globalAlpha=1;ctx.restore();strokePoly(rimPts,1.5,"rgba(120,150,190,0.5)");}
+function drawDam(){const crest=state.upper.maxDepth+state.upper.elev;block(SC.dam.cx,SC.dam.cy,1.2,4.5,0,crest,"#5a5f6b","#3c4049","#4a4f59");
+  const cp=isoRect(SC.dam.cx,SC.dam.cy,0.7,2.2,crest);fillPoly(cp,"#7a7f8b");strokePoly(cp,1,"#9aa0ad");}
+function drawPenstock(){const a=iso(SC.upper.cx+1.5,SC.upper.cy+2,state.upper.elev),b=iso(SC.ph.cx-0.8,SC.ph.cy,2);
+  ctx.lineCap="round";ctx.strokeStyle="#2b3340";ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();
+  ctx.strokeStyle="#3d4756";ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();
+  const flow=clamp(state.lastQ/3,0,1);
+  if(flow>0.02){ctx.strokeStyle=state.mode==="pump"?"#36e0ff":"#22e6a0";ctx.lineWidth=3;ctx.setLineDash([7,11]);const t=performance.now()/1000;ctx.lineDashOffset=state.mode==="pump"?-(t*60*flow):(t*60*flow);ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();ctx.setLineDash([]);}}
+function drawPowerhouse(){block(SC.ph.cx,SC.ph.cy,2.6,2.4,0,3.2,"#2c3650","#1b2236","#222c44");
+  const rp=isoRect(SC.ph.cx,SC.ph.cy,1.5,1.4,3.2);fillPoly(rp,"#34405e");
+  const on=state.mode!=="idle";ctx.fillStyle=on?(state.mode==="generate"?"rgba(34,230,160,.7)":"rgba(255,182,39,.65)"):"rgba(60,80,120,.3)";
+  const w1=iso(SC.ph.cx-0.5,SC.ph.cy+0.8,1.4),w2=iso(SC.ph.cx+0.5,SC.ph.cy+0.8,1.4),w3=iso(SC.ph.cx+0.5,SC.ph.cy+0.8,2.4),w4=iso(SC.ph.cx-0.5,SC.ph.cy+0.8,2.4);fillPoly([w1,w2,w3,w4],ctx.fillStyle);}
+function drawBatteryBank(){const b=state.battery;if(!b||b.capMWh<=0)return;
+  const units=Math.min(6,Math.max(1,Math.round(b.capMWh/10)));const soc=b.capMWh>0?b.socMWh/b.capMWh:0;
+  for(let i=0;i<units;i++){const cx=SC.ph.cx+3.0+(i%3)*1.05,cy=SC.ph.cy-0.6+Math.floor(i/3)*0.95;
+    block(cx,cy,0.85,0.75,0,1.25,"#3a3340","#241f2a","#2e2733");
+    fillPoly(isoRect(cx,cy,0.26,0.42,1.3),soc>0.5?"#22e6a0":soc>0.2?"#ffb627":"#ff5566");}
+}
+/* ---- OVERHAULED WIND TURBINE: tapered tower, nacelle, swept tapered blades ---- */
+function drawWindTurbines(){const t=performance.now()/1000;
+  for(let i=0;i<state.wind.length;i++){const w=state.wind[i];if(w.health<=0)continue;
+    const cx=w.tx,cy=w.ty;const hubH=5.0;
+    fillPoly(isoRect(cx,cy,0.55,0.55,0),"#2e3744");strokePoly(isoRect(cx,cy,0.55,0.55,0),1,"#3c475a");
+    const base=iso(cx,cy,0),mid=iso(cx,cy,hubH*0.5),hub=iso(cx,cy,hubH);
+    // tapered tower (3 gradient passes)
+    ctx.lineCap="round";
+    ctx.strokeStyle="#9aa6b8";ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(base[0],base[1]);ctx.lineTo(hub[0],hub[1]);ctx.stroke();
+    ctx.strokeStyle="#c2ccdc";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(base[0],base[1]);ctx.lineTo(hub[0],hub[1]);ctx.stroke();
+    ctx.strokeStyle="#e6ecf5";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(base[0],base[1]);ctx.lineTo(hub[0],hub[1]);ctx.stroke();
+    // nacelle box (iso)
+    block(cx,cy,0.55,0.4,hubH,hubH+0.35,"#dfe6f0","#aab4c4","#c4cedd");
+    // rotor
+    const vHub=state.weather.windRef*Math.pow(w.Hhub/10,PHYS.alphaWind);const rpm=clamp(vHub*8,0,40);
+    window._wtAng=window._wtAng||{};window._wtAng[i]=(window._wtAng[i]||0)+rpm*0.03*(vHub>2.5?1:0.0);
+    const ang=window._wtAng[i],R=20;
+    ctx.save();ctx.translate(hub[0],hub[1]-4);
+    for(let b=0;b<3;b++){const a=ang+b*2.0944;ctx.save();ctx.rotate(a);drawBlade(R);ctx.restore();}
+    ctx.fillStyle="#8a96aa";ctx.beginPath();ctx.arc(0,0,3.2,0,7);ctx.fill();
+    ctx.restore();
+  }
+}
+function drawBlade(R){ // tapered, slightly curved blade pointing +x
+  ctx.beginPath();
+  ctx.moveTo(0,-1.4);
+  ctx.quadraticCurveTo(R*0.55,-2.2,R,0);          // top edge (curves down to tip)
+  ctx.quadraticCurveTo(R*0.55,2.2,0,1.4);          // bottom edge
+  ctx.closePath();
+  const g=ctx.createLinearGradient(0,0,R,0);
+  g.addColorStop(0,"#eef3fb");g.addColorStop(1,"#bcc6d6");
+  ctx.fillStyle=g;ctx.fill();ctx.strokeStyle="rgba(255,255,255,0.5)";ctx.lineWidth=0.6;ctx.stroke();
+}
+/* ---- OVERHAULED SOLAR: tilted mount, framed cells, anti-glare, bloom when generating ---- */
+function drawSolar(){const G=state.weather.G,glow=clamp(G/950,0,1);
+  for(const s of state.solar){if(s.health<=0)continue;
+    const cx=s.tx,cy=s.ty;
+    fillPoly(isoRect(cx,cy,0.92,0.92,0),"#23291c");strokePoly(isoRect(cx,cy,0.92,0.92,0),1,"#333c28");
+    // post/legs
+    const rows=2,cols=3,pw=0.26, gap=0.04;
+    const totalW=cols*pw+(cols-1)*gap;
+    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+      const x0=cx-totalW/2+c*(pw+gap), y0=cy-0.34+r*0.34;
+      const baseZ=0.45+r*0.04, topZ=baseZ+0.7;
+      // tilted table (front-low, back-high) — 4 corners
+      const flb=iso(x0,y0+pw,baseZ),frb=iso(x0+pw,y0+pw,baseZ),blt=iso(x0,y0,topZ),brt=iso(x0+pw,y0,topZ);
+      // frame
+      const frameCol="#3a4250";
+      fillPoly([flb,frb,brt,blt],frameCol);
+      // cell inset (slightly smaller, dark blue, anti-reflective sheen)
+      const inset=0.03;
+      const fli=iso(x0+inset,y0+pw-inset,baseZ+0.02),fri=iso(x0+pw-inset,y0+pw-inset,baseZ+0.02),bli=iso(x0+inset,y0+inset,topZ-0.02),bri=iso(x0+pw-inset,y0+inset,topZ-0.02);
+      const baseB=`rgb(${(18+glow*30)|0},${(34+glow*60)|0},${(70+glow*120)|0})`;
+      fillPoly([fli,fri,bri,bli],baseB);
+      // gridlines (cell busbars)
+      ctx.strokeStyle="rgba(10,16,30,0.55)";ctx.lineWidth=0.5;
+      for(let g2=1;g2<3;g2++){const tx=g2/3;const a=[fli[0]+(bli[0]-fli[0])*tx,fli[1]+(bli[1]-fli[1])*tx],bb=[fri[0]+(bri[0]-fri[0])*tx,fri[1]+(bri[1]-fri[1])*tx];ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(bb[0],bb[1]);ctx.stroke();}
+      // reflective bloom when generating
+      if(glow>0.05){ctx.globalAlpha=glow*0.5;fillPoly([fli,fri,bri,bli],"#9fd8ff");ctx.globalAlpha=1;}
+    }
+  }
+}
+/* Weather FX: rendered EVERY frame from continuous cloud/rain/wind/temp values, so the
+   sky is always alive — drifting cloud haze, wind streaks, rain that refills, snow when cold,
+   and lightning during thunderstorms. Particle counts scale with intensity. */
+let parts=[],ltng=0;
+function drawWeatherFX(){const wx=state.weather;const t=state.weather.type;const now=performance.now()/1000;
+  // 1) drifting cloud haze (always, scales with cloud cover)
+  const cloudN=Math.round(clamp(wx.cloud,0,1)*16);
+  if(parts.length<cloudN+10)for(let i=parts.length;i<cloudN+10;i++)parts.push({kind:'c',x:Math.random()*W,y:Math.random()*H*0.55,r:30+Math.random()*60,vx:0.15+Math.random()*0.3});
+  // 2) wind streaks (scale with wind speed)
+  const windN=Math.round(clamp(wx.windRef/14,0,1)*22);
+  if(parts.length<cloudN+windN+20)for(let i=parts.length;i<cloudN+windN+20;i++)parts.push({kind:'w',x:Math.random()*W,y:Math.random()*H,vx:2+Math.random()*4,len:8+Math.random()*16});
+  // 3) rain (continuous with rainfall mm/day; heavier on storm types)
+  const rainI=clamp((wx.rain+ (t==="thunderstorm"||t==="storm"?8:0))/24,0,1.3);
+  const rainN=Math.round(rainI*150);
+  if(rainN>0&&parts.filter(p=>p.kind==='r').length<rainN)for(let i=0;i<rainN;i++)parts.push({kind:'r',x:Math.random()*W,y:Math.random()*H,vy:7+Math.random()*7,vx:-2-Math.min(3,wx.windRef*0.3)});
+  // 4) snow when cold
+  const snowI=(wx.temp<5)?clamp((wx.cloud+0.2)*(5-wx.temp)/5,0,1):0;
+  const snowN=Math.round(snowI*110);
+  if(snowN>0&&parts.filter(p=>p.kind==='s').length<snowN)for(let i=0;i<snowN;i++)parts.push({kind:'s',x:Math.random()*W,y:Math.random()*H,vy:0.5+Math.random()*1.6,vx:(Math.random()-0.5)*1.4});
+  // update + draw
+  ctx.save();
+  for(let i=parts.length-1;i>=0;i--){const p=parts[i];
+    if(p.kind==='c'){p.x+=p.vx;if(p.x>W+80)p.x=-80;
+      ctx.fillStyle="rgba(190,205,225,"+(0.05+wx.cloud*0.22)+")";ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,7);ctx.fill();}
+    else if(p.kind==='w'){p.x+=p.vx*(0.5+wx.windRef*0.2);if(p.x>W+20)p.x=-20;
+      ctx.strokeStyle="rgba(200,220,245,"+(0.04+clamp(wx.windRef/20,0,0.18))+")";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-p.len,p.y);ctx.stroke();}
+    else if(p.kind==='r'){p.y+=p.vy;p.x+=p.vx;if(p.y>H){p.y=-6;p.x=Math.random()*W;}
+      ctx.strokeStyle="rgba(150,190,230,0.5)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-2,p.y+8);ctx.stroke();}
+    else if(p.kind==='s'){p.y+=p.vy*cam.zoom;p.x+=p.vx;if(p.y>H){p.y=-5;p.x=Math.random()*W;}
+      ctx.fillStyle="rgba(225,238,255,0.9)";ctx.fillRect(p.x,p.y,2.2,2.2);}
+  }
+  // prune over-population when intensity drops
+  const want=cloudN+windN+rainN+snowN;
+  if(parts.length>want*1.6+30)parts.length=want+10;
+  // lightning flash during thunderstorm
+  if(t==="thunderstorm"){if(now-ltng>2+Math.random()*3){ltng=now;}
+    const f=now-ltng;if(f<0.18){ctx.fillStyle="rgba(255,255,255,"+(0.5*(1-f/0.18))+")";ctx.fillRect(0,0,W,H);}}
+  ctx.restore();
+}
+function drawSceneLabels(){ctx.save();ctx.font="bold 10px monospace";ctx.textAlign="center";ctx.textBaseline="middle";
+  const label=(cx,cy,z,txt,col)=>{const p=iso(cx,cy,z);const w=ctx.measureText(txt).width+12;ctx.fillStyle="rgba(8,12,20,.75)";ctx.beginPath();
+    const x=p[0]-w/2,y=p[1]-15,r=4;ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+14,r);ctx.arcTo(x+w,y+14,x,y+14,r);ctx.arcTo(x,y+14,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();ctx.fill();
+    ctx.fillStyle=col;ctx.fillText(txt,p[0],p[1]-8);};
+  label(SC.upper.cx,SC.upper.cy-3.4,state.upper.elev+state.upper.maxDepth+0.6,"UPPER "+(resVolume(state.upper)/resMaxVolume(state.upper)*100|0)+"%","#36e0ff");
+  label(SC.lower.cx,SC.lower.cy-4.4,0.6,"LOWER "+(resVolume(state.lower)/resMaxVolume(state.lower)*100|0)+"%","#3aa0ff");
+  label(SC.ph.cx,SC.ph.cy-1.4,3.6,fmtMW(Math.abs(state.lastP)/1e6),state.mode==="generate"?"#22e6a0":state.mode==="pump"?"#ffb627":"#6f86a8");
+  ctx.restore();}
+function render(){if(!cv.width)resizeCanvas();ctx.clearRect(0,0,W,H);drawSky();drawGround();drawWindTurbines();
+  const uRimZ=state.upper.elev+state.upper.maxDepth;
+  block(SC.upper.cx,SC.upper.cy,7.6,7.6,0,state.upper.elev,"#3a4a36","#2a3528","#33402c");
+  drawReservoir(state.upper,SC.upper,uRimZ,state.upper.elev);drawDam();drawPenstock();drawPowerhouse();drawBatteryBank();
+  drawReservoir(state.lower,SC.lower,state.lower.elev,state.lower.elev-state.lower.maxDepth);drawSolar();drawSceneLabels();
+  ctx.fillStyle=seasonPal(state.season).tint;ctx.fillRect(0,0,W,H);
+  const h=((state.time%24)+24)%24;if(h<6.5||h>18.5){ctx.fillStyle="rgba(8,16,40,0.38)";ctx.fillRect(0,0,W,H);}
+  drawWeatherFX();const th=document.getElementById("toolhint");if(th){th.classList.toggle("show",!!state.buildTool);if(state.buildTool)th.textContent="Place "+(state.buildTool==="wind"?"Wind Turbine":"Solar Array")+" — click a green tile · Esc cancels";}}
+
+/* ============================================================
+   13 — CHARTS
+   ============================================================ */
+function drawLineChart(canvas,data,color,fill){const c=canvas.getContext("2d");
+  canvas.width=canvas.clientWidth*DPR;canvas.height=canvas.clientHeight*DPR;c.setTransform(DPR,0,0,DPR,0,0);
+  const W2=canvas.clientWidth,H2=canvas.clientHeight;c.clearRect(0,0,W2,H2);
+  if(!data||data.length<2){c.fillStyle="#4f6585";c.font="10px monospace";c.fillText("collecting…",6,H2/2);return;}
+  let mn=Math.min(...data),mx=Math.max(...data);if(mn===mx){mn-=1;mx+=1;}const pad=(mx-mn)*0.15;mn-=pad;mx+=pad;
+  c.strokeStyle="rgba(60,80,120,0.3)";c.lineWidth=1;for(let i=0;i<=3;i++){const yy=lerp(H2-2,2,i/3);c.beginPath();c.moveTo(0,yy);c.lineTo(W2,yy);c.stroke();}
+  if(mn<0&&mx>0){const zy=lerp(H2-2,2,(0-mn)/(mx-mn));c.strokeStyle="rgba(255,85,102,0.4)";c.setLineDash([3,3]);c.beginPath();c.moveTo(0,zy);c.lineTo(W2,zy);c.stroke();c.setLineDash([]);}
+  const n=data.length,px=i=>lerp(2,W2-2,i/(n-1)),py=v=>lerp(H2-2,2,(v-mn)/(mx-mn));
+  if(fill){c.beginPath();c.moveTo(px(0),H2);for(let i=0;i<n;i++)c.lineTo(px(i),py(data[i]));c.lineTo(px(n-1),H2);c.closePath();const g=c.createLinearGradient(0,0,0,H2);g.addColorStop(0,fill);g.addColorStop(1,"rgba(0,0,0,0)");c.fillStyle=g;c.fill();}
+  c.strokeStyle=color;c.lineWidth=1.6;c.beginPath();for(let i=0;i<n;i++){i?c.lineTo(px(i),py(data[i])):c.moveTo(px(i),py(data[i]));}c.stroke();
+  c.fillStyle=color;c.beginPath();c.arc(px(n-1),py(data[n-1]),2.5,0,7);c.fill();}
+function renderCharts(){drawLineChart(document.getElementById("ch-price"),state.priceHist,"#36e0ff","rgba(54,224,255,0.16)");
+  drawTwo(document.getElementById("ch-vol"),state.volHistU,state.volHistL,"#22e6a0","#3aa0ff");}
+function drawTwo(canvas,a,b,ca,cb){const c=canvas.getContext("2d");canvas.width=canvas.clientWidth*DPR;canvas.height=canvas.clientHeight*DPR;c.setTransform(DPR,0,0,DPR,0,0);
+  const W2=canvas.clientWidth,H2=canvas.clientHeight;c.clearRect(0,0,W2,H2);if(!a||a.length<2)return;
+  const all=a.concat(b);let mn=0,mx=Math.max(...all)*1.1;c.strokeStyle="rgba(60,80,120,0.3)";for(let i=0;i<=3;i++){const yy=lerp(H2-2,2,i/3);c.beginPath();c.moveTo(0,yy);c.lineTo(W2,yy);c.stroke();}
+  const drawS=(d,col)=>{const n=d.length,px=i=>lerp(2,W2-2,i/(n-1)),py=v=>lerp(H2-2,2,(v-mn)/(mx-mn));c.strokeStyle=col;c.lineWidth=1.5;c.beginPath();for(let i=0;i<n;i++){i?c.lineTo(px(i),py(d[i])):c.moveTo(px(i),py(d[i]));}c.stroke();};
+  drawS(a,ca);drawS(b,cb);}
+
+/* ============================================================
+   14 — UI UPDATES
+   ============================================================ */
+function bar(mw,mx,col){return`<div class="efbar"><i style="width:${clamp(mw/Math.max(0.01,mx)*100,0,100)}%;background:${col}"></i></div>`;}
+const SRCCOL={wind:"var(--wind)",solar:"var(--solar)",hydro:"var(--hydro)",bat:"var(--bat)"};
+function updateEnergyFlow(){const f=state.flow||{};const mx=Math.max(0.5,f.wind,f.solar,f.hydro,f.batDis,f.reToGrid,f.reToPump,f.pumpGrid,f.gridSell,f.gridBuy);
+  const srcs=[["🌬️","Wind",f.wind,SRCCOL.wind],["☀️","Solar",f.solar,SRCCOL.solar],["🌀","Hydro",f.hydro,SRCCOL.hydro],["🔋","Battery",f.batDis,SRCCOL.bat]];
+  document.getElementById("efsrc").innerHTML=srcs.map(s=>`<div class="efrow"><div class="ico" style="background:${s[3]}22">${s[0]}</div><div class="nm">${s[1]}</div>${bar(s[2],mx,s[3])}<div class="mw">${s[2].toFixed(2)}</div></div>`).join("");
+  const sinks=[["⚡","Grid sell",f.gridSell,"#22e6a0"],["🔁","Pump load",f.pumpGrid+f.reToPump+(f.batToPump||0),"#ff7a3a"],["🔋","Battery",f.batChg+(f.reToBat||0),"var(--bat)"]];
+  document.getElementById("efsink").innerHTML=sinks.map(s=>`<div class="efrow"><div class="ico" style="background:${s[3]}22">${s[0]}</div><div class="nm">${s[1]}</div>${bar(s[2],mx,s[3])}<div class="mw">${s[2].toFixed(2)}</div></div>`).join("");}
+function updateUI(){
+  const cash=document.getElementById("k-cash");cash.textContent=fmtMoneyFull(state.cash);cash.parentElement.className="b full "+(state.cash>=0?"good":"bad");
+  const td=document.getElementById("k-today");td.textContent=fmtMoney(state.profitToday);td.parentElement.className="b "+(state.profitToday>=0?"good":"bad");
+  const mg=document.getElementById("k-margin");const m=marginPct();mg.textContent=(m>=0?"":"")+m.toFixed(0)+"%";mg.parentElement.className="b "+(m>=0?"good":"bad");
+  const gen=state.gen.wind+state.gen.solar+state.gen.hydro+state.gen.bat;
+  document.getElementById("k-gen").innerHTML=fmtWh(gen)+"<small> ("+fmtWh(state.today.gen)+" today)</small>";
+  document.getElementById("k-prices").innerHTML="sell $"+avgSell().toFixed(0)+" / buy $"+avgBuy().toFixed(0);
+  // top
+  document.getElementById("t-season").textContent=({Spring:"🌱 Spring",Summer:"☀️ Summer",Autumn:"🍂 Autumn",Winter:"❄️ Winter"}[state.season]);
+  document.getElementById("t-day").textContent=Math.floor(state.time/24)+1;
+  const hh=((state.time%24)+24)%24,hr=Math.floor(hh),mn=Math.floor((hh-hr)*60);document.getElementById("t-clock").textContent=String(hr).padStart(2,"0")+":"+String(mn).padStart(2,"0");
+  const wxIcon={clear:"☀️",heatwave:"🔥",thunderstorm:"⛈️",rain:"🌧️",storm:"🌪️",snow:"🌨️",blizzard:"❄️"}[state.weather.type]||"☀️";
+  setText("t-wx",wxIcon+" "+state.weather.type.charAt(0).toUpperCase()+state.weather.type.slice(1));
+  // bottom price
+  const bp=document.getElementById("bp-price");bp.textContent=fmtMoney(state.price);bp.style.color=state.price<0?"#ff5566":state.price>90?"#22e6a0":state.price<35?"#ffb627":"#cfe0f5";
+  // right telemetry
+  setText("t-hn",(state.lastHn||0).toFixed(1)+" m");setText("t-hf",(state.lastHf||0).toFixed(2)+" m");setText("t-q",(state.lastQ||0).toFixed(2)+" m³/s");setText("t-re",fmtMW(state.windMW+state.solarMW));
+  // equipment
+  setText("eq-tn",TURBINES[state.turbine.tier].name);setText("eq-th",state.turbine.health.toFixed(0)+"%");setW("eq-tb",state.turbine.health+"%");
+  setText("eq-pn",PUMPS[state.pump.tier].name);setText("eq-ph",state.pump.health.toFixed(0)+"%");setW("eq-pb",state.pump.health+"%");
+  const bcap=state.battery.capMWh;setText("eq-bh",bcap>0?state.battery.socMWh.toFixed(1)+"/"+bcap+" MWh":"none");setW("eq-bb",(bcap>0?state.battery.socMWh/bcap*100:0)+"%");
+  setText("eq-rh",(resVolume(state.upper)/resMaxVolume(state.upper)*100|0)+"% / "+(resVolume(state.lower)/resMaxVolume(state.lower)*100|0)+"%");
+  setW("eq-ru",resVolume(state.upper)/resMaxVolume(state.upper)*100+"%");setW("eq-rl",resVolume(state.lower)/resMaxVolume(state.lower)*100+"%");
+  // keep renewable-route & battery-route selectors in sync with state (cheap, ~6Hz)
+  document.querySelectorAll('#routeseg button').forEach(b=>b.classList.toggle("on",b.dataset.route===state.route));
+  document.querySelectorAll('#batroute button').forEach(b=>b.classList.toggle("on",b.dataset.br===(state.battery.route||"GRID")));
+  document.querySelectorAll('#batseg button').forEach(b=>b.classList.toggle("on",b.dataset.bat===(state.battery.mode||"idle")));
+}
+function setText(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+function setW(id,v){const e=document.getElementById(id);if(e)e.style.width=v;}
+function updateModeButtons(){if(DIAG)return;document.querySelectorAll(".mbtn").forEach(b=>b.classList.toggle("on",b.dataset.mode===state.mode));}
+function updateFlowUI(){if(DIAG)return;const f=document.getElementById("flow");if(f)f.value=Math.round(state.flowRate*100);setText("flowv",Math.round(state.flowRate*100)+"%");}
+function updateBatUI(){if(DIAG)return;document.querySelectorAll('#batseg button').forEach(b=>b.classList.toggle("on",b.dataset.bat===(state.battery.mode||"idle")));}
+function syncBatRouteUI(){if(DIAG)return;document.querySelectorAll('#batroute button').forEach(b=>b.classList.toggle("on",b.dataset.br===(state.battery.route||"GRID")));}
+function syncRouteUI(){if(DIAG)return;document.querySelectorAll('#routeseg button').forEach(b=>b.classList.toggle("on",b.dataset.route===state.route));}
+
+/* ============================================================
+   15 — MODALS (Build, Rules, Finance, Quests, Settings, Save)
+   ============================================================ */
+let currentPanel="none";
+function showPanel(name){document.querySelectorAll(".ntab").forEach(t=>t.classList.toggle("on",t.dataset.panel===name));currentPanel=name;
+  const ov=document.getElementById("overlay");
+  if(name==="none"||!name){ov.classList.remove("show");return;}ov.classList.add("show");
+  const titles={build:"Build & Upgrade",auto:"Automation Rules",fin:"Financial Management",quests:"Quests & Grants",settings:"Settings",save:"Save / Load"};
+  setText("m-title",titles[name]||"");
+  const body=document.getElementById("m-body");
+  if(name==="build")body.innerHTML=buildHTML();else if(name==="auto")body.innerHTML=autoHTML();
+  else if(name==="fin")body.innerHTML=finHTML();else if(name==="quests"){renderQuests();return;}
+  else if(name==="settings")body.innerHTML=settingsHTML();else if(name==="save")body.innerHTML=saveHTML();}
+function damRaiseCost(){const lvl=Math.max(0,(state.upper.maxDepth-12)/2.5);return Math.round(220000*Math.exp(lvl*0.5)*Math.pow(grossHead()/50,1.3));}
+function findFreeTile(){for(let x=-4;x<=22;x++)for(let y=-4;y<=16;y++)if(isBuildable(x,y)&&!tileOccupied(x,y))return{x,y};return null;}
+// DOM-free quiet cores (used by UI + GOD)
+function qBuyTurbine(i){if(i!==state.turbine.tier+1)return false;const t=TURBINES[i];if(state.cash<t.cost)return false;state.cash-=t.cost;state.capExTotal+=t.cost;state.turbine.tier=i;state.turbine.health=100;return true;}
+function qBuyPump(i){if(i!==state.pump.tier+1)return false;const p=PUMPS[i];if(state.cash<p.cost)return false;state.cash-=p.cost;state.capExTotal+=p.cost;state.pump.tier=i;state.pump.health=100;return true;}
+function qRaiseDam(){const c=damRaiseCost();if(state.cash<c)return false;state.cash-=c;state.capExTotal+=c;state.upper.maxDepth+=2.5;return true;}
+function qUpgradePenstock(){const pt=PENSTOCKS.findIndex(p=>Math.abs(p.D-state.penstock.D)<0.01);const n=PENSTOCKS[pt+1];if(!n||state.cash<n.cost)return false;state.cash-=n.cost;state.capExTotal+=n.cost;state.penstock.D=n.D;return true;}
+function qBuyBattery(){if(state.cash<BATTERY_COST)return false;state.cash-=BATTERY_COST;state.capExTotal+=BATTERY_COST;state.battery.capMWh+=BATTERY_MWH;return true;}
+function qPlaceWind(){const t=findFreeTile();if(!t||state.cash<WIND_COST*(1-SUBSIDY))return false;const c=WIND_COST*(1-SUBSIDY);state.cash-=c;state.capExTotal+=c;state.wind.push({tx:t.x,ty:t.y,R:WIND_R,Hhub:WIND_HUB,health:100});return true;}
+function qPlaceSolar(){const t=findFreeTile();if(!t||state.cash<SOLAR_COST*(1-SUBSIDY))return false;const c=SOLAR_COST*(1-SUBSIDY);state.cash-=c;state.capExTotal+=c;state.solar.push({tx:t.x,ty:t.y,area:SOLAR_AREA,health:100});return true;}
+// UI wrappers
+function buyTurbine(i){if(!qBuyTurbine(i))return toast("Insufficient funds","","bad");toast("Installed",TURBINES[i].name,"good");refreshBuild();}
+function buyPump(i){if(!qBuyPump(i))return toast("Insufficient funds","","bad");toast("Installed",PUMPS[i].name,"good");refreshBuild();}
+function raiseDam(){if(!qRaiseDam())return toast("Insufficient funds","","bad");toast("Dam raised","+2.5 m","good");refreshBuild();}
+function upgradePenstock(){if(!qUpgradePenstock())return toast("Insufficient funds","","bad");toast("Penstock upgraded","lower friction","good");refreshBuild();}
+function buyBattery(){if(!qBuyBattery())return toast("Insufficient funds","","bad");toast("Battery installed","+"+BATTERY_MWH+" MWh","good");refreshBuild();}
+function buyWind(){selectBuildTool('wind');}
+function buySolar(){selectBuildTool('solar');}
+function refreshBuild(){if(currentPanel==="build")document.getElementById("m-body").innerHTML=buildHTML();}
+function selectBuildTool(tool){state.buildTool=tool;showPanel("none");toast("Placement","Click a green tile. Esc cancels.","info");}
+function placeBuilding(tx,ty){const tool=state.buildTool;if(!tool)return;if(!isBuildable(tx,ty)||tileOccupied(tx,ty)){toast("Can't build here","Pick an empty green tile.","warn");return;}
+  if(tool==="wind"){if(!qPlaceWind())return toast("Insufficient funds","","bad");toast("Wind placed",WIND_RATED_MW+" MW","good");}
+  else if(tool==="solar"){if(!qPlaceSolar())return toast("Insufficient funds","","bad");toast("Solar placed",SOLAR_PEAK_MW+" MW peak","good");}
+  state.buildTool=null;}
+function cancelBuildTool(){state.buildTool=null;}
+
+function buildHTML(){let h="";
+  h+='<div class="bcat">TURBINES</div>';
+  TURBINES.forEach((t,i)=>{const cur=i===state.turbine.tier,can=i===state.turbine.tier+1;
+    const npv=npvUpgrade(t.cost,(t.kW/1000)*avgSell()*4*365*0.5);
+    h+=`<div class="bcard ${cur?'cur':''}"><div class="ic">🌀</div><div class="info"><div class="n">${t.name}</div>
+      <div class="d">Rated ${fmtkW(t.kW*1000)} · η ${(t.eta*100).toFixed(0)}%</div>
+      <div class="npv ${npv>=0?'pos':'neg'}">NPV ${fmtMoney(npv)}</div></div><div class="act">
+      ${cur?'<span class="price" style="color:var(--green)">INSTALLED</span>':''}
+      ${can?`<span class="price">${fmtMoney(t.cost)}</span><button class="buy" onclick="buyTurbine(${i})">Install</button>`:''}
+      ${!cur&&!can?'<span class="price" style="color:var(--mut2)">LOCKED</span>':''}</div></div>`;});
+  h+='<div class="bcat">PUMPS</div>';
+  PUMPS.forEach((p,i)=>{const cur=i===state.pump.tier,can=i===state.pump.tier+1;
+    const npv=npvUpgrade(p.cost,(p.kW/1000)*avgBuy()*4*365*0.5);
+    h+=`<div class="bcard ${cur?'cur':''}"><div class="ic">🔁</div><div class="info"><div class="n">${p.name}</div>
+      <div class="d">Rated ${fmtkW(p.kW*1000)} · η ${(p.eta*100).toFixed(0)}%</div>
+      <div class="npv ${npv>=0?'pos':'neg'}">NPV ${fmtMoney(npv)}</div></div><div class="act">
+      ${cur?'<span class="price" style="color:var(--green)">INSTALLED</span>':''}
+      ${can?`<span class="price">${fmtMoney(p.cost)}</span><button class="buy" onclick="buyPump(${i})">Install</button>`:''}
+      ${!cur&&!can?'<span class="price" style="color:var(--mut2)">LOCKED</span>':''}</div></div>`;});
+  h+='<div class="bcat">CIVIL</div>';
+  const structOK=true;
+  h+=`<div class="bcard"><div class="ic">🏗️</div><div class="info"><div class="n">Raise Dam Wall</div><div class="d">+2.5 m crest → more head &amp; storage.</div></div><div class="act"><span class="price">${fmtMoney(damRaiseCost())}</span><button class="buy" onclick="raiseDam()">Raise</button></div></div>`;
+  const pt=PENSTOCKS.findIndex(p=>Math.abs(p.D-state.penstock.D)<0.01);
+  h+=`<div class="bcard"><div class="ic">🛤️</div><div class="info"><div class="n">Penstock (D ${state.penstock.D.toFixed(1)} m)</div><div class="d">Larger D lowers friction Hf.</div></div><div class="act">${PENSTOCKS[pt+1]?`<span class="price">${fmtMoney(PENSTOCKS[pt+1].cost)}</span><button class="buy" onclick="upgradePenstock()">D=${PENSTOCKS[pt+1].D}m</button>`:'<span class="price" style="color:var(--mut2)">MAX</span>'}</div></div>`;
+  h+='<div class="bcat">RENEWABLES — pick, then click a green tile · '+Math.round(SUBSIDY*100)+'% tax credit applied</div>';
+  const wc=WIND_COST*(1-SUBSIDY);
+  h+=`<div class="bcard"><div class="ic">🌬️</div><div class="info"><div class="n">Wind Turbine (${WIND_RATED_MW} MW)</div><div class="d">R=${WIND_R}m hub=${WIND_HUB}m. Placed: ${state.wind.length}.</div><div class="npv ${npvUpgrade(wc,avgSell()*WIND_RATED_MW*0.4*8760)>=0?'pos':'neg'}">NPV ${fmtMoney(npvUpgrade(wc,avgSell()*WIND_RATED_MW*0.4*8760))}</div></div><div class="act"><span class="price">${fmtMoney(wc)}</span><button class="buy" onclick="buyWind()">Place</button></div></div>`;
+  const sc=SOLAR_COST*(1-SUBSIDY);
+  h+=`<div class="bcard"><div class="ic">☀️</div><div class="info"><div class="n">Solar Array (${SOLAR_PEAK_MW} MW peak)</div><div class="d">${SOLAR_AREA} m². Placed: ${state.solar.length}.</div><div class="npv ${npvUpgrade(sc,avgSell()*SOLAR_PEAK_MW*0.2*8760)>=0?'pos':'neg'}">NPV ${fmtMoney(npvUpgrade(sc,avgSell()*SOLAR_PEAK_MW*0.2*8760))}</div></div><div class="act"><span class="price">${fmtMoney(sc)}</span><button class="buy" onclick="buySolar()">Place</button></div></div>`;
+  h+='<div class="bcat">STORAGE</div>';
+  h+=`<div class="bcard"><div class="ic">🔋</div><div class="info"><div class="n">Lithium Bank (+${BATTERY_MWH} MWh)</div><div class="d">η ${(state.battery.eff*100).toFixed(0)}%. Total: ${state.battery.capMWh} MWh.</div></div><div class="act"><span class="price">${fmtMoney(BATTERY_COST)}</span><button class="buy" onclick="buyBattery()">Install</button></div></div>`;
+  return h;}
+function autoHTML(){let h='<div style="font-size:12px;color:var(--mut);margin-bottom:12px">Rules run top-down each tick; first match sets hydro mode. (GOD mode overrides these.)</div>';
+  state.rules.forEach((r,idx)=>{h+=`<div class="rule"><div class="rh"><div class="sw ${r.on?'on':''}" onclick="toggleRule(${idx})"><i></i></div><div class="rn">Rule ${idx+1}</div><button class="btn tiny dng" style="height:28px" onclick="delRule(${idx})">Delete</button></div>
+    <div class="rule-row">IF <select class="tiny" onchange="editRule(${idx},'m',this.value)">${["price","upper","lower","hour","wind"].map(m=>`<option ${r.m===m?'selected':''}>${m}</option>`).join("")}</select>
+    <select class="tiny" onchange="editRule(${idx},'op',this.value)">${["<",">","<=",">="].map(o=>`<option ${r.op===o?'selected':''}>${o}</option>`).join("")}</select>
+    <input type="number" style="width:80px" value="${r.v}" onchange="editRule(${idx},'v',parseFloat(this.value))"></div>
+    <div class="rule-row">THEN <select class="tiny" onchange="editRule(${idx},'act',this.value)">${[["generate","GENERATE"],["pump","PUMP"],["idle","IDLE"]].map(a=>`<option value="${a[0]}" ${r.act===a[0]?'selected':''}>${a[1]}</option>`).join("")}</select>
+    flow <input type="number" min="0" max="100" style="width:64px" value="${Math.round(r.f*100)}" onchange="editRule(${idx},'f',clamp(parseFloat(this.value)/100,0,1))">%</div></div>`;});
+  h+=`<button class="addbtn" onclick="addRule()">+ ADD RULE</button>`;return h;}
+function toggleRule(i){state.rules[i].on=!state.rules[i].on;refreshAuto();}
+function delRule(i){state.rules.splice(i,1);refreshAuto();}
+function addRule(){state.rules.push({on:true,m:"price",op:"<",v:20,act:"pump",f:1});refreshAuto();}
+function editRule(i,k,v){state.rules[i][k]=v;}
+function refreshAuto(){if(currentPanel==="auto")document.getElementById("m-body").innerHTML=autoHTML();}
+function finHTML(){const gen=state.gen.wind+state.gen.solar+state.gen.hydro+state.gen.bat;const T=state.totals;
+  let h='<div class="bcat">OPERATIONS</div>';
+  h+=fr("Cash",fmtMoneyFull(state.cash));h+=fr("Capital invested",fmtMoney(state.capExTotal));
+  h+=fr("Energy generated",fmtWh(gen));h+=fr("Energy sold / bought",T.sold.toFixed(0)+" / "+T.bought.toFixed(0)+" MWh");
+  h+=fr("Avg sell price","$"+avgSell().toFixed(1)+"/MWh");h+=fr("Avg buy price","$"+avgBuy().toFixed(1)+"/MWh");
+  h+=fr("Margin",marginPct().toFixed(0)+"%");h+=fr("Cumulative O&M",fmtMoney(T.om));h+=fr("Grants",fmtMoney(state.grants));
+  h+='<div class="bcat">LOANS</div>';h+=fr("Balance",fmtMoney(state.loan.balance));h+=fr("APR",(state.loan.rate*100).toFixed(1)+"%");
+  h+=`<div class="btnline"><button class="btn pri" onclick="takeLoan(500000)">+ $500k @7%</button><button class="btn pri" onclick="takeLoan(2000000)">+ $2M @7%</button><button class="btn" onclick="repayAll()">Repay all</button></div>`;
+  return h;}
+function fr(k,v){return`<div class="finrow"><span class="k">${k}</span><span class="v">${v}</span></div>`;}
+function takeLoan(a){state.cash+=a;state.loan.balance+=a;state.loan.minPayment=a*0.012;toast("Loan",fmtMoney(a)+" @7%","info");refreshFin();}
+function repayAll(){const p=Math.min(state.loan.balance,state.cash);if(p<=0)return;state.cash-=p;state.loan.balance-=p;toast("Repaid",fmtMoney(p),"good");refreshFin();}
+function refreshFin(){if(currentPanel==="fin")document.getElementById("m-body").innerHTML=finHTML();}
+function renderQuests(){if(currentPanel!=="quests")return;let h='<div style="font-size:12px;color:var(--mut);margin-bottom:12px">Complete missions for Federal Grants.</div>';
+  state.quests.forEach(q=>{h+=`<div class="q ${q.done?'done':''}"><div class="qh"><div class="qchk">${q.done?'✓':''}</div><div class="qn">${q.name}</div><div class="rew">${q.reward>0?'+'+fmtMoney(q.reward):''}</div></div><div class="qd">${q.desc}</div></div>`;});
+  document.getElementById("m-body").innerHTML=h;}
+const settings={autosave:true};
+function settingsHTML(){return`<div class="setrow"><div><b>Auto-save</b></div><div class="sw ${settings.autosave?'on':''}" onclick="settings.autosave=!settings.autosave;refreshSettings()"><i></i></div></div>
+  <div class="bcat" style="margin-top:18px">ECONOMY VERIFICATION</div>
+  <div class="finrow"><span class="k">365-day GOD sim</span><span class="v"><button class="btn tiny pri" style="height:30px" onclick="showVerify()">Run full-year test</button></span></div>
+  <div style="font-size:11px;color:var(--mut);margin:8px 0 0">Runs a full deterministic year under GOD control to prove the economy grows profitably with zero debt.</div>
+  ${ECON_VERDICT?verdictHTML(ECON_VERDICT):''}
+  <div class="bcat" style="margin-top:18px">REFERENCE</div>
+  <div style="font-family:var(--mono);font-size:11px;color:var(--cyan);line-height:1.8">ρ=1000 · g=9.81 · f=0.015 · Cp=0.40 · η_panel=0.20 · γ=0.004/°C<br>α=0.143 · σ_c=0.18 · r=0.06 · ITC=${Math.round(SUBSIDY*100)}%</div>`;}
+function verdictHTML(r){const ok=r.winnable,c=ok?"var(--green)":"var(--red)";
+  return`<div style="margin-top:12px;background:${ok?'#0d2f23':'#2a1518'};border:1px solid ${c};border-radius:8px;padding:12px;font-family:var(--mono);font-size:11px;line-height:1.9;color:${c}">
+    VERDICT: ${ok?'GROWS PROFITABLY ✓':'NEEDS TUNING'}<br>Net 1-yr: ${fmtMoney(r.profit)} (${fmtMoney(r.perDay)}/d)<br>End debt: ${fmtMoney(r.endDebt)} · End cash: ${fmtMoneyFull(r.endCash)}<br>
+    Avg buy $${r.avgBuy} → sell $${r.avgSell}/MWh · η_rt ${r.eta}<br>Wind ${r.wind} · Solar ${r.solar} · Upgrades T${r.turbineTier}/P${r.pumpTier}</div>`;}
+function refreshSettings(){if(currentPanel==="settings")document.getElementById("m-body").innerHTML=settingsHTML();}
+function saveHTML(){return`<div style="font-size:12px;color:var(--mut);margin-bottom:14px">Persist to browser LocalStorage.</div>
+  <div class="btnline"><button class="btn pri" onclick="saveGame()">💾 Save</button><button class="btn" onclick="loadGame()">📂 Load</button><button class="btn dng" onclick="resetGame()">🗑 New</button></div>
+  <div class="bcat" style="margin-top:18px">SAVE</div>${fr("Game day",Math.floor(state.time/24)+1+" / 365")}${fr("Cash",fmtMoneyFull(state.cash))}`;}
+function saveGame(){try{localStorage.setItem("hydrot2_save",JSON.stringify(state));toast("Saved","Stored locally","good");}catch(e){toast("Save failed",e.message,"bad");}refreshSave();}
+function migrateState(){const s=state;
+  if(!s.god)s.god={phase:'empty',basis:0,cycles:0,autoBuild:true,lastInvestDay:null,profitEMA:null};if(s.god.autoBuild===undefined)s.god.autoBuild=true;
+  if(!s.battery)s.battery={capMWh:0,socMWh:0,cRate:0.5,eff:0.92,mode:'idle',route:'GRID'};
+  if(s.battery.route===undefined)s.battery.route='GRID';
+  if(!s.flow)s.flow={wind:0,solar:0,hydro:0,batDis:0,reToGrid:0,reToPump:0,pumpGrid:0,batChg:0,gridSell:0,gridBuy:0};
+  if(!s.gen)s.gen={wind:0,solar:0,hydro:0,bat:0};if(!s.totals)s.totals={sold:0,bought:0,sellRev:0,buyCost:0,om:0,loan:0};if(!s.today)s.today={gen:0,profit:0};
+  if(s.route===undefined)s.route="AUTO";if(s.priceEMA===undefined)s.priceEMA=45;
+  if(!Array.isArray(s.wind))s.wind=[];if(!Array.isArray(s.solar))s.solar=[];
+  s.wind.forEach(w=>{if(w.tx===undefined){w.tx=3;w.ty=3;}if(w.health===undefined)w.health=100;});
+  s.solar.forEach(p=>{if(p.tx===undefined){p.tx=19;p.ty=13;}if(p.health===undefined)p.health=100;});
+  if(!s.rules){s.rules=[{on:true,m:"price",op:"<",v:25,act:"pump",f:1},{on:true,m:"price",op:">",v:80,act:"generate",f:1}];}
+  return s;}
+function loadGame(){const s=localStorage.getItem("hydrot2_save");if(!s)return toast("No save","","warn");
+  try{state=JSON.parse(s);migrateState();state.paused=true;document.getElementById("start").classList.add("hidden");toast("Loaded","Welcome back","info");showPanel("none");}catch(e){toast("Load failed",e.message,"bad");}}
+function resetGame(){if(!confirm("Start a new game? Unsaved progress is lost."))return;newGame();document.getElementById("start").classList.remove("hidden");toast("New game","Fresh plant","info");showPanel("none");}
+function refreshSave(){if(currentPanel==="save")document.getElementById("m-body").innerHTML=saveHTML();}
+function showGameOver(won){const ov=document.getElementById("overlay");ov.classList.add("show");setText("m-title",won?"🏆 YEAR COMPLETE — WIN":"💀 BANKRUPTCY");
+  document.getElementById("m-body").innerHTML=`<div style="text-align:center;padding:14px"><div style="font-size:46px;margin-bottom:10px">${won?"⚡":"💸"}</div>
+    <div style="font-size:14px;margin-bottom:8px">${won?"You grew a profitable plant through all four seasons!":"Your operation went bankrupt."}</div>
+    <div style="font-family:var(--mono);color:var(--cyan);margin:14px 0;line-height:1.8">Final cash: ${fmtMoneyFull(state.cash)}<br>Energy generated: ${fmtWh(state.gen.wind+state.gen.solar+state.gen.hydro+state.gen.bat)}<br>Debt: ${fmtMoney(state.loan.balance)}</div>
+    <button class="btn pri" style="width:200px" onclick="resetGame()">Play Again</button></div>`;}
+
+/* ============================================================
+   16 — ECONOMY VERIFIER (proves GOD grows profitably, debt-free)
+   ============================================================ */
+let DIAG=false,ECON_VERDICT=null;
+function verifyEconomy(days){days=days||365;const real=state,realDiag=DIAG;newGame();state.seed=12345;
+  DIAG=true;state.godMode=true;state.autoOn=false;state.paused=false;state.gameOver=false;
+  state.god={phase:'empty',basis:0,cycles:0,autoBuild:true,lastInvestDay:null,profitEMA:null};
+  state.upper.depth=state.upper.maxDepth*0.5;state.lower.depth=state.lower.maxDepth*0.5;state.cash=4000000;
+  const startCash=state.cash;let minCash=state.cash;
+  for(let i=0;i<24*days;i++){physicsStep(1);if(state.cash<minCash)minCash=state.cash;}
+  const profit=state.cash-startCash;
+  const r={days,startCash,endCash:+state.cash.toFixed(0),profit:+profit.toFixed(0),perDay:+(profit/days).toFixed(0),minCash:+minCash.toFixed(0),
+    endDebt:+state.loan.balance.toFixed(0),avgSell:+avgSell().toFixed(0),avgBuy:+avgBuy().toFixed(0),
+    eta:+etaRT().toFixed(3),wind:state.wind.length,solar:state.solar.length,turbineTier:state.turbine.tier,pumpTier:state.pump.tier,
+    cycles:state.god.cycles||0,winnable:profit>0&&state.loan.balance<startCash*0.5};
+  DIAG=realDiag;state=real;return r;}
+function showVerify(){const r=verifyEconomy(365);ECON_VERDICT=r;const ok=r.winnable;
+  toast(ok?"ECONOMY: GROWS ✓":"ECONOMY: needs work","365-day GOD sim → net "+fmtMoney(r.profit)+", end debt "+fmtMoney(r.endDebt)+", T"+r.turbineTier+"/P"+r.pumpTier+", "+r.wind+"W/"+r.solar+"S",ok?"good":"warn");
+  console.log("HYDRO ECONOMY VERDICT",r);if(currentPanel==="settings")document.getElementById("m-body").innerHTML=settingsHTML();}
+
+/* ============================================================
+   17 — INTERACTION
+   ============================================================ */
+function screenToTile(mx,my){const s=cam.zoom;const dx=(mx-cam.x)/(TILE*0.5*s),dy=(my-cam.y)/(TILE*0.25*s);return{x:Math.round((dx+dy)/2),y:Math.round((dy-dx)/2)};}
+let drag=null;
+cv.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,cx:cam.x,cy:cam.y,moved:false,id:e.pointerId};});
+window.addEventListener("pointermove",e=>{if(drag&&(e.pointerId===drag.id||drag.id===undefined)){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>5)drag.moved=true;cam.x=drag.cx+dx;cam.y=drag.cy+dy;}
+  if(state.buildTool){const r=cv.getBoundingClientRect();state.hoverTile=screenToTile(e.clientX-r.left,e.clientY-r.top);cv.style.cursor="crosshair";}else cv.style.cursor="grab";});
+window.addEventListener("pointerup",e=>{if(state.buildTool&&drag&&!drag.moved){const r=cv.getBoundingClientRect();const t=screenToTile(e.clientX-r.left,e.clientY-r.top);placeBuilding(t.x,t.y);}drag=null;});
+window.addEventListener("keydown",e=>{if(e.key==="Escape"&&state.buildTool){state.buildTool=null;}});
+cv.addEventListener("wheel",e=>{e.preventDefault();cam.zoom=clamp(cam.zoom*(e.deltaY<0?1.12:0.89),0.4,2.6);},{passive:false});
+cv.addEventListener("contextmenu",e=>{if(state.buildTool){e.preventDefault();state.buildTool=null;}});
+
+// mode + routing + battery + god controls
+document.querySelectorAll(".mbtn").forEach(b=>b.addEventListener("click",()=>{
+  state.mode=b.dataset.mode;state.godMode=false;state.autoOn=false;
+  document.getElementById("godtg").querySelector(".sw").classList.remove("on");
+  const at=document.getElementById("autotg");if(at)at.querySelector(".sw").classList.remove("on");
+  updateModeButtons();
+}));
+document.getElementById("flow").addEventListener("input",e=>{state.flowRate=e.target.value/100;setText("flowv",e.target.value+"%");});
+document.querySelectorAll('#routeseg button').forEach(b=>b.addEventListener("click",()=>{state.route=b.dataset.route;syncRouteUI();}));
+document.querySelectorAll('#batseg button').forEach(b=>b.addEventListener("click",()=>{if(state.godMode)return toast("Battery is GOD-controlled","","warn");state.battery.mode=b.dataset.bat;updateBatUI();}));
+document.querySelectorAll('#batroute button').forEach(b=>b.addEventListener("click",()=>{state.battery.route=b.dataset.br;syncBatRouteUI();if(b.dataset.br==="PUMP")toast("Battery → Pump","Discharge now refills the reservoir while the turbine can keep generating.","info");}));
+document.getElementById("autotg").addEventListener("click",()=>{
+  state.autoOn=!state.autoOn;
+  if(state.autoOn){state.godMode=false;document.getElementById("godtg").querySelector(".sw").classList.remove("on");toast("Rule automation ON","Your rules now drive the hydro plant.","info");}
+  document.getElementById("autotg").querySelector(".sw").classList.toggle("on",state.autoOn);
+});
+document.getElementById("godtg").addEventListener("click",()=>{
+  state.godMode=!state.godMode;
+  if(state.godMode){state.autoOn=false;document.getElementById("autotg").querySelector(".sw").classList.remove("on");toast("GOD mode","Full autopilot engaged (overrides rules)","good");}
+  document.getElementById("godtg").querySelector(".sw").classList.toggle("on",state.godMode);
+});
+// nav + modal
+document.querySelectorAll(".ntab,[data-panel]").forEach(b=>b.addEventListener("click",e=>{e.preventDefault();showPanel(b.dataset.panel);}));
+document.getElementById("m-close").addEventListener("click",()=>showPanel("none"));
+document.getElementById("overlay").addEventListener("click",e=>{if(e.target.id==="overlay")showPanel("none");});
+// speed
+function setSpeed(s){state.speed=s;state.paused=false;
+  document.querySelectorAll(".spdgrp button").forEach(b=>b.classList.remove("on"));
+  const btn=document.querySelector(`.spdgrp button[data-spd="${s}"]`);if(btn)btn.classList.add("on");else document.getElementById("spd-pause").classList.remove("on");}
+document.querySelectorAll(".spdgrp button[data-spd]").forEach(b=>b.addEventListener("click",()=>setSpeed(parseFloat(b.dataset.spd))));
+document.getElementById("spd-pause").addEventListener("click",()=>{state.paused=!state.paused;document.querySelectorAll(".spdgrp button").forEach(b=>b.classList.remove("on"));document.getElementById("spd-pause").classList.toggle("on",state.paused);});
+// drawers (iPad)
+function syncResponsive(){document.body.classList.add("app");}
+document.getElementById("dleft").addEventListener("click",()=>document.getElementById("left").classList.toggle("hide"));
+document.getElementById("dright").addEventListener("click",()=>document.getElementById("right").classList.toggle("hide"));
+
+/* ============================================================
+   18 — LOOP + BOOT
+   ============================================================ */
+window.addEventListener("resize",()=>{resizeCanvas();syncResponsive();});
+new ResizeObserver(resizeCanvas).observe(cv.parentElement);
+let lastT=performance.now(),chartT=0,saveT=0,uiT=0;
+function loop(now){try{
+  const dt=Math.min(0.25,(now-lastT)/1000);lastT=now;
+  if(state&&!state.paused&&!state.gameOver&&state.speed>0){
+    const hps=state.speed;let togo=hps*dt,steps=0;
+    while(togo>1e-4&&steps<400){physicsStep(Math.min(1,togo));togo-=Math.min(1,togo);steps++;}
+  }
+  render();
+  uiT+=dt;if(uiT>=0.18){uiT=0;updateUI();updateEnergyFlow();}
+  chartT+=dt;if(chartT>=0.5){chartT=0;renderCharts();}
+  saveT+=dt;if(settings.autosave&&saveT>=30){saveT=0;try{localStorage.setItem("hydrot2_save",JSON.stringify(state));}catch(e){}}
+}catch(err){if(!window._le){window._le=1;console.error('Loop',err);}}
+  requestAnimationFrame(loop);}
+
+// boot
+try{newGame();syncResponsive();
+  // open both drawers on large screens so the player sees the dashboards immediately
+  if(window.innerWidth>1024){document.getElementById("left").classList.remove("hide");document.getElementById("right").classList.remove("hide");}
+  resizeCanvas();
+  try{ECON_VERDICT=verifyEconomy(365);console.log("HYDRO ECONOMY VERDICT (boot)",ECON_VERDICT);}catch(v){console.warn("verify skipped",v);}
+}catch(bootErr){console.error("Boot",bootErr);}
+// expose inline handlers
+Object.assign(window,{buyTurbine,buyPump,raiseDam,upgradePenstock,buyBattery,buyWind,buySolar,
+  selectBuildTool,placeBuilding,cancelBuildTool,toggleRule,delRule,addRule,editRule,takeLoan,repayAll,
+  saveGame,loadGame,resetGame,refreshSettings,refreshBuild,refreshAuto,refreshFin,refreshSave,showVerify,settings});
+document.getElementById("startbtn").addEventListener("click",()=>{
+  document.getElementById("start").classList.add("hidden");
+  state.paused=false;setSpeed(12.2);
+  if(window.innerWidth<=1024){document.getElementById("left").classList.remove("hide");}
+  toast("Simulation started","Tip: set Routing, or enable GOD to auto-grow.","info");});
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
