@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Swimmer v3 — Adult Body Lab</title>
+<style>
+  :root{--bg:#0b1a19;--panel:#102624f2;--line:#1f3b38;--txt:#d9ede9;--dim:#8fb0aa;--acc:#3fcbb8;--acc2:#f2a33c}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font:13px/1.35 ui-sans-serif,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+  canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+  canvas:active{cursor:grabbing}
+  #panel{position:fixed;top:0;right:0;bottom:0;width:330px;background:var(--panel);backdrop-filter:blur(10px);
+    border-left:1px solid var(--line);overflow-y:auto;padding:14px 14px 40px;z-index:2}
+  #panel h1{font-size:14px;letter-spacing:.06em;text-transform:uppercase;margin:0 0 2px;color:var(--acc)}
+  #panel .sub{font-size:11px;color:var(--dim);margin:0 0 14px}
+  .sec{border-top:1px solid var(--line);padding:11px 0 12px}
+  .sec:first-of-type{border-top:0}
+  .sec h2{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:0 0 8px;font-weight:600}
+  .row{display:flex;align-items:center;gap:8px;margin:5px 0}
+  .row label{flex:0 0 84px;color:var(--dim);font-size:11.5px}
+  .row output{flex:0 0 44px;text-align:right;font-variant-numeric:tabular-nums;color:var(--txt);font-size:11.5px}
+  input[type=range]{flex:1;min-width:0;accent-color:var(--acc);height:18px;margin:0}
+  select,button{font:inherit;color:var(--txt);background:#173431;border:1px solid #2a4b47;border-radius:6px;padding:5px 7px;outline:none}
+  select{width:100%}
+  button{cursor:pointer}
+  button:hover{border-color:var(--acc)}
+  button.on{background:var(--acc);color:#06201d;border-color:var(--acc);font-weight:600}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .seg{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+  .seg button{padding:6px 2px;font-size:11px}
+  .hud{position:fixed;left:16px;top:14px;z-index:2;pointer-events:none}
+  .hud b{display:block;font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:#eafffb}
+  .hud span{font-size:11.5px;color:#b9d8d2;font-variant-numeric:tabular-nums}
+  .hud .stat{display:inline-block;margin-right:12px}
+  .hud .stat em{font-style:normal;color:var(--acc);font-weight:600}
+  .badge{display:inline-block;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:#06201d;background:var(--acc2);
+    border-radius:3px;padding:1px 5px;margin-left:6px;vertical-align:1px}
+  .note{font-size:10.5px;color:var(--dim);margin:8px 0 0}
+  .checks{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--dim)}
+  .checks label{display:flex;align-items:center;gap:5px;cursor:pointer}
+  input[type=checkbox]{accent-color:var(--acc);margin:0}
+  #err{position:fixed;inset:0;display:none;place-items:center;background:#0b1a19;color:#ffb4a8;padding:30px;text-align:center;z-index:9}
+  #panel::-webkit-scrollbar{width:8px}#panel::-webkit-scrollbar-thumb{background:#2a4b47;border-radius:4px}
+  @media(max-width:760px){#panel{width:min(330px,86vw);padding-bottom:20px}.hud{display:none}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud">
+  <b>Swimmer v3 <span class="badge">adult build</span></b>
+  <span class="stat">tris <em id="iTris">–</em></span>
+  <span class="stat">verts <em id="iVerts">–</em></span>
+  <span class="stat">seat <em id="iSeat">–</em></span>
+  <span class="stat">extent <em id="iHeight">–</em></span>
+</div>
+
+<aside id="panel">
+  <h1>Adult Body Lab</h1>
+  <p class="sub">Live geometry viewer · v3 higher-detail meshes · drag to orbit, wheel to zoom</p>
+
+  <div class="sec">
+    <h2>Preset</h2>
+    <select id="preset"></select>
+    <div class="grid2" style="margin-top:6px">
+      <button id="rand">Randomize</button>
+      <button id="reset">Reset preset</button>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>Pose</h2>
+    <div class="seg" id="poses">
+      <button data-pose="0">T-pose</button>
+      <button data-pose="1">Sit</button>
+      <button data-pose="2">Lie back</button>
+      <button data-pose="3">Dive</button>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>Body parameters</h2>
+    <div id="sliders"></div>
+  </div>
+
+  <div class="sec">
+    <h2>Hair &amp; suit</h2>
+    <div class="row"><label>Hair</label><select id="hair">
+      <option value="cap">Swim cap</option><option value="short">Short</option>
+      <option value="bun">Bun</option><option value="ponytail">Ponytail</option></select></div>
+    <div class="row"><label>Suit</label><select id="suit">
+      <option value="striped">Striped one-piece</option><option value="plain">Plain one-piece</option>
+      <option value="twopiece">Two-piece</option><option value="trunks">Trunks</option></select></div>
+  </div>
+
+  <div class="sec">
+    <h2>Colour</h2>
+    <div class="row"><label>Palette</label><select id="pal"></select></div>
+    <div class="row"><label>Skin / hair</label><select id="look"></select></div>
+  </div>
+
+  <div class="sec">
+    <h2>View</h2>
+    <div class="checks">
+      <label><input type="checkbox" id="spin" checked> Auto-spin</label>
+      <label><input type="checkbox" id="wire"> Wireframe</label>
+    </div>
+    <div class="grid3" style="margin-top:8px">
+      <button id="frame">Frame</button>
+      <button id="front">Front</button>
+      <button id="side">Side</button>
+    </div>
+    <p class="note">Adult-only redesign: the child preset and <code>child</code> proportion path have been removed. Stripe bands are now height-based, so adding mesh loops does not change the suit pattern.</p>
+  </div>
+</aside>
+<div id="err"></div>
+
+<script src="gb.js"></script>
+<script src="swimmerGB3.js"></script>
+<script>
+"use strict";
+/* ============================== live viewer =============================== */
+const cv=document.getElementById('c');
+const gl=cv.getContext('webgl2',{antialias:true});
+if(!gl){const e=document.getElementById('err');e.style.display='grid';e.textContent='WebGL2 is not available in this browser.';throw new Error('no webgl2');}
+const $=id=>document.getElementById(id);
+
+/* ---------- state ---------- */
+const PARAM=[
+  ['height','Height',1.45,1.95,0.005,2,'m'],
+  ['build','Build',0,1,0.01,2,''],
+  ['shoulders','Shoulders',0.80,1.50,0.01,2,''],
+  ['bust','Bust',0,1,0.01,2,''],
+  ['waist','Waist',0.70,1.45,0.01,2,''],
+  ['hips','Hips',0.70,1.50,0.01,2,''],
+  ['legs','Legs',0.85,1.15,0.005,2,''],
+  ['arms','Arms',0.88,1.12,0.005,2,''],
+  ['head','Head',0.88,1.12,0.005,2,''],
+  ['neck','Neck',0.80,1.30,0.01,2,'']
+];
+// The combo picked in the lab. Viewer-only: BODIES stays the 9 game presets.
+const TUNED={name:'tuned',height:1.67,build:0.32,shoulders:0.80,bust:0.85,waist:0.70,hips:1.04,legs:1.15,arms:1.12,head:1.12,neck:0.80,hair:'ponytail',suit:'plain'};
+const VIEW_BODIES=BODIES.concat([TUNED]);
+const state={
+  pose:0,pal:0,look:3,spin:true,wire:false,
+  body:Object.assign({},TUNED),presetId:9,
+  yaw:0.62,pitch:0.10,dist:3.9,target:[0,0.9,0]
+};
+const V2=[454,479,466,454,479,466,454,434,434]; // v2 triangle counts for ratio display
+
+/* ---------- viewer persistence (keeps the last body/pose/colour across reloads) ---------- */
+const SKEY='swimmer3.viewer.v1';
+function save(){try{localStorage.setItem(SKEY,JSON.stringify({
+  body:state.body,pal:state.pal,look:state.look,pose:state.pose,presetId:state.presetId,
+  spin:state.spin,wire:state.wire}));}catch(e){}}
+function restore(){try{const s=JSON.parse(localStorage.getItem(SKEY)||'null');
+  if(!s||typeof s!=='object'||!s.body)return false;
+  state.body=Object.assign({},TUNED,s.body);
+  state.pal=Number.isFinite(+s.pal)?+s.pal:0;
+  state.look=Number.isFinite(+s.look)?+s.look:0;
+  state.pose=Number.isFinite(+s.pose)?+s.pose:0;
+  state.presetId=Number.isFinite(+s.presetId)?+s.presetId:-1;
+  state.spin=s.spin!==false;state.wire=!!s.wire;return true;}catch(e){return false;}}
+restore();
+
+/* ---------- tiny mat4 ---------- */
+function m4(){const o=new Float32Array(16);o[0]=o[5]=o[10]=o[15]=1;return o;}
+function mul4(a,b){const o=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++){let s=0;for(let k=0;k<4;k++)s+=a[k*4+r]*b[c*4+k];o[c*4+r]=s;}return o;}
+function persp(f,asp,n,fa){const o=new Float32Array(16);const t=1/Math.tan(f/2);o[0]=t/asp;o[5]=t;o[10]=(fa+n)/(n-fa);o[11]=-1;o[14]=2*fa*n/(n-fa);return o;}
+function lookM(e,t,u){let f=[t[0]-e[0],t[1]-e[1],t[2]-e[2]];let l=Math.hypot(...f)||1;f=f.map(v=>v/l);
+  let s=[f[1]*u[2]-f[2]*u[1],f[2]*u[0]-f[0]*u[2],f[0]*u[1]-f[1]*u[0]];l=Math.hypot(...s)||1;s=s.map(v=>v/l);
+  const v=[s[1]*f[2]-s[2]*f[1],s[2]*f[0]-s[0]*f[2],s[0]*f[1]-s[1]*f[0]];const o=m4();
+  o[0]=s[0];o[4]=s[1];o[8]=s[2];o[1]=v[0];o[5]=v[1];o[9]=v[2];o[2]=-f[0];o[6]=-f[1];o[10]=-f[2];
+  o[12]=-(s[0]*e[0]+s[1]*e[1]+s[2]*e[2]);o[13]=-(v[0]*e[0]+v[1]*e[1]+v[2]*e[2]);o[14]=f[0]*e[0]+f[1]*e[1]+f[2]*e[2];return o;}
+
+/* ---------- shaders ---------- */
+function prog(vs,fs){const mk=(t,s)=>{const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);
+  if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(sh));return sh;};
+  const p=gl.createProgram();gl.attachShader(p,mk(gl.VERTEX_SHADER,vs));gl.attachShader(p,mk(gl.FRAGMENT_SHADER,fs));
+  gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(p));return p;}
+const VS=`#version 300 es
+precision highp float;
+layout(location=0) in vec3 aPos;layout(location=1) in vec3 aNor;layout(location=2) in vec4 aCol;
+layout(location=5) in vec4 i0;layout(location=6) in vec4 i1;layout(location=7) in vec4 i2;layout(location=8) in vec4 i3;layout(location=9) in vec4 iC;
+uniform mat4 uVP;uniform float uMat;out vec3 vN;out vec4 vC;
+const vec3 SWSK[8]=vec3[8](vec3(0.95,0.87,0.63),vec3(0.87,0.70,0.52),vec3(0.58,0.41,0.30),vec3(0.95,0.87,0.63),vec3(0.95,0.87,0.63),vec3(0.87,0.70,0.52),vec3(0.58,0.41,0.30),vec3(0.87,0.70,0.52));
+const vec3 SWHR[8]=vec3[8](vec3(0.40,0.27,0.15),vec3(0.24,0.16,0.10),vec3(0.11,0.10,0.10),vec3(0.88,0.72,0.40),vec3(0.62,0.29,0.14),vec3(0.11,0.10,0.10),vec3(0.24,0.16,0.10),vec3(0.40,0.27,0.15));
+void main(){mat4 im=mat4(i0,i1,i2,i3);vec4 w=im*vec4(aPos,1.0);vN=normalize(mat3(im)*aNor);
+ vec3 c=aCol.rgb*iC.rgb;
+ if(uMat>4.5&&uMat<5.5&&iC.a>1.5){int p=int(iC.a+0.5);vec3 B=vec3(float((p>>12)&63),float((p>>6)&63),float(p&63))/63.0;
+   int cs=(p>>18)&3,ss=(p>>20)&1,lk=(p>>21)&7;float m=aCol.a;
+   c=m<0.0625?SWSK[lk]:m<0.1875?SWHR[lk]:m<0.375?(cs==0?iC.rgb:cs==1?B:vec3(0.95)):m<0.625?B:m<0.875?(ss==0?iC.rgb:B):iC.rgb;}
+ vC=vec4(c,aCol.a);gl_Position=uVP*w;}`;
+const FS=`#version 300 es
+precision highp float;in vec3 vN;in vec4 vC;uniform vec3 uSunDir,uSunCol,uSky,uGround;out vec4 o;
+void main(){vec3 n=normalize(vN);if(!gl_FrontFacing)n=-n;float nd=max(dot(n,uSunDir),0.0);vec3 hemi=mix(uGround,uSky,n.y*0.5+0.5);
+ o=vec4(vC.rgb*(hemi+uSunCol*nd),1.0);}`;
+const BVS=`#version 300 es
+in vec2 p;out float vy;void main(){vy=p.y*0.5+0.5;gl_Position=vec4(p,0.999,1.0);}`;
+const BFS=`#version 300 es
+precision highp float;in float vy;out vec4 o;void main(){vec3 top=vec3(0.30,0.56,0.53),mid=vec3(0.35,0.62,0.59),bot=vec3(0.54,0.78,0.75);
+ float h=1.0-vy;vec3 c=mix(top,mid,smoothstep(0.0,0.75,h));c=mix(c,bot,smoothstep(0.72,1.0,h));o=vec4(c,1.0);}`;
+const GVS=`#version 300 es
+layout(location=0) in vec2 aXZ;uniform mat4 uVP;out vec3 vW;void main(){vW=vec3(aXZ.x,0.0,aXZ.y);gl_Position=uVP*vec4(vW,1.0);}`;
+const GFS=`#version 300 es
+precision highp float;in vec3 vW;out vec4 o;
+float grid(vec2 p,float s){vec2 q=abs(fract(p*s-0.5)-0.5)/fwidth(p*s);return 1.0-smoothstep(0.0,0.9,min(q.x,q.y));}
+void main(){float d=length(vW.xz);float fade=1.0-smoothstep(2.2,9.0,d);
+ float g=max(grid(vW.xz,2.0)*0.24,grid(vW.xz,0.5)*0.075)*fade;
+ vec2 e=vW.xz*vec2(1.0,0.62);float sh=exp(-dot(e,e)*5.0)*0.55;
+ vec3 col=mix(vec3(0.10,0.31,0.30),vec3(0.04,0.15,0.14),clamp(sh*1.4,0.0,1.0));
+ o=vec4(col,clamp(g+sh,0.0,0.75));}`;
+const LVS=`#version 300 es
+layout(location=0) in vec3 aPos;uniform mat4 uVP;uniform mat4 uModel;
+void main(){gl_Position=uVP*uModel*vec4(aPos,1.0);}`;
+const LFS=`#version 300 es
+precision highp float;uniform vec4 uCol;out vec4 o;void main(){o=uCol;}`;
+
+const P=prog(VS,FS),PB=prog(BVS,BFS),PG=prog(GVS,GFS),PL=prog(LVS,LFS);
+const U=n=>gl.getUniformLocation(P,n),UG=n=>gl.getUniformLocation(PG,n),UL=n=>gl.getUniformLocation(PL,n);
+
+/* ---------- static buffers: background + floor ---------- */
+const bq=gl.createVertexArray();gl.bindVertexArray(bq);
+{const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+ gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);}
+const gq=gl.createVertexArray();gl.bindVertexArray(gq);
+{const S=26,b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);
+ gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-S,-S,S,-S,-S,S,S,S]),gl.STATIC_DRAW);
+ gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);}
+gl.bindVertexArray(null);
+
+function buf(data,loc,size,div,dyn){const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);
+  gl.bufferData(gl.ARRAY_BUFFER,data,dyn?gl.DYNAMIC_DRAW:gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,size,gl.FLOAT,false,0,0);if(div)gl.vertexAttribDivisor(loc,div);return b;}
+
+/* ---------- live mesh ---------- */
+let MESH=null,wireVAO=null,wireBuf=null,wireCount=0,instBuf=null,icolBuf=null,ico=null,seat=0,tris=0,verts=0,bounds=null;
+const IDENT=new Float32Array(16);IDENT[0]=IDENT[5]=IDENT[10]=IDENT[15]=1;
+function freeMesh(){if(!MESH)return;gl.deleteVertexArray(MESH.vao);for(const b of MESH.bufs)gl.deleteBuffer(b);MESH=null;}
+function build(){
+  const g=swimmerGB(state.pose,state.body);
+  freeMesh();
+  const vao=gl.createVertexArray();gl.bindVertexArray(vao);
+  const bufs=[buf(new Float32Array(g.p),0,3),buf(new Float32Array(g.n),1,3),buf(new Float32Array(g.c),2,4)];
+  instBuf=buf(new Float32Array(IDENT),5,4,1,true);
+  for(let k=1;k<4;k++){gl.enableVertexAttribArray(5+k);gl.vertexAttribPointer(5+k,4,gl.FLOAT,false,64,k*16);gl.vertexAttribDivisor(5+k,1);}
+  ico=pickVariant(()=>0.5,state.pal,state.look).icol;
+  icolBuf=buf(new Float32Array(ico),9,4,1);
+  gl.bindVertexArray(null);
+  MESH={vao,bufs:bufs.concat([instBuf,icolBuf])};
+  tris=g.tris;verts=g.p.length/3;seat=g.seat;
+  // bounds in world space (resting on the floor)
+  let mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];
+  for(let i=0;i<g.p.length;i+=3)for(let k=0;k<3;k++){const v=g.p[i+k];if(v<mn[k])mn[k]=v;if(v>mx[k])mx[k]=v;}
+  bounds={mn,mx};
+  // wireframe edge list (own VAO so it cannot disturb the fill VAO)
+  const E=[];
+  for(let i=0;i<g.p.length;i+=9){for(const [a,b] of [[0,1],[1,2],[2,0]]){
+    E.push(g.p[i+a*3],g.p[i+a*3+1],g.p[i+a*3+2],g.p[i+b*3],g.p[i+b*3+1],g.p[i+b*3+2]);}}
+  if(!wireVAO){wireVAO=gl.createVertexArray();gl.bindVertexArray(wireVAO);wireBuf=gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER,wireBuf);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);}
+  const wv=new Float32Array(E);gl.bindBuffer(gl.ARRAY_BUFFER,wireBuf);gl.bufferData(gl.ARRAY_BUFFER,wv,gl.DYNAMIC_DRAW);
+  wireCount=wv.length/3;
+  // instance = floor-rest translation (column-major, translation in column 3)
+  const tr=new Float32Array(IDENT);tr[13]=-seat;
+  gl.bindBuffer(gl.ARRAY_BUFFER,instBuf);gl.bufferData(gl.ARRAY_BUFFER,tr,gl.DYNAMIC_DRAW);
+  gl.bindVertexArray(null);
+  updateHUD();
+}
+function updateHUD(){
+  $('iTris').textContent=tris+'  ('+(tris/454).toFixed(2)+'× v2)';
+  $('iVerts').textContent=verts;
+  $('iSeat').textContent=seat.toFixed(3);
+  $('iHeight').textContent=(bounds?bounds.mx[1]-bounds.mn[1]:0).toFixed(3)+' m';
+}
+function frameCamera(snap){
+  if(!bounds)return;
+  const {mn,mx}=bounds;
+  state.target=[(mn[0]+mx[0])/2,(mx[1]-mn[1])/2+0.02,(mn[2]+mx[2])/2];
+  const h=mx[1]-mn[1],w=Math.max(mx[0]-mn[0],mx[2]-mn[2]);
+  const fov=0.62;state.dist=Math.max(h,w*0.9)/2/Math.tan(fov/2)*1.42;
+  if(snap){
+    state.yaw=state.pose===3?0.95:0.62;
+    state.pitch=state.pose===0?0.10:state.pose===3?0.52:state.pose===2?0.34:0.30;
+  }
+}
+
+/* ---------- render ---------- */
+let dirty=true,lastT=0;
+function draw(t){
+  const dt=Math.min(0.05,(t-lastT)/1000||0);lastT=t;
+  if(dirty){dirty=false;build();}
+  if(state.spin)state.yaw+=dt*0.35;
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  const W=Math.round(cv.clientWidth*dpr),H=Math.round(cv.clientHeight*dpr);
+  if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}
+  gl.viewport(0,0,W,H);
+  gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.disable(gl.CULL_FACE);
+  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  // background
+  gl.useProgram(PB);gl.bindVertexArray(bq);gl.disable(gl.DEPTH_TEST);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);gl.enable(gl.DEPTH_TEST);
+  // camera
+  const cp=Math.cos(state.pitch),sp=Math.sin(state.pitch),cy=Math.cos(state.yaw),sy=Math.sin(state.yaw);
+  const eye=[state.target[0]+sy*cp*state.dist,state.target[1]+sp*state.dist,state.target[2]+cy*cp*state.dist];
+  const VP=mul4(persp(0.62,W/H,0.05,60),lookM(eye,state.target,[0,1,0]));
+  // floor
+  gl.useProgram(PG);gl.uniformMatrix4fv(UG('uVP'),false,VP);gl.bindVertexArray(gq);
+  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
+  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+  gl.depthMask(true);gl.disable(gl.BLEND);
+  // figure
+  gl.useProgram(P);gl.uniformMatrix4fv(U('uVP'),false,VP);gl.uniform1f(U('uMat'),5);
+  const camDir=[sy,0,cy];const s=[camDir[0]*0.75-camDir[2]*0.35,0.66,camDir[2]*0.75+camDir[0]*0.35];const sl=Math.hypot(...s);
+  gl.uniform3fv(U('uSunDir'),s.map(v=>v/sl));gl.uniform3fv(U('uSunCol'),[0.52,0.50,0.46]);
+  gl.uniform3fv(U('uSky'),[0.68,0.70,0.72]);gl.uniform3fv(U('uGround'),[0.42,0.45,0.44]);
+  if(state.wire){gl.enable(gl.POLYGON_OFFSET_FILL);gl.polygonOffset(1.0,1.0);}
+  gl.bindVertexArray(MESH.vao);gl.drawArraysInstanced(gl.TRIANGLES,0,verts,1);
+  if(state.wire){gl.disable(gl.POLYGON_OFFSET_FILL);
+    gl.useProgram(PL);gl.uniformMatrix4fv(UL('uVP'),false,VP);
+    const lm=new Float32Array(IDENT);lm[13]=-seat;
+    gl.uniformMatrix4fv(UL('uModel'),false,lm);
+    gl.uniform4fv(UL('uCol'),[1,1,1,0.26]);
+    gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);
+    gl.bindVertexArray(wireVAO);gl.drawArrays(gl.LINES,0,wireCount);
+    gl.depthMask(true);gl.disable(gl.BLEND);}
+  gl.bindVertexArray(null);
+  requestAnimationFrame(draw);
+}
+
+/* ---------- UI ---------- */
+const sliders={};
+PARAM.forEach(([key,label,min,max,step,dec,unit])=>{
+  const row=document.createElement('div');row.className='row';
+  row.innerHTML=`<label for="s_${key}">${label}</label><input id="s_${key}" type="range" min="${min}" max="${max}" step="${step}"><output id="o_${key}"></output>`;
+  $('sliders').appendChild(row);
+  const inp=$('s_'+key),out=$('o_'+key);
+  inp.addEventListener('input',()=>{
+    state.body[key]=+inp.value;
+    state.body.name='custom';
+    out.textContent=(+inp.value).toFixed(dec)+(unit?' '+unit:'');
+    state.presetId=-1;$('preset').value='-1';
+    dirty=true;save();
+  });
+  sliders[key]={inp,out,dec,unit};
+});
+function syncSliders(){
+  PARAM.forEach(([key,,min,max,step,dec,unit])=>{
+    const s=sliders[key];let v=+state.body[key];
+    if(!isFinite(v))v=min;v=Math.max(min,Math.min(max,v));
+    s.inp.value=v;s.out.textContent=v.toFixed(dec)+(unit?' '+unit:'');
+  });
+}
+const presetSel=$('preset');
+VIEW_BODIES.forEach((b,i)=>{const o=document.createElement('option');o.value=i;o.textContent=b.name.replace('_',' ');presetSel.appendChild(o);});
+{const o=document.createElement('option');o.value='-1';o.textContent='custom';presetSel.appendChild(o);}
+presetSel.value=String(state.presetId);
+presetSel.addEventListener('change',()=>{
+  const id=+presetSel.value;if(id<0){state.presetId=-1;return;}
+  state.presetId=id;state.body=Object.assign({},VIEW_BODIES[id]);
+  syncSliders();dirty=false;build();frameCamera(false);
+  $('hair').value=state.body.hair;$('suit').value=state.body.suit;save();
+});
+$('hair').addEventListener('change',e=>{state.body.hair=e.target.value;state.body.name='custom';state.presetId=-1;presetSel.value='-1';dirty=true;save();});
+$('suit').addEventListener('change',e=>{state.body.suit=e.target.value;state.body.name='custom';state.presetId=-1;presetSel.value='-1';dirty=true;save();});
+const palSel=$('pal');
+PALETTES.forEach((p,i)=>{const o=document.createElement('option');o.value=i;o.textContent=p.name;palSel.appendChild(o);});
+palSel.value=state.pal;
+palSel.addEventListener('change',e=>{state.pal=+e.target.value;rebuildTint();save();});
+const LOOKS=['cream / light brown','tan / dark brown','brown / black','cream / blonde','cream / auburn','tan / black','brown / dark brown','tan / light brown'];
+const lookSel=$('look');
+LOOKS.forEach((n,i)=>{const o=document.createElement('option');o.value=i;o.textContent=n;lookSel.appendChild(o);});
+lookSel.value=state.look;
+lookSel.addEventListener('change',e=>{state.look=+e.target.value;rebuildTint();save();});
+function rebuildTint(){ico=pickVariant(()=>0.5,state.pal,state.look).icol;
+  gl.bindBuffer(gl.ARRAY_BUFFER,icolBuf);gl.bufferSubData(gl.ARRAY_BUFFER,0,new Float32Array(ico));}
+
+document.querySelectorAll('#poses button').forEach(b=>{
+  b.addEventListener('click',()=>{state.pose=+b.dataset.pose;markPose();dirty=false;build();frameCamera(true);save();});
+});
+function markPose(){document.querySelectorAll('#poses button').forEach(b=>b.classList.toggle('on',+b.dataset.pose===state.pose));}
+markPose();
+$('spin').addEventListener('change',e=>{state.spin=e.target.checked;save();});
+$('wire').addEventListener('change',e=>{state.wire=e.target.checked;save();});
+$('frame').addEventListener('click',()=>{frameCamera(true);});
+$('front').addEventListener('click',()=>{state.yaw=0;state.pitch=0.06;frameCamera(false);});
+$('side').addEventListener('click',()=>{state.yaw=Math.PI/2;state.pitch=0.06;frameCamera(false);});
+$('reset').addEventListener('click',()=>{const id=state.presetId>=0?state.presetId:9;state.presetId=id;
+  state.body=Object.assign({},VIEW_BODIES[id]);presetSel.value=String(id);syncSliders();dirty=false;build();frameCamera(true);
+  $('hair').value=state.body.hair;$('suit').value=state.body.suit;save();});
+$('rand').addEventListener('click',()=>{
+  const r=(a,b)=>a+Math.random()*(b-a);
+  state.body=Object.assign({},state.body,{name:'custom',height:+r(1.52,1.92).toFixed(3),build:+r(0.1,1).toFixed(2),
+    shoulders:+r(0.88,1.38).toFixed(2),bust:+r(0,0.95).toFixed(2),waist:+r(0.8,1.35).toFixed(2),
+    hips:+r(0.8,1.4).toFixed(2),legs:+r(0.9,1.1).toFixed(2),arms:+r(0.92,1.08).toFixed(2),
+    head:+r(0.94,1.06).toFixed(2),neck:+r(0.85,1.2).toFixed(2)});
+  const hairs=['cap','short','bun','ponytail'],suits=['striped','plain','twopiece','trunks'];
+  state.body.hair=hairs[Math.floor(Math.random()*hairs.length)];
+  state.body.suit=suits[Math.floor(Math.random()*suits.length)];
+  $('hair').value=state.body.hair;$('suit').value=state.body.suit;
+  state.pal=Math.floor(Math.random()*PALETTES.length);state.look=Math.floor(Math.random()*LOOKS.length);
+  palSel.value=state.pal;lookSel.value=state.look;
+  state.presetId=-1;presetSel.value='-1';syncSliders();rebuildTint();dirty=false;build();frameCamera(false);save();
+});
+
+/* orbit */
+let drag=null;
+cv.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY};cv.setPointerCapture(e.pointerId);});
+cv.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;
+  state.yaw-=dx*0.007;state.pitch=Math.max(-0.35,Math.min(1.15,state.pitch+dy*0.006));state.spin=false;$('spin').checked=false;});
+cv.addEventListener('pointerup',e=>{drag=null;try{cv.releasePointerCapture(e.pointerId);}catch(_){}});
+cv.addEventListener('pointercancel',()=>{drag=null;});
+cv.addEventListener('wheel',e=>{e.preventDefault();state.dist=Math.max(0.55,Math.min(14,state.dist*Math.exp(e.deltaY*0.0012)));},{passive:false});
+
+/* boot */
+$('spin').checked=state.spin;$('wire').checked=state.wire;
+$('hair').value=state.body.hair;$('suit').value=state.body.suit;
+presetSel.value=String(state.presetId);
+syncSliders();markPose();build();frameCamera(true);
+requestAnimationFrame(draw);
+
+/* small public hook for testing / screenshots */
+window.viewer={state,rebuild:()=>{dirty=true;},setPose:p=>{state.pose=p;markPose();dirty=false;build();frameCamera(true);},
+  setParam:(k,v)=>{state.body[k]=+v;state.body.name='custom';sliders[k]&&(sliders[k].inp.value=v);dirty=true;},
+  setTint:(p,l)=>{state.pal=p;state.look=l;palSel.value=p;lookSel.value=l;rebuildTint();},
+  info:()=>({tris,verts,seat,height:bounds?bounds.mx[1]-bounds.mn[1]:0,body:state.body,pose:state.pose})};
+</script>
+</body>
+</html>
