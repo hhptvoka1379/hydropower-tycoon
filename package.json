@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test game/tests/",
+    "check": "node build/bundle.mjs --check",
+    "build": "node build/bundle.mjs",
+    "legacy": "python3 -m http.server 8080 -d game/legacy"
   },
   "keywords": [],
   "author": "",
