@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Hydropower Tycoon · the valley (part one: the world)</title>
+<!--
+  Hydropower Tycoon, part one: the world. One offline file. No external requests, no eval.
+  Rendering: a small hand-written WebGL2 renderer (see the closing note: Three.js could not be inlined through the
+  tools used to write this file, so no Three.js code, and therefore no Three.js MIT header, is present).
+-->
+<style>
+:root{
+  --paper:#f1ead9; --paper-shade:#ddd2b8; --ink:#2b2a26; --moss:#4f6b3a; --clay:#a3472c; --river:#2f6f86; --ochre:#c58b2a; --ochre-text:#8a5f10;
+  --gen:var(--moss); --pump:var(--clay); --ren:var(--river); --warn:var(--ochre); --alarm:var(--clay);
+  --surface:var(--paper); --surface-raised:#f8f3e6; --text:var(--ink); --text-2:#5a5646; --border:#a89c7c;
+  --serif:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+  --mono:ui-monospace,'Cascadia Mono',Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#d9d2bd;color:var(--text);font:15px/1.4 var(--serif)}
+canvas#view{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+.mono,.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.panel{position:fixed;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;box-shadow:0 2px 0 rgba(43,42,38,.14)}
+button,select,input{font:inherit;color:inherit}
+button{min-height:44px;min-width:44px;padding:6px 12px;background:var(--surface-raised);border:1px solid var(--border);border-radius:6px;cursor:pointer}
+button:hover{background:var(--paper-shade)}
+button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+button[aria-pressed="true"]::before{content:"\2713\00a0"}
+:focus-visible{outline:3px solid var(--river);outline-offset:2px}
+.small{font-size:12.5px;color:var(--text-2)}
+#hud-tl{left:max(12px,env(safe-area-inset-left));top:max(12px,env(safe-area-inset-top));padding:8px 12px;min-width:170px;max-width:46vw}
+#hud-tl .lab{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-2)}
+#place-name{font-size:19px;font-weight:600;line-height:1.2}
+#hud-tr{position:fixed;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+#mapbox{display:flex;gap:8px;align-items:flex-start;padding:6px;position:relative}
+#compass{width:52px;height:52px}
+#minimap{width:128px;height:128px;border:1px solid var(--border);border-radius:6px;background:var(--paper-shade);display:block}
+.btnrow{display:flex;gap:8px}
+#hint{left:50%;transform:translateX(-50%);bottom:max(12px,env(safe-area-inset-bottom));padding:8px 14px;text-align:center;max-width:calc(100vw - 24px);font-size:14px}
+#presets{right:max(12px,env(safe-area-inset-right));bottom:calc(max(12px,env(safe-area-inset-bottom)) + 52px);padding:6px;display:flex;gap:6px}
+#status-chip{left:max(12px,env(safe-area-inset-left));bottom:calc(max(12px,env(safe-area-inset-bottom)) + 52px);padding:4px 10px;min-height:44px;display:flex;align-items:center;gap:8px;font-size:13px}
+#status-chip button{min-height:36px}
+.card{position:fixed;z-index:20;background-color:var(--surface);background-image:radial-gradient(rgba(43,42,38,.06) 1px,transparent 1.3px),linear-gradient(180deg,#f7f1e1,#ebe2c9);background-size:5px 5px,100% 100%;color:var(--text);border:1px solid var(--border);border-radius:10px;box-shadow:0 3px 0 rgba(43,42,38,.18);padding:14px 16px}
+.card h2{margin:0 0 4px;font-size:21px;font-weight:600}
+.card p{margin:6px 0}
+#card{left:max(12px,env(safe-area-inset-left));bottom:calc(max(12px,env(safe-area-inset-bottom)) + 104px);width:min(340px,calc(100vw - 24px))}
+#card svg{display:block;width:100%;height:auto;margin-top:8px;border-top:1px dashed var(--border);padding-top:8px}
+.stamp{position:absolute;top:12px;right:14px;transform:rotate(-8deg);border:2px solid var(--clay);color:var(--clay);border-radius:4px;padding:1px 8px;font:700 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;background:rgba(255,255,255,.35)}
+#start{left:50%;top:50%;transform:translate(-50%,-50%);width:min(440px,calc(100vw - 24px));z-index:30}
+#start .row,#about .row{display:flex;gap:8px;margin-top:10px;justify-content:flex-end}
+#about{left:50%;top:50%;transform:translate(-50%,-50%);width:min(380px,calc(100vw - 24px));z-index:31}
+#settings{right:max(12px,env(safe-area-inset-right));top:210px;width:min(300px,calc(100vw - 24px));padding:10px 12px;z-index:25;max-height:calc(100vh - 230px);overflow:auto}
+#settings h2{margin:0 0 6px;font-size:17px}
+#settings .field{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;border-top:1px solid var(--paper-shade)}
+#settings .field label{flex:1}
+#settings input[type=checkbox]{width:24px;height:24px;accent-color:var(--moss)}
+#settings input[type=range]{width:120px;accent-color:var(--moss)}
+.seg{display:flex;gap:4px}
+.seg button{padding:4px 10px}
+#checks{right:max(12px,env(safe-area-inset-right));top:210px;width:min(620px,calc(100vw - 24px));max-height:calc(100vh - 240px);overflow:auto;padding:10px 12px;z-index:26}
+#checks table{width:100%;border-collapse:collapse;font-size:12.5px}
+#checks th,#checks td{text-align:left;padding:4px 6px;border-bottom:1px solid var(--paper-shade);vertical-align:top;overflow-wrap:anywhere}
+#checks td.res{font-weight:700;white-space:nowrap}
+#toast{position:fixed;left:50%;top:76px;transform:translateX(-50%);padding:6px 14px;z-index:40}
+#loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--paper-shade);z-index:50;font-size:18px}
+[hidden]{display:none!important}
+@media (max-width:700px){
+  #hud-tl{min-width:0;max-width:52vw}#place-name{font-size:16px}
+  #minimap{width:96px;height:96px}#compass{width:44px;height:44px}
+  #hint{font-size:12.5px;bottom:max(8px,env(safe-area-inset-bottom))}
+  #presets{bottom:calc(max(8px,env(safe-area-inset-bottom)) + 58px);left:max(12px,env(safe-area-inset-left));right:auto}
+  #status-chip{bottom:calc(max(8px,env(safe-area-inset-bottom)) + 112px)}
+  #card{bottom:calc(max(8px,env(safe-area-inset-bottom)) + 176px)}
+  #settings,#checks{top:170px;max-height:calc(100vh - 190px)}
+}
+@media (max-height:700px){#card svg{max-height:110px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<canvas id="view" tabindex="0" aria-label="3D valley diorama. Use W A S D or the arrow keys to walk."></canvas>
+
+<div id="hud-tl" class="panel" role="status" aria-live="polite">
+  <div class="lab">You are at</div>
+  <div id="place-name">The valley</div>
+  <div class="small">Seed <span id="seed-val" class="num"></span></div>
+</div>
+
+<div id="hud-tr">
+  <div id="mapbox" class="panel" style="position:relative">
+    <svg id="compass" viewBox="-30 -30 60 60" role="img" aria-label="Compass">
+      <circle r="27" fill="#f8f3e6" stroke="#2b2a26" stroke-width="1.4"/>
+      <g id="needle"><path d="M0,-22 L5,2 L0,-2 L-5,2 Z" fill="#a3472c" stroke="#2b2a26" stroke-width="1"/><path d="M0,22 L4,2 L0,4 L-4,2 Z" fill="#ddd2b8" stroke="#2b2a26" stroke-width="1"/><text y="-12" x="0" font-size="8" font-weight="700" text-anchor="middle" fill="#fff" font-family="monospace" transform="translate(0,-1)">N</text></g>
+    </svg>
+    <canvas id="minimap" width="160" height="160" role="img" aria-label="Survey sketch minimap, north up"></canvas>
+  </div>
+  <div class="btnrow">
+    <button id="btn-settings" aria-expanded="false" aria-controls="settings">Settings</button>
+    <button id="btn-checks" aria-expanded="false" aria-controls="checks">Checks</button>
+  </div>
+</div>
+
+<div id="status-chip" class="panel"><span id="audit-status" class="num">Self-check: pending…</span></div>
+
+<div id="presets" class="panel" role="group" aria-label="Camera presets">
+  <button data-preset="follow" aria-pressed="true">Follow</button>
+  <button data-preset="overview" aria-pressed="false">Overview</button>
+  <button data-preset="free" aria-pressed="false">Free look</button>
+</div>
+
+<div id="hint" class="panel">WASD walk · Shift faster · right-drag to look · Q/E turn · wheel zoom · double-click to go there · F recentre</div>
+
+<div id="card" class="card" role="dialog" aria-labelledby="card-title" hidden>
+  <div id="card-stamp" class="stamp" hidden>Visited</div>
+  <h2 id="card-title"></h2>
+  <p id="card-text"></p>
+  <div id="card-sketch"></div>
+  <div class="small">Click elsewhere or press Esc to close.</div>
+</div>
+
+<div id="start" class="card" role="dialog" aria-labelledby="start-title">
+  <h2 id="start-title">Field station, upper valley</h2>
+  <p>You are the station swimmer, out on survey. The valley holds a powerhouse beside a lower lake, an upper lake high on the shelf, and a lookout on the rim.</p>
+  <p>Walk with <b>W A S D</b> or the arrow keys. Drag with the right mouse button to look around. Double-click a spot on the ground to walk there. Stairs join the powerhouse, the lakes and the lookout. She stops at the water's edge.</p>
+  <div class="row"><button id="start-go">Start walking</button></div>
+</div>
+
+<div id="about" class="card" role="dialog" aria-labelledby="about-title" hidden>
+  <h2 id="about-title">About</h2>
+  <p>Hydropower Tycoon, part one: a field-station valley you can walk through, drawn entirely in code.</p>
+  <div class="row"><button id="about-close">Close</button></div>
+</div>
+
+<div id="settings" class="panel" hidden>
+  <h2>Settings</h2>
+  <div class="field"><span id="q-lab">Quality</span>
+    <div class="seg" role="group" aria-labelledby="q-lab">
+      <button data-q="Low" aria-pressed="false">Low</button><button data-q="Medium" aria-pressed="true">Medium</button><button data-q="High" aria-pressed="false">High</button>
+    </div></div>
+  <div class="field"><label for="opt-rain">Rain (scenery only)</label><input id="opt-rain" type="checkbox"></div>
+  <div class="field"><label for="opt-rev">Reverse gesture direction</label><input id="opt-rev" type="checkbox"></div>
+  <div class="field"><label for="opt-rm">Reduced motion</label><input id="opt-rm" type="checkbox"></div>
+  <div class="field"><label for="opt-snd">Sound</label><input id="opt-snd" type="checkbox"></div>
+  <div class="field"><label for="opt-vol">Master volume</label><input id="opt-vol" type="range" min="0" max="100" value="50"></div>
+  <div class="field"><span>Field notes</span><button id="btn-about">About</button></div>
+</div>
+
+<div id="checks" class="panel" hidden>
+  <h2 style="margin:0 0 6px;font-size:17px">Self-check</h2>
+  <div id="checks-summary" class="small num">Pending…</div>
+  <table><thead><tr><th>Check</th><th>Expected</th><th>Actual</th><th>Result</th></tr></thead><tbody id="checks-body"></tbody></table>
+</div>
+
+<div id="toast" class="panel small" hidden></div>
+<div id="loading" role="status">Surveying the valley…</div>
+
+<script>
+const Game=(function(){
+'use strict';
+/* ================= Appendix A: gb.js (verbatim) ================= */
+class GB{constructor(){this.p=[];this.n=[];this.c=[];this.s=null;}
+  v(x,y,z,nx,ny,nz,c,a){this.p.push(x,y,z);this.n.push(nx,ny,nz);this.c.push(c[0],c[1],c[2],a||0);}
+  tri(a,b,c,col,wa,wb,wc){const ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2],vx=c[0]-a[0],vy=c[1]-a[1],vz=c[2]-a[2];let nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;const l=Math.hypot(nx,ny,nz)||1;nx/=l;ny/=l;nz/=l;
+    this.v(a[0],a[1],a[2],nx,ny,nz,col,wa);this.v(b[0],b[1],b[2],nx,ny,nz,col,wb);this.v(c[0],c[1],c[2],nx,ny,nz,col,wc);}
+  quad(a,b,c,d,col){this.tri(a,b,c,col);this.tri(a,c,d,col);}
+  box(T,lx,ly,lz,sx,sy,sz,col){const hx=sx/2,hz=sz/2;const P=[];for(let i=0;i<8;i++){P.push(T(lx+((i&1)?hx:-hx),ly+((i&2)?sy:0),lz+((i&4)?hz:-hz)));}
+    this.quad(P[0],P[1],P[3],P[2],col);this.quad(P[4],P[6],P[7],P[5],col);this.quad(P[0],P[4],P[5],P[1],col);this.quad(P[2],P[3],P[7],P[6],col);this.quad(P[0],P[2],P[6],P[4],col);this.quad(P[1],P[5],P[7],P[3],col);}
+  cyl(a,b,r,seg,col,caps,gap,r2){r2=r2===undefined?r:r2;const ax=b[0]-a[0],ay=b[1]-a[1],az=b[2]-a[2];const l=Math.hypot(ax,ay,az)||1;const dx=ax/l,dy=ay/l,dz=az/l;
+    let ux=0,uy=1,uz=0;if(Math.abs(dy)>0.9){ux=1;uy=0;}let px=uy*dz-uz*dy,py=uz*dx-ux*dz,pz=ux*dy-uy*dx;let pl=Math.hypot(px,py,pz);px/=pl;py/=pl;pz/=pl;const qx=dy*pz-dz*py,qy=dz*px-dx*pz,qz=dx*py-dy*px;
+    const g=gap||0;const a0=g/2,a1=Math.PI*2-g/2;const pt=(c,ang,rr)=>{const cs=Math.cos(ang+Math.PI/2),sn=Math.sin(ang+Math.PI/2);return [c[0]+(px*cs+qx*sn)*rr,c[1]+(py*cs+qy*sn)*rr,c[2]+(pz*cs+qz*sn)*rr];};
+    for(let i=0;i<seg;i++){const t0=a0+(a1-a0)*i/seg,t1=a0+(a1-a0)*(i+1)/seg;const A=pt(a,t0,r),B=pt(a,t1,r),C=pt(b,t1,r2),D=pt(b,t0,r2);this.quad(A,B,C,D,col);if(caps&&!g){this.tri(a,B,A,col);this.tri(b,D,C,col);}}}
+  cone(base,h,r,seg,col,wTop){for(let i=0;i<seg;i++){const t0=i/seg*Math.PI*2,t1=(i+1)/seg*Math.PI*2;const A=[base[0]+Math.cos(t0)*r,base[1],base[2]+Math.sin(t0)*r],B=[base[0]+Math.cos(t1)*r,base[1],base[2]+Math.sin(t1)*r],C=[base[0],base[1]+h,base[2]];
+    this.tri(A,B,C,col,0,0,wTop||0);this.tri(A,[base[0],base[1],base[2]],B,col);}}
+}
+/* ================= Appendix B: swimmerGB3.js (verbatim, one flagged edit) ================= */
+/* ---------- swimmer / slide rider v3: ADULT body lab (higher-detail geometry + per-instance tint) ----------
+   Adult-only redesign of swimmerGB2.js. Same names / packed-tint scheme; drop-in into the game.
+   Depends only on the game's GB class: new GB(), g.tri(a,b,c,col,wa,wb,wc), g.p (positions, read for bounds).
+   Axes: y up, metres, the swimmer FACES +Z, arms along +/-X. Origin: the PELVIS (midpoint of the hip joints), all poses.
+     swimmerGB(pose, body)  body = descriptor (see SWIM_BODY_DEFAULT / BODIES); omitted = the reference figure.
+       Returned GB also carries g.seat (lowest y; rest a rider on a surface at h by placing it at y = h - g.seat),
+       g.tris, g.top (highest y) and g.body (the resolved descriptor).
+   Poses: 0 T-pose, 1 slide sitting (feet-first +Z, arms up), 2 slide lying back (hands behind head), 3 dive (belly -Y, head +Z).
+   Tint mask in the vertex-colour ALPHA (use uMat 5, see README):
+      0.000 skin   0.125 hair   0.25 cap   0.50 stripe B   0.75 straps   1.00 stripe A
+   Per instance icol (4 floats): rgb = stripe A colour, a = packed integer (< 2^24, exact in float32):
+     bits 0-17 stripe B rgb (6 bits/channel) | bits 18-19 cap source (0 A, 1 B, 2 white) | bit 20 strap source (0 A, 1 B)
+     bits 21-23 LOOK index 0..7 into SWIM_LOOK = [skin tone, hair colour]
+   v3 mesh detail vs v2: torso 8 -> 12 sides and ~2x the ring count, limbs 5 -> 7 sides with mid-segment rings,
+   head 8 -> 10 sides with an extra ring, neck 5 -> 7 sides. ~1.9x triangles, spent on silhouette/shading loops.
+   No child proportions or child preset: this build is adults only.
+*/
+const SWIM_SKIN=[[0.95,0.87,0.63],[0.87,0.70,0.52],[0.58,0.41,0.30]];                 // cream (reference), tan, brown
+const SWIM_HAIR=[[0.40,0.27,0.15],[0.24,0.16,0.10],[0.11,0.10,0.10],[0.88,0.72,0.40],[0.62,0.29,0.14]]; // lt brown, dk brown, black, blonde, auburn
+const SWIM_LOOK=[[0,0],[1,1],[2,2],[0,3],[0,4],[1,2],[2,1],[1,0]];                    // [skin, hair]; keep in sync with the shader
+const PALETTES=[
+  {name:'red',   a:[0.88,0.24,0.24],b:[0.94,0.94,0.96],cap:[0.88,0.24,0.24],strap:[0.88,0.24,0.24]},
+  {name:'blue',  a:[0.20,0.42,0.85],b:[0.94,0.94,0.96],cap:[0.20,0.42,0.85],strap:[0.20,0.42,0.85]},
+  {name:'yellow',a:[0.98,0.78,0.16],b:[0.94,0.94,0.96],cap:[0.98,0.78,0.16],strap:[0.98,0.78,0.16]},
+  {name:'teal',  a:[0.08,0.60,0.58],b:[0.94,0.94,0.96],cap:[0.08,0.60,0.58],strap:[0.08,0.60,0.58]},
+  {name:'pink',  a:[0.95,0.45,0.66],b:[0.94,0.94,0.96],cap:[0.95,0.45,0.66],strap:[0.95,0.45,0.66]},
+  {name:'navy',  a:[0.13,0.17,0.40],b:[0.13,0.17,0.40],cap:[1,1,1],          strap:[0.13,0.17,0.40]} // solid suit, white cap
+];
+function swimPack(b,capSrc,strapSrc,look){const q=v=>Math.max(0,Math.min(63,Math.round(v*63)));
+  return q(b[0])*4096+q(b[1])*64+q(b[2])+capSrc*262144+strapSrc*1048576+(look&7)*2097152;}
+function swimSrc(c,p){const eq=(u,v)=>Math.abs(u[0]-v[0])+Math.abs(u[1]-v[1])+Math.abs(u[2]-v[2])<1e-3;return eq(c,p.a)?0:eq(c,p.b)?1:2;}
+// rnd: function returning [0,1). pal: optional palette index, look: optional SWIM_LOOK index.
+// Returns {pal, a, b, look, skin, icol:[r,g,b,packed]} -> swimmerTint(icol, i, v).
+function pickVariant(rnd,pal,look){const P=PALETTES[pal===undefined?Math.floor(rnd()*PALETTES.length)%PALETTES.length:pal];
+  const k=1+(rnd()-0.5)*0.08,h=(rnd()-0.5)*0.05;
+  const jit=c=>[Math.min(1,c[0]*k*(1+h)),Math.min(1,c[1]*k),Math.min(1,c[2]*k*(1-h))];
+  const a=jit(P.a),b=P.b===P.a||swimSrc(P.b,P)===0?a:jit(P.b);
+  if(look===undefined){const W=[25,15,12,15,8,10,8,7];let r=rnd()*100;look=0;while(look<7&&r>=W[look]){r-=W[look];look++;}}
+  return {pal:PALETTES.indexOf(P),a,b,look,skin:SWIM_LOOK[look][0],icol:[a[0],a[1],a[2],swimPack(b,swimSrc(P.cap,P),Math.min(1,swimSrc(P.strap,P)),look)]};}
+function swimmerTint(icol,i,v){icol.set(v.icol,i*4);}
+
+/* ---- body descriptor (ADULTS ONLY: no child field, no child preset) ----
+   height    total standing height in metres (sole to crown), ~1.45-1.95. The figure is built in unit proportions
+             and uniformly scaled so the T-pose is exactly this tall.
+   build     0 slim .. 0.5 average .. 1 stocky/heavy: torso width + depth, limb thickness, slight belly above 0.6
+   shoulders shoulder width multiplier (1 = reference)          bust   0 flat .. 0.5 reference .. 1 full (front-only bulge)
+   waist     waist width multiplier                             hips   hip/seat width multiplier
+   legs      leg length multiplier (leg:torso ratio)            arms   arm length multiplier
+   head      head size multiplier                               neck   neck length multiplier
+   hair      'cap' (swim cap) | 'short' | 'bun' | 'ponytail'    (bare hair uses the hair mask / SWIM_LOOK colour)
+   suit      'striped' one-piece | 'plain' one-piece | 'twopiece' (sporty crop top + bottoms) | 'trunks' (bare torso, swim trunks)
+*/
+const SWIM_BODY_DEFAULT={name:'reference',height:1.704,build:0.5,shoulders:1,bust:0.5,waist:1,hips:1,legs:1,arms:1,head:1,neck:1,hair:'cap',suit:'striped'};
+const BODIES=[
+  {name:'average',   height:1.68,build:0.55,shoulders:1.00,bust:0.50,waist:1.00,hips:1.04,legs:1.00,arms:1.00,head:1.00,neck:1.00,hair:'cap',     suit:'striped'},
+  {name:'slim_tall', height:1.84,build:0.15,shoulders:1.00,bust:0.30,waist:0.92,hips:0.94,legs:1.07,arms:1.05,head:0.96,neck:1.12,hair:'ponytail',suit:'striped'},
+  {name:'curvy',     height:1.66,build:0.62,shoulders:1.00,bust:0.80,waist:0.88,hips:1.22,legs:0.98,arms:1.00,head:1.00,neck:0.98,hair:'bun',     suit:'plain'},
+  {name:'stocky',    height:1.60,build:0.85,shoulders:1.10,bust:0.55,waist:1.18,hips:1.08,legs:0.91,arms:0.96,head:1.02,neck:0.82,hair:'cap',     suit:'plain'},
+  {name:'athletic',  height:1.76,build:0.55,shoulders:1.24,bust:0.35,waist:0.92,hips:0.96,legs:1.04,arms:1.04,head:0.98,neck:1.00,hair:'ponytail',suit:'twopiece'},
+  {name:'petite',    height:1.52,build:0.35,shoulders:0.94,bust:0.45,waist:0.95,hips:1.00,legs:0.97,arms:0.98,head:1.05,neck:0.95,hair:'bun',     suit:'striped'},
+  {name:'plus_size', height:1.65,build:1.00,shoulders:1.06,bust:0.85,waist:1.28,hips:1.22,legs:0.95,arms:0.98,head:1.02,neck:0.82,hair:'short',   suit:'plain'},
+  {name:'masc_average',height:1.77,build:0.50,shoulders:1.20,bust:0.12,waist:1.10,hips:0.88,legs:1.00,arms:1.04,head:1.00,neck:1.00,hair:'short', suit:'trunks'},
+  {name:'masc_broad',height:1.87,build:0.85,shoulders:1.36,bust:0.18,waist:1.16,hips:0.94,legs:0.98,arms:0.97,head:1.00,neck:0.92,hair:'short',   suit:'trunks'}
+];
+// Picks a preset (uniform, or weights[] if given) and jitters a few parameters a little.
+// Returns {id, name, body, scale}. For instanced rendering use the cached mesh of BODIES[id] and multiply the
+// instance matrix (and the seat offset) by `scale` (the height jitter); `body` is the fully jittered descriptor for
+// one-off meshes (it would be a new mesh per rider if built directly).
+function pickBody(rnd,weights){let id=0;
+  if(weights){let t=0;for(const w of weights)t+=w;let r=rnd()*t;while(id<BODIES.length-1&&r>=weights[id]){r-=weights[id];id++;}}
+  else id=Math.min(BODIES.length-1,Math.floor(rnd()*BODIES.length));
+  const B=BODIES[id],j=a=>(rnd()*2-1)*a,cl=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+  const scale=1+j(0.03);
+  const body=Object.assign({},B,{height:B.height*scale,build:cl(B.build+j(0.06),0,1),shoulders:B.shoulders*(1+j(0.03)),
+    hips:B.hips*(1+j(0.03)),waist:B.waist*(1+j(0.03)),bust:B.bust>0.15?cl(B.bust+j(0.06),0,1):B.bust,legs:B.legs*(1+j(0.02))});
+  return {id,name:B.name,body,scale};}
+
+function swimmerGB(pose,body){
+  pose=(pose|0)%4;const g=new GB();
+  const Bd=Object.assign({},SWIM_BODY_DEFAULT,body||{});
+  const SK=SWIM_SKIN[0],RED=PALETTES[0].a,WHT=PALETTES[0].b,HAIRC=SWIM_HAIR[0];
+  const M_SKIN=0,M_HAIR=0.125,M_CAP=0.25,M_B=0.5,M_STRAP=0.75,M_A=1;
+  const add=(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]],sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],mul=(a,s)=>[a[0]*s,a[1]*s,a[2]*s];
+  const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+  const nrm=a=>{const l=Math.hypot(a[0],a[1],a[2])||1;return [a[0]/l,a[1]/l,a[2]/l];};
+  const lerp=(a,b,t)=>a+(b-a)*t;
+  /* ---- derived proportions (unit space = the 1.70 m reference; uniform scale SC applied at emission) ---- */
+  const bld=Math.max(0,Math.min(1,Bd.build));
+  const bw=1+(bld-0.5)*0.5;                  // torso width
+  const bdp=1+(bld-0.5)*0.55;                // torso depth
+  const lr=1+(bld-0.5)*0.6;                  // limb radius
+  const belly=Math.max(0,bld-0.6)*0.05;      // forward belly at the waist
+  const hsz=Bd.head;                         // head scale
+  const legL=Bd.legs,armL=Bd.arms,neckL=Bd.neck;
+  const shW=Bd.shoulders,hipW=Bd.hips,waistW=Bd.waist;
+  const bust=Math.max(0,Math.min(1,Bd.bust));
+  const chestW=bw*(0.55+0.45*shW);
+  const suit=Bd.suit,hair=Bd.hair;
+  const fsz=(1+(lr-1)*0.4);                  // feet / hands
+  const pivY=0.50+0.08*neckL;                // head pivot (top of neck), torso-local
+  const legRaw=0.79*legL+0.075*fsz,headTop=pivY+0.26*hsz;
+  const SC=Bd.height/(legRaw+headTop);       // uniform scale to the requested height
+  // outward-facing triangle (winding flipped so the normal points away from interior point ref), scaled at emission
+  const T=(a,b,c,col,m,ref)=>{const n=cross(sub(b,a),sub(c,a));const cen=mul(add(add(a,b),c),1/3);if(dot(n,sub(cen,ref))<0){const t=b;b=c;c=t;}
+    g.tri(mul(a,SC),mul(b,SC),mul(c,SC),col,m,m,m);};
+  const Q=(a,b,c,d,col,m,ref)=>{T(a,b,c,col,m,ref);T(a,c,d,col,m,ref);};
+  const PS=[
+    {lean:0,head:0,thigh:[-0.03,-1,0.02],shin:[-0.03,-1,-0.03],ff:[0.05,0,1],fu:[0,1,0],
+     ua:[1,-0.08,0],fa:[1,-0.06,0],hu:[0,1,0],pony:[0,-1,-0.12]},
+    {lean:0.32,head:-0.1,thigh:[0.13,-0.06,1],shin:[0.08,-0.03,1],ff:[0.1,1,0.3],fu:[0,0,-1],
+     ua:[0.42,1,0.12],fa:[0.22,1,0.2],hu:[0,0,-1],pony:[0,-1,-0.35]},
+    {lean:1.38,head:0.55,thigh:[0.07,-0.04,1],shin:[0.03,0.02,1],ff:[0.12,1,0.2],fu:[0,0,-1],
+     ua:[0.75,0.55,0.18],tgt:true,hu:[0,0,-1],pony:[0,-0.6,-1]},
+    {lean:-Math.PI/2,head:-0.15,thigh:[-0.02,0,-1],shin:[-0.01,0.02,-1],ff:[0,-0.12,-1],fu:[0,-1,0],
+     ua:[0.12,1,0.04],fa:[0.03,1,0.04],hu:[0,0,-1],pony:[0,0.06,-1]}
+  ][pose];
+  const cl=Math.cos(PS.lean),sl=Math.sin(PS.lean);
+  const W=p=>[p[0],p[1]*cl+p[2]*sl,-p[1]*sl+p[2]*cl];       // torso-local -> pelvis space
+  const Wd=W;
+  // tube through pts with radii (radius 0 at the end = pointed tip), seg sides; frame from hint.
+  // colf(i,k,am,n) may return [colour, mask]; shape(i,n) adds radial muscle offset along the ring normal.
+  const tube=(pts,rad,seg,colf,m,hint,shape)=>{let rings=[];
+    for(let i=0;i<pts.length;i++){
+      const t=nrm(sub(pts[Math.min(i+1,pts.length-1)],pts[Math.max(i-1,0)]));let u=sub(hint,mul(t,dot(hint,t)));u=nrm(u);const v=cross(t,u);
+      const r=[];for(let k=0;k<seg;k++){const a=(k+0.5)/seg*Math.PI*2;
+        const n=add(mul(u,Math.cos(a)),mul(v,Math.sin(a)));
+        const rr=rad[i]+(shape?shape(i,n):0);
+        r.push(add(pts[i],mul(n,rr)));}rings.push(r);}
+    for(let i=0;i+1<rings.length;i++){
+      for(let k=0;k<seg;k++){const k1=(k+1)%seg;const ref=mul(add(pts[i],pts[i+1]),0.5);
+        const am=(k+0.5)/seg*Math.PI*2;
+        const t=nrm(sub(pts[Math.min(i+1,pts.length-1)],pts[Math.max(i-1,0)]));
+        let u=sub(hint,mul(t,dot(hint,t)));u=nrm(u);const v=cross(t,u);
+        const nm=add(mul(u,Math.cos(am)),mul(v,Math.sin(am)));
+        const yc=(rings[i][k][1]+rings[i][k1][1]+rings[i+1][k1][1]+rings[i+1][k][1])*0.25;
+        const c=typeof colf==='function'?colf(i,k,am,nm,yc):[colf,m];
+        if(rad[i+1]===0)T(rings[i][k],rings[i][k1],pts[i+1],c[0],c[1],ref);
+        else Q(rings[i][k],rings[i][k1],rings[i+1][k1],rings[i+1][k],c[0],c[1],ref);}}
+    return rings;};
+  const wedge=(o,f,u,len,w0,w1,h0,h1,mid,col)=>{f=nrm(f);u=nrm(sub(u,mul(f,dot(u,f))));const s=cross(f,u);const P=[];
+    for(let e=0;e<2;e++){const w=e?w1:w0,h=e?h1:h0,c=add(o,mul(f,e*len));for(let j=0;j<4;j++){const sx=(j&1)?1:-1,top=(j&2)?1:0;
+      P.push(add(c,add(mul(s,sx*w/2),mul(u,mid?(top?h/2:-h/2):top*h))));}}
+    const ref=add(o,add(mul(f,len*0.4),mul(u,mid?0:h0*0.3)));
+    const F=[[0,1,3,2],[4,5,7,6],[0,1,5,4],[2,3,7,6],[0,2,6,4],[1,3,7,5]];for(const q of F)Q(P[q[0]],P[q[1]],P[q[2]],P[q[3]],col,0,ref);};
+
+  /* ---- torso profile (torso-local: y up the spine, z = belly). rows [y, half-width, half-depth, z offset] ---- */
+  const hipR=hipW*bw,waR=waistW*bw,shR=shW*(0.8+0.2*bw);
+  const KEY=[[-0.025,0.085*hipR,0.062*bdp,0],[0,0.168*Math.pow(hipR,0.9),0.105*bdp,-0.012],[0.07,0.162*hipR,0.098*bdp,-0.006],
+    [0.13,0.124*lerp(hipR,waR,0.45),0.08*bdp+belly*0.6,belly*0.4],[0.20,0.104*waR,0.072*bdp+belly,belly*0.8],
+    [0.27,0.122*lerp(waR,chestW,0.5),0.084*bdp+belly*0.5,0.006+belly*0.4],[0.33,0.134*chestW,0.096*bdp,0.004],[0.38,0.138*chestW,0.098*bdp,0.008],
+    [0.42,0.142*chestW,0.088*bdp,0.008],[0.465,0.168*shR,0.074*bdp,0],[0.50,0.10*(0.85+0.15*bw),0.055*(0.85+0.15*bdp),0]];
+  const prof=y=>{for(let i=0;i+1<KEY.length;i++){const A=KEY[i],B=KEY[i+1];if(y<=B[0]||i+2===KEY.length){const t=Math.max(0,Math.min(1,(y-A[0])/(B[0]-A[0])));
+      return [A[1]+(B[1]-A[1])*t,A[2]+(B[2]-A[2])*t,A[3]+(B[3]-A[3])*t];}}};
+  // bust: two soft lobes whose centres sit on the front vertex columns (±22.5°), so the front reads as
+  // two breasts with a sternum valley. Both falloffs are Gaussian: the lobes fade into the ribcage
+  // instead of ending on a hard crease, and the lower fade is a little fuller than the upper one.
+  const bx=0.050*chestW,bsx=0.024*chestW,by=0.372,bHi=0.052,bLo=0.055;
+  const bustD=(y,x,ca)=>{
+    if(bust<=0||ca<=0.06)return 0;
+    const front=Math.pow(ca,1.1);
+    const lobe=Math.exp(-((x-bx)*(x-bx))/(2*bsx*bsx))+Math.exp(-((x+bx)*(x+bx))/(2*bsx*bsx));
+    const q=(y-by)/(y>by?bHi:bLo);
+    return bust*0.062*lobe*Math.exp(-q*q)*front;};
+  const NS=16;const ring=(y,cut)=>{const r=[];for(let k=0;k<NS;k++){const a=k/NS*Math.PI*2,sa=Math.sin(a),ca=Math.cos(a);
+      const yy=y+(cut?cut*Math.pow(Math.abs(sa),0.62):0)+(y<0?0.032*Math.pow(Math.max(0,-ca),1.4):0);
+      const p=prof(yy);const x=p[0]*sa;const d=bustD(yy,x,ca);
+      r.push([x+sa*d,yy,p[1]*ca+p[2]+ca*d]);}return r;};
+  // v3 rings: weighted to the hip, waist, bust and shoulder curves. Stripes are coloured by Y, so the
+  // ring layout changes the silhouette only, never the suit pattern.
+  const RY=[0.04,0.08,0.12,0.16,0.20,0.27,0.30,0.325,0.35,0.375,0.40,0.428,0.465,0.50];
+  // The torso ends on a saddle-shaped hip ring: low at the front/back centre (the crotch), high over the
+  // hip bones. That ring is the suit's leg line, and it is stitched to the thighs below (bridgeLoop), so
+  // the hip and the legs are one continuous surface with real leg holes instead of a closed skirt.
+  const HIPY=-0.042,hipRingSrc=ring(HIPY,0.055);
+  const rings=[hipRingSrc];for(let i=0;i<RY.length;i++)rings.push(ring(RY[i]));
+  const hipRing=hipRingSrc.map(W),CROTCH=W([0,-0.055,0.018]);
+  const hipLoop=s=>s>0?[0,1,2,3,4,5,6,7,8].map(k=>hipRing[k]).concat([CROTCH])
+    :[8,9,10,11,12,13,14,15,0].map(k=>hipRing[k]).concat([CROTCH]);
+  // stitch a torso leg hole to the top ring of a thigh tube. Both loops are sorted by their angle around
+  // the thigh axis, then walked together; the unequal vertex counts are handled by whichever loop is
+  // "behind" in angle. Sorting (rather than trusting vertex order) keeps it winding-agnostic.
+  const bridgeLoop=(A,B,axisPt,u,v)=>{
+    const ang=p=>{const d=sub(p,axisPt);return Math.atan2(dot(d,v),dot(d,u));};
+    const srt=L=>L.map(p=>({p,a:ang(p)})).sort((x,y)=>x.a-y.a);
+    let aa=srt(A),bb=srt(B);
+    let best=0,bd=1e9;
+    bb.forEach((o,j)=>{const d=Math.abs(o.a-aa[0].a);if(d<bd){bd=d;best=j;}});
+    bb=bb.slice(best).concat(bb.slice(0,best));
+    const na=aa.length,nb=bb.length;let i=0,j=0;
+    const col=p=>suit==='trunks'?[RED,M_A]:[SK,M_SKIN];
+    while(i<na||j<nb){
+      const an=i+1<na?aa[i+1].a:aa[0].a+Math.PI*2,bn=j+1<nb?bb[j+1].a:bb[0].a+Math.PI*2;
+      if((an<=bn&&i<na)||j>=nb){const p1=aa[i].p,p2=aa[(i+1)%na].p,p3=bb[j%nb].p;
+        const c=col(mul(add(add(p1,p2),p3),1/3));T(p1,p2,p3,c[0],c[1],axisPt);i++;}
+      else{const p1=aa[i%na].p,p2=bb[(j+1)%nb].p,p3=bb[j%nb].p;
+        const c=col(mul(add(add(p1,p2),p3),1/3));T(p1,p2,p3,c[0],c[1],axisPt);j++;}}};
+  const axis=y=>[0,y,prof(y)[2]];
+  const SUIT_TOP=0.436;
+  const bandCol=y=>{
+    if(suit==='trunks'){if(y<0.07)return [RED,M_A];if(y<0.11)return [WHT,M_B];return [SK,M_SKIN];}
+    if(suit==='twopiece'){if(y<0.07)return [RED,M_A];if(y<0.11)return [WHT,M_B];if(y<0.26)return [SK,M_SKIN];
+      if(y<0.31)return [RED,M_A];if(y<0.35)return [WHT,M_B];if(y<SUIT_TOP)return [RED,M_A];return [SK,M_SKIN];}
+    if(y>=SUIT_TOP)return [SK,M_SKIN];
+    if(suit==='plain')return [RED,M_A];
+    if(y<0.085)return [RED,M_A];
+    return Math.floor((y-0.085)/0.043)%2?[WHT,M_B]:[RED,M_A];};
+  // straps are painted onto the torso skin (no floating quads): one angular facet column on each side,
+  // continuing from the suit top edge over the shoulder bevel to the back.
+  const strapX=0.082*chestW,strapHW=0.017,strapY=suit==='twopiece'?SUIT_TOP-0.006:SUIT_TOP;
+  const suitQuadCol=(y,x)=>{
+    if(suit!=='trunks'&&y>strapY-0.012&&Math.abs(Math.abs(x)-strapX)<strapHW)return [RED,M_STRAP];
+    return bandCol(y);};
+  for(let i=0;i+1<rings.length;i++){
+    for(let k=0;k<NS;k++){const k1=(k+1)%NS;
+      const xc=(rings[i][k][0]+rings[i+1][k][0]+rings[i][k1][0]+rings[i+1][k1][0])*0.25;
+      const yc=(rings[i][k][1]+rings[i+1][k][1]+rings[i][k1][1]+rings[i+1][k1][1])*0.25;
+      const c=suitQuadCol(yc,xc);Q(W(rings[i][k]),W(rings[i][k1]),W(rings[i+1][k1]),W(rings[i+1][k]),c[0],c[1],W(axis(yc)));}}
+  const top=[0,0.515,0];
+  for(let k=0;k<NS;k++){const k1=(k+1)%NS;
+    T(W(rings[rings.length-1][k]),W(rings[rings.length-1][k1]),W(top),SK,M_SKIN,W([0,0.44,0]));}
+  /* ---- neck + head (head-local, scaled by hsz) ---- */
+  const hp=PS.head,chh=Math.cos(hp),shh=Math.sin(hp),piv=[0,pivY,0.0];
+  const HW=p=>{p=mul(p,hsz);const y=p[1],z=p[2];return W(add(piv,[p[0],y*chh-z*shh,y*shh+z*chh]));};
+  const nr=(0.85+0.15*bw)*(1+1.2*Math.max(0,shW-1));
+  tube([W([0,0.47,-0.005]),W([0,0.50,0.0]),HW([0,0.06,0.0])],[0.046*nr,0.042*nr,0.038*nr],7,SK,M_SKIN,Wd([0,0,1]));
+  const HC=[0,0.125,0.012];
+  const HR=[[0.10,0.062,0.072,-0.006],[0.06,0.078,0.092,0],[0.015,0.077,0.093,0.002],[-0.035,0.062,0.078,0.006],[-0.08,0.048,0.062,0.010]];
+  const NH=10;
+  const hr=HR.map(([y,rx,rz,zo],j)=>{const r=[];for(let k=0;k<NH;k++){const a=k/NH*Math.PI*2,sa=Math.sin(a),ca=Math.cos(a);
+      let z=rz*ca+zo;if(ca>0.5&&k!==0)z-=0.012;
+      if(k===0){if(j===2)z+=0.014;if(j===3)z+=0.004;if(j===1)z+=0.006;}
+      r.push([rx*sa*(j===4&&ca>0.5?0.8:1),y,z]);}return r;});
+  const htop=[0,0.137,-0.01],hchin=[0,-0.124,0.028];
+  /* [world-edit 1/2] was: const capCol=hair==='cap'?[RED,M_CAP]:[HAIRC,M_HAIR];
+     A new descriptor flag Bd.cap paints a swim cap over the scalp for ANY hair style, so a ponytail can sit under a cap. */
+  const capCol=(hair==='cap'||Bd.cap)?[RED,M_CAP]:[HAIRC,M_HAIR];
+  const low=hair==='short'?0.012:0;  // short hair reaches a little lower at the back/sides
+  const hcol=(a,b,c)=>{const cy=(a[1]+b[1]+c[1])/3,cz=(a[2]+b[2]+c[2])/3;const t=Math.max(0,Math.min(1,(0.09-cz)/0.18));return cy>0.065-0.13*t-low*t;};
+  const HT=(a,b,c)=>{const cp=hcol(a,b,c);T(HW(add(HC,a)),HW(add(HC,b)),HW(add(HC,c)),cp?capCol[0]:SK,cp?capCol[1]:M_SKIN,HW(HC));};
+  for(let k=0;k<NH;k++){const k1=(k+1)%NH;HT(hr[0][k],hr[0][k1],htop);HT(hr[4][k1],hr[4][k],hchin);
+    for(let j=0;j<4;j++){HT(hr[j][k],hr[j][k1],hr[j+1][k1]);HT(hr[j][k],hr[j+1][k1],hr[j+1][k]);}}
+  /* ---- legs (pelvis space); quad/hamstring/calf/ankle shaping, suit paint carried onto the opening ---- */
+  const thR=lerp(1,lr,0.6)*(0.6+0.4*hipR);
+  const legShape=(i,n)=>{
+    const front=Math.max(0,n[2]),back=Math.max(0,-n[2]),side=Math.abs(n[0]);
+    let d=0;
+    if(i<=2){d+=0.012*thR*front*(i===1?1:i===2?0.65:0.30);d+=0.006*thR*back;d+=0.004*thR*side;}
+    else if(i===3)d+=0.006*thR*front;
+    else if(i===4)d+=0.002*lr*(1-side);
+    else if(i===5)d+=0.008*lr*back;
+    else if(i===6)d+=0.012*lr*back;
+    return d;};
+  for(const s of [-1,1]){const mir=v=>[v[0]*s,v[1],v[2]];const H=[s*0.070*lerp(1,hipR,0.6),0,-0.006];
+    const td=nrm(mir(PS.thigh)),sd=nrm(mir(PS.shin));const K=add(H,mul(td,0.40*legL));
+    const C1=add(K,mul(sd,0.15*legL)),C2=add(K,mul(sd,0.27*legL)),A=add(K,mul(sd,0.39*legL));
+    const legCol=i=>suit==='trunks'&&i<1?[RED,M_A]:[SK,M_SKIN];
+    const lr0=tube([add(H,mul(td,0.045*legL)),add(H,mul(td,0.12*legL)),add(H,mul(td,0.20*legL)),
+        add(H,mul(td,0.30*legL)),K,C1,C2,A],
+      [0.100*thR,0.092*thR,0.080*thR,0.060*thR,0.045*lr,0.052*lr,0.056*lr,0.024*lr],7,
+      legCol,0,[-s,0,0],legShape)[0];
+    // close the hip onto this thigh: the hip ring's half-loop + the crotch point stitch to the thigh top
+    const lu=nrm(sub([-s,0,0],mul(td,dot([-s,0,0],td))));
+    bridgeLoop(hipLoop(s),lr0,add(H,mul(td,0.06*legL)),lu,cross(td,lu));
+    const ff=nrm(mir(PS.ff)),fu=nrm(mir(PS.fu));const fuo=nrm(sub(fu,mul(ff,dot(fu,ff))));
+    wedge(add(add(A,mul(fuo,-0.075*fsz)),mul(ff,-0.055*fsz)),ff,fu,0.20*fsz,0.055*fsz,0.062*fsz,0.085*fsz,0.024*fsz,false,SK);}
+  /* ---- arms (torso-local, then W); deltoid / biceps / forearm shaping ---- */
+  const ar=lr*(0.75+0.25*shW);
+  const armShape=(i,n)=>{
+    const front=Math.max(0,n[2]),back=Math.max(0,-n[2]);
+    let d=0;
+    if(i===0)d+=0.010*ar;                              // deltoid cap
+    if(i===1){d+=0.009*ar*front;d+=0.004*ar*back;}     // biceps / triceps
+    if(i===3)d+=0.005*ar;                              // forearm belly
+    return d;};
+  for(const s of [-1,1]){const mir=v=>[v[0]*s,v[1],v[2]];const S=[s*0.155*shR,0.455,-0.005];
+    const ua=nrm(mir(PS.ua));const E=add(S,mul(ua,0.28*armL));
+    const tg=PS.tgt?mir([0.02,pivY+0.14*hsz,-0.11*hsz]):null;
+    const fa=tg?nrm(sub(tg,E)):nrm(mir(PS.fa));const Wr=add(E,mul(fa,0.25*armL));
+    const hu=mir(PS.hu);
+    tube([W(add(S,mul(ua,-0.03))),W(add(S,mul(ua,0.10*armL))),W(E),W(add(E,mul(fa,0.10*armL))),W(Wr)],
+      [0.062*ar,0.050*ar,0.036*ar,0.033*ar,0.021*lr*(0.6+0.4*ar)],7,SK,M_SKIN,Wd(cross(ua,hu)),armShape);
+    wedge(W(add(Wr,mul(fa,-0.02))),Wd(fa),Wd(hu),0.14*fsz*armL,0.050*fsz,0.042*fsz,0.030*fsz,0.017*fsz,true,SK);}
+  /* ---- hair extras (bun / ponytail), kept above the lowest body point so g.seat stays the body's ---- */
+  let mnB=1e9;for(let i=1;i<g.p.length;i+=3)if(g.p[i]<mnB)mnB=g.p[i];mnB/=SC;
+  if(hair==='bun'){const ax=nrm([0,0.55,-0.85]),c0=add(HC,mul(ax,0.105));let c=HW(c0);const r=0.05*hsz;
+    const axW=nrm(sub(HW(add(c0,ax)),c));if(c[1]-r<mnB)c=[c[0],mnB+r,c[2]];
+    let u=nrm(cross(axW,[1,0,0]));if(!isFinite(u[0]))u=[0,1,0];const v=cross(axW,u);const n=8,pa=add(c,mul(axW,r*0.85)),pb=add(c,mul(axW,-r*0.6));
+    const eq=[];for(let k=0;k<n;k++){const a=k/n*Math.PI*2;eq.push(add(c,add(mul(u,Math.cos(a)*r),mul(v,Math.sin(a)*r))));}
+    for(let k=0;k<n;k++){const k1=(k+1)%n;T(eq[k],eq[k1],pa,HAIRC,M_HAIR,c);T(eq[k],eq[k1],pb,HAIRC,M_HAIR,c);}}
+  if(hair==='ponytail'){const p0=HW(add(HC,[0,0.06,-0.05])),p1=HW(add(HC,[0,0.06,-0.105]));const d=nrm(PS.pony);
+    const back=nrm(sub(p1,p0)),L=0.17*hsz;
+    const p2=add(p1,mul(nrm(add(d,mul(back,0.3))),L*0.5)),p3=add(p2,mul(nrm(add(d,mul(back,0.05))),L*0.6));
+    const rr=[0.026*hsz,0.034*hsz,0.03*hsz,0];const P=[p0,p1,p2,p3].map((p,i)=>p[1]-rr[i]<mnB+0.005?[p[0],mnB+0.005+rr[i],p[2]]:p);
+    tube(P,rr,6,HAIRC,M_HAIR,[1,0,0]);}
+  let mn=1e9,mx=-1e9;for(let i=1;i<g.p.length;i+=3){if(g.p[i]<mn)mn=g.p[i];if(g.p[i]>mx)mx=g.p[i];}
+  g.seat=mn;g.top=mx;g.tris=g.p.length/9;g.body=Bd;
+  return g;}
+
+/* ================= world code starts here (everything below is new) ================= */
+// Female athlete preset (same descriptor fields as BODIES). cap:true = the [world-edit] flag above (white cap over a ponytail).
+const ATHLETE_F={name:'athlete_f',height:1.74,build:0.35,shoulders:1.12,bust:0.6,waist:0.92,hips:1.02,legs:1.05,arms:1.04,head:0.98,neck:1.00,hair:'ponytail',suit:'twopiece',cap:true};
+BODIES.push(ATHLETE_F);
+
+/* ================= CONFIG: every constant, with its unit ================= */
+const CONFIG={
+  seed:20240611,                                   // integer, unitless
+  world:{size:360,cell:2,exag:3,bottom:-18},       // size m (square, centred on 0,0); cell m (terrain mesh pitch); exag × (vertical relief); bottom = displayed m (underside of the solid)
+  relief:{wallH:28,wallStart:34,wallEnd:170,northUp:13,southUp:6,noiseScale:90,noiseBase:0.9,noiseHigh:21,floorAbove:0.35}, // heights in REAL m (before ×exag); wallStart/wallEnd/noiseScale = horizontal m
+  river:{amp:15,upSlope:0.04,downSlope:0.02,depth:0.18,bank:1.07,wUp:3.2,wDown:5.8},  // amp m (centreline swing); slopes = real m per horizontal m; depth/bank real m; widths m (half-width scale)
+  lakes:{lower:{level:2.7,depth:3.0,R:27,bank:0.05,fade0:18,fade1:50},                // level, depth real m; R = mean shore radius m; bank = real m per m; fade0/fade1 m from shore
+         upper:{level:12.8,depth:3.7,R:22,bank:0.10,fade0:14,fade1:42}},
+  sites:{padY:4.5,serviceY:13.4,lookoutY:19.4,shoreY:2.85,padR:9.5,padBlend:7,lookoutR:7,serviceR:4.5,shoreInset:3.6}, // *Y real m; radii m
+  stairs:{riser:0.16,tread:0.40,width:1.7,landing:5.0,landingHalfW:1.9,railOffset:0.95,railH:0.95,corridorW0:3.3,corridorW1:6,   // riser m (DISPLAYED = world, never stretched), tread m, tread width m, landing length m (outer ~3 m is mesh-flat), landing half-width m, rails m
+          specMaxRiser:0.18,specMinTread:0.28,landingMaxSlopeDeg:5},
+  player:{height:1.74,walk:2.4,run:4.2,stairFactor:0.8,turnRate:10,walkSlopeDeg:40,maxWade:0.06,slideBack:0.01,stride:2.8,glideTol:0.45}, // m, m/s, m/s, ×, 1/s, deg, m, m per blocked frame, m per gait cycle, m
+  camera:{fov:50,distMin:4,distMax:40,distDefault:11,pitchDefault:0.42,pitchMin:0.08,pitchMax:1.35,spring:0.18,rotSpeed:1.6,overviewDist:470,freeSpeed:14,freeFast:32,near:0.3,far:2600}, // deg, m, m, m, rad, rad, rad, s, rad/s, m, m/s, m/s, m, m
+  light:{dir:[-0.5,0.8,0.35],shadowExtent:60,shadowDist:170,shadowStrength:0.55},       // direction toward the sun (top left, afternoon); half-size m; m
+  rain:{max:1500,speed:14,box:[34,22,34]},                                              // particles (hard cap), m/s, m
+  quality:{Low:{pr:0.75,shadow:1024,trees:0.35,grass:0.3,msaa:0},Medium:{pr:1,shadow:2048,trees:0.7,grass:0.65,msaa:4},High:{pr:2,shadow:4096,trees:1,grass:1,msaa:4}}, // pixel ratio, shadow map px, fractions
+  audit:{hashN:33,contBound:4.0,contStep:0.5,simSeconds:60,simDt:1/60,routeSpeed:2.4}   // lattice size, m per step bound (displayed), m, s, s, m/s
+};
+
+/* ================= Core: pure, seeded, side-effect free (also runs inside the audit worker) ================= */
+function makeCore(CFG){
+  const EX=CFG.world.exag,WS=CFG.world.size,CELL=CFG.world.cell,NC=Math.round(WS/CELL),NV=NC+1,HALF=WS/2;
+  const SEED=CFG.seed|0,RL=CFG.relief,RV=CFG.river,ST=CFG.stairs,SI=CFG.sites,PL=CFG.player;
+  const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+  const sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
+  const hash2=(ix,iz,s)=>{let h=Math.imul(ix|0,374761393)^Math.imul(iz|0,668265263)^Math.imul(s|0,2147483647);h=Math.imul(h^(h>>>13),1274126177);h^=h>>>16;return (h>>>0)/4294967296;};
+  const vnoise=(x,z,s)=>{const ix=Math.floor(x),iz=Math.floor(z),fx=x-ix,fz=z-iz,u=fx*fx*(3-2*fx),v=fz*fz*(3-2*fz);
+    const a=hash2(ix,iz,s),b=hash2(ix+1,iz,s),c=hash2(ix,iz+1,s),d=hash2(ix+1,iz+1,s);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;};
+  const fbm=(x,z,oct,s)=>{let a=1,f=1,sum=0,nn=0;for(let i=0;i<oct;i++){sum+=a*vnoise(x*f,z*f,s+i*17);nn+=a;a*=0.42;f*=2.03;}return sum/nn;};
+  const rngMake=seed=>{let a=seed|0;return ()=>{a=(a+0x6D2B79F5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return ((t^(t>>>14))>>>0)/4294967296;};};
+  const smin=(a,b,k)=>{const h=Math.max(k-Math.abs(a-b),0);return Math.min(a,b)-h*h/(4*k);};
+
+  /* ---- seeded layout (all positions derive from the seed; heights are never sampled to place things) ---- */
+  const R_=rngMake(SEED*7919+13);
+  const ph0=R_()*6.2831,ph1=R_()*6.2831;
+  const cx=z=>RV.amp*(0.7*Math.sin(z/46+ph0)+0.3*Math.sin(z/19+ph1));          // shared river / valley centreline x(z), m
+  const mkLake=(c,x,z,name)=>({name,x,z,R0:c.R,level:c.level,depth:c.depth,bank:c.bank,f0:c.fade0,f1:c.fade1,p1:R_()*6.2831,p2:R_()*6.2831,p3:R_()*6.2831});
+  const lakeR=(L,th)=>L.R0*(1+0.2*Math.sin(2*th+L.p1)+0.12*Math.sin(3*th+L.p2)+0.07*Math.sin(5*th+L.p3));
+  const lakeSd=(L,x,z)=>Math.hypot(x-L.x,z-L.z)-lakeR(L,Math.atan2(z-L.z,x-L.x));
+  const ZL=50;
+  const LOW=mkLake(CFG.lakes.lower,cx(ZL),ZL,'Lower lake');
+  const zin=ZL-1.25*LOW.R0,zout=ZL+1.25*LOW.R0;
+  const riverLevel=z=>z<zin?LOW.level+RV.upSlope*(zin-z):z>zout?LOW.level-RV.downSlope*(z-zout):LOW.level; // real m, water surface
+  const riverW=z=>{const t=sstep(zin,zout+30,z),n=(vnoise(z/25,3.7,SEED+3)-0.5)*2;return RV.wUp+(RV.wDown-RV.wUp)*t+(1.1+1.0*t)*n+1.5*sstep(zout,zout+110,z);};
+
+  // base terrain without local rises (real m)
+  const baseOnly=(x,z)=>{
+    const u=x-cx(z),au=Math.abs(u),wall=RL.wallH*Math.pow(sstep(RL.wallStart,RL.wallEnd,au),1.3),wf=wall/RL.wallH;
+    let h=riverLevel(z)+RL.floorAbove+wall+RL.northUp*Math.pow(sstep(-70,-180,z),1.2)+RL.southUp*sstep(110,180,z);
+    const A=RL.noiseBase+RL.noiseHigh*Math.pow(wf,1.4);
+    let n=(fbm(x/RL.noiseScale,z/RL.noiseScale,5,SEED)-0.38)*A*1.6;
+    n+=(fbm(x/14+50,z/14,2,SEED+9)-0.5)*0.35;
+    return h+Math.max(n,-0.25);};
+  const MASS=[];
+  const baseH=(x,z)=>{let h=baseOnly(x,z);for(let i=0;i<MASS.length;i++){const m=MASS[i],dx=x-m.x,dz=z-m.z;h+=m.amp*Math.exp(-(dx*dx+dz*dz)/(2*m.r*m.r));}return h;};
+
+  const PR={s:0,d:0,i:0};      // scratch result of polyline projection (no per-call allocation)
+  const mkPoly=(pts,ds)=>{const cum=[0];for(let i=1;i<pts.length;i++)cum.push(cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));return {pts,cum,len:cum[cum.length-1],ds};};
+  const project=(P,x,z)=>{let best=1e18,bs=0,bi=0;const pts=P.pts,cum=P.cum;
+    for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1],ex=b[0]-a[0],ez=b[1]-a[1],l2=ex*ex+ez*ez;let t=l2>0?((x-a[0])*ex+(z-a[1])*ez)/l2:0;t=t<0?0:t>1?1:t;
+      const px=a[0]+ex*t,pz=a[1]+ez*t,dd=(x-px)*(x-px)+(z-pz)*(z-pz);if(dd<best){best=dd;bs=cum[i]+t*Math.sqrt(l2);bi=i;}}
+    PR.s=bs;PR.d=Math.sqrt(best);PR.i=bi;return PR.d;};
+  const pointAt=(P,s,out)=>{s=clamp(s,0,P.len);const i=Math.min(P.pts.length-2,Math.max(0,Math.floor(s/P.ds)));const a=P.pts[i],b=P.pts[i+1],l=P.cum[i+1]-P.cum[i]||1,t=clamp((s-P.cum[i])/l,0,1);
+    out.x=a[0]+(b[0]-a[0])*t;out.z=a[1]+(b[1]-a[1])*t;out.tx=(b[0]-a[0])/l;out.tz=(b[1]-a[1])/l;return out;};
+
+  // a flight: polyline sampled every 0.5 m; profile = flat landing, constant-grade ramp, flat landing (real m)
+  const makeFlight=(name,start,psi0,wa,wl,wp,lo,hi)=>{
+    const loD=lo*EX,hiD=hi*EX,n=Math.max(1,Math.ceil((hiD-loD)/ST.riser-1e-9)),riser=(hiD-loD)/n,tread=ST.tread,L=ST.landing,total=2*L+n*tread;
+    const ds=0.5,m=Math.ceil(total/ds),pts=[[start[0],start[1]]];let x=start[0],z=start[1];
+    for(let i=1;i<=m;i++){const s=(i-0.5)*ds,psi=psi0+wa*Math.sin(s/wl+wp);x+=Math.cos(psi)*ds;z+=Math.sin(psi)*ds;pts.push([x,z]);}
+    const P=mkPoly(pts,ds);
+    const F=Object.assign(P,{name,loD,hiD,lo,hi,n,riser,tread,L,total,width:ST.width,
+      prof:[[0,lo],[L,lo],[L+n*tread,hi],[P.len+1,hi]],w0:ST.corridorW0,w1:ST.corridorW1,cr:2.1,kind:'flight'});
+    F.treadTop=i=>loD+(i+1)*riser;
+    return F;};
+  const sampleAt=(F,s)=>pointAt(F,s,{x:0,z:0,tx:0,tz:0});
+  const bbox=(F,m)=>{let a=1e9,b=1e9,c=-1e9,d=-1e9;for(const p of F.pts){a=Math.min(a,p[0]);b=Math.min(b,p[1]);c=Math.max(c,p[0]);d=Math.max(d,p[1]);}F.bb=[a-m,b-m,c+m,d+m];};
+  const mkPad=(name,pts,y,r,blend,cr)=>{const P=mkPoly(pts,1);return Object.assign(P,{name,prof:[[0,y],[1e9,y]],w0:r,w1:blend,cr,kind:'pad',y});};
+
+  // layout chain: lower shore -> powerhouse -> service route -> rim lookout
+  const shoreW=LOW.x-lakeR(LOW,Math.PI);
+  const E1=[shoreW-SI.shoreInset,ZL];
+  const F1=makeFlight('Powerhouse to the lower lake shore',E1,Math.PI,0,10,0,SI.shoreY,SI.padY);
+  const H1=F1.pts[F1.pts.length-1];
+  const padPH=mkPad('Powerhouse pad',[[H1[0]-17,ZL-1],[H1[0]-1.5,ZL]],SI.padY,SI.padR,SI.padBlend,SI.padR-0.6);
+  const PHC=[H1[0]-14,ZL-1.5];                         // powerhouse centre; door on its east wall faces the stair head
+  const YARD=[H1[0]-5.5,ZL-1.5];                       // service yard in front of the door
+  const F2=makeFlight('Powerhouse to the upper lake service route',[H1[0]-9,ZL-SI.padR+0.2],-Math.PI/2-0.3,0.45,14,R_()*6.2831,SI.padY,SI.serviceY);
+  const T2=F2.pts[F2.pts.length-1];
+  const UP=mkLake(CFG.lakes.upper,0,T2[1],'Upper lake');
+  UP.x=T2[0]-5-lakeR(UP,0);                            // east shore sits 5 m from the service route
+  const padSR=mkPad('Service route',[[T2[0],T2[1]+9],[T2[0],T2[1]-3]],SI.serviceY,SI.serviceR,6,SI.serviceR);
+  const F3=makeFlight('Upper lake service route to the rim lookout',[T2[0],T2[1]],-1.25,0.3,12,R_()*6.2831,SI.serviceY,SI.lookoutY);
+  const L3=F3.pts[F3.pts.length-1],l3p=F3.pts[F3.pts.length-3],l3d=Math.hypot(L3[0]-l3p[0],L3[1]-l3p[1])||1,L3D=[(L3[0]-l3p[0])/l3d,(L3[1]-l3p[1])/l3d];
+  const LKC=[L3[0]+L3D[0]*3.5,L3[1]+L3D[1]*3.5];       // lookout disc centre
+  const padLK=mkPad('Rim lookout pad',[[L3[0],L3[1]],[L3[0]+L3D[0]*6,L3[1]+L3D[1]*6]],SI.lookoutY,SI.lookoutR,8,SI.lookoutR);
+  const lakes=[LOW,UP],FEATS=[padPH,padSR,padLK,F1,F2,F3];
+  for(const F of FEATS)bbox(F,F.w0+F.w1+1);
+  // local rises so each site sits on natural-looking ground (amp = target - natural height, so cut/fill stays small)
+  [[PHC[0],PHC[1],SI.padY,30],[T2[0],T2[1],SI.serviceY,30],[LKC[0],LKC[1],SI.lookoutY,42]].forEach(m=>MASS.push({x:m[0],z:m[1],r:m[3],amp:m[2]-baseOnly(m[0],m[1])}));
+
+  const applyLake=(h,x,z,L)=>{
+    const dx=x-L.x,dz=z-L.z;if(Math.abs(dx)>L.R0*1.6+L.f1||Math.abs(dz)>L.R0*1.6+L.f1)return h;
+    const R=lakeR(L,Math.atan2(dz,dx)),sd=Math.hypot(dx,dz)-R;let T,w;
+    if(sd<0){const q=Math.min(1,-sd/(R*0.7)),s=q*q*(3-2*q);T=L.level-L.depth*Math.pow(s,0.8)+(vnoise(x/10,z/10,SEED+3)-0.5)*0.6*s;w=1;}
+    else{T=L.level+L.bank*Math.min(sd,50)+0.3*sstep(0,1.5,sd);w=1-sstep(L.f0,L.f1,sd);}
+    return h+(T-h)*w;};
+  const carve=(h,x,z)=>{const d=Math.abs(x-cx(z)),W=riverW(z);if(d>W*1.6+30)return h;
+    const s=sstep(0.5*W,1.6*W,d),ch=riverLevel(z)-RV.depth+RV.bank*s+0.06*Math.max(0,d-1.6*W);return smin(h,ch,0.35);};
+  const applyFeat=(h,x,z,F)=>{const b=F.bb;if(x<b[0]||x>b[2]||z<b[1]||z>b[3])return h;
+    const d=project(F,x,z);if(d>=F.w0+F.w1)return h;
+    const pr=F.prof;let y=pr[pr.length-1][1];
+    for(let k=0;k<pr.length-1;k++){if(PR.s<=pr[k+1][0]){const a=pr[k],c=pr[k+1],t=c[0]>a[0]?clamp((PR.s-a[0])/(c[0]-a[0]),0,1):1;y=a[1]+(c[1]-a[1])*t;break;}}
+    return h+(y-h)*(1-sstep(F.w0,F.w0+F.w1,d));};
+  const heightReal=(x,z)=>{let h=baseH(x,z);h=applyLake(h,x,z,LOW);h=applyLake(h,x,z,UP);h=carve(h,x,z);for(let i=0;i<FEATS.length;i++)h=applyFeat(h,x,z,FEATS[i]);return h;};
+  const heightAt=(x,z)=>EX*heightReal(x,z);            // DISPLAYED height (m): the one height every system uses
+
+  /* ---- displayed height grid + triangle-exact interpolation (the same triangles the mesh draws) ---- */
+  let HG=null;
+  const buildGrid=()=>{if(HG)return HG;HG=new Float32Array(NV*NV);for(let j=0;j<NV;j++)for(let i=0;i<NV;i++)HG[j*NV+i]=heightAt(-HALF+i*CELL,-HALF+j*CELL);return HG;};
+  const meshY=(x,z)=>{if(!HG)buildGrid();let fx=clamp((x+HALF)/CELL,0,NC-1e-6),fz=clamp((z+HALF)/CELL,0,NC-1e-6);const i=Math.floor(fx),j=Math.floor(fz),tx=fx-i,tz=fz-j,k=j*NV+i;
+    const a=HG[k],b=HG[k+1],c=HG[k+NV],d=HG[k+NV+1];return tz<=tx?a+(b-a)*tx+(d-b)*tz:a+(d-c)*tx+(c-a)*tz;};
+  const meshNormalY=(x,z)=>{if(!HG)buildGrid();let fx=clamp((x+HALF)/CELL,0,NC-1e-6),fz=clamp((z+HALF)/CELL,0,NC-1e-6);const i=Math.floor(fx),j=Math.floor(fz),tx=fx-i,tz=fz-j,k=j*NV+i;
+    const a=HG[k],b=HG[k+1],c=HG[k+NV],d=HG[k+NV+1];const gx=(tz<=tx?b-a:d-c)/CELL,gz=(tz<=tx?d-b:c-a)/CELL;return 1/Math.sqrt(1+gx*gx+gz*gz);};
+
+  /* ---- stairs: tread tops come from the flight (lo + (i+1)*riser); the walker uses the same numbers ---- */
+  // stairHit = flight index under the point (or -1); stairKind = 1 on a tread, 2 on a flat landing slab (the landing slab is flat by construction,
+  // so the player never sees the 2 m terrain mesh bend where the ramp meets the landing)
+  let stairHit=-1,stairKind=0;
+  const stairTop=(x,z)=>{stairHit=-1;stairKind=0;for(let k=0;k<3;k++){const F=FLIGHTS[k],b=F.bb;if(x<b[0]||x>b[2]||z<b[1]||z>b[3])continue;
+      const d=project(F,x,z),s=PR.s,e=F.L+F.n*F.tread;
+      if(d<=F.width/2+0.1&&s>=F.L&&s<e){const i=Math.min(F.n-1,Math.floor((s-F.L)/F.tread));stairHit=k;stairKind=1;return F.treadTop(i);}
+      if(d<=ST.landingHalfW){if(s<F.L){stairHit=k;stairKind=2;return F.loD;}if(s>=e){stairHit=k;stairKind=2;return F.hiD;}}}return NaN;};
+  const FLIGHTS=[F1,F2,F3];
+  const groundY=(x,z)=>{const m=meshY(x,z),t=stairTop(x,z);return t>m?t:m;};
+  const treadInfo=(F,i)=>{const o={x:0,z:0,tx:0,tz:0};pointAt(F,F.L+(i+0.5)*F.tread,o);const yaw=Math.atan2(o.tx,o.tz);
+    const hw=F.width/2,cs=Math.cos(yaw),sn=Math.sin(yaw);let g=1e9;
+    for(const sx of [-hw,hw])for(const sz of [-F.tread/2,F.tread/2]){g=Math.min(g,meshY(o.x+sx*cs+sz*sn,o.z-sx*sn+sz*cs));}
+    return {x:o.x,z:o.z,tx:o.tx,tz:o.tz,yaw,top:F.treadTop(i),ground:meshY(o.x,o.z),bottom:g-0.3};};
+
+  /* ---- water ---- */
+  const waterDepth=(x,z,g)=>{let d=0;for(let k=0;k<2;k++){const L=lakes[k];if(Math.abs(x-L.x)<L.R0*1.7+3&&Math.abs(z-L.z)<L.R0*1.7+3&&lakeSd(L,x,z)<2){const w=L.level*EX-g;if(w>d)d=w;}}
+    if(Math.abs(x-cx(z))<2*riverW(z)){const w=riverLevel(z)*EX-g;if(w>d)d=w;}return d;};
+
+  /* ---- walker: the ONLY movement rule (player, glide and audit all call it) ---- */
+  const LIM=HALF-3,TANL=Math.tan(PL.walkSlopeDeg*Math.PI/180);
+  // the powerhouse footprint (walls + foundation, 10.8 x 7.8 m) blocks walking; you look in through the door and windows
+  const BLD=[PHC[0]-5.5,PHC[1]-4.0,PHC[0]+5.5,PHC[1]+4.0];
+  const inBld=(x,z)=>x>BLD[0]&&x<BLD[2]&&z>BLD[1]&&z<BLD[3];
+  const walkerStep=(st,dx,dz,speed,dt)=>{
+    const len=Math.hypot(dx,dz);if(len<1e-9)return 0;dx/=len;dz/=len;
+    const nx=clamp(st.x+dx*speed*dt,-LIM,LIM),nz=clamp(st.z+dz*speed*dt,-LIM,LIM),mx=nx-st.x,mz=nz-st.z,md=Math.hypot(mx,mz);if(md<1e-9)return 0;
+    const g=groundY(nx,nz),inNew=stairHit>=0,dh=g-st.y;
+    if(waterDepth(nx,nz,g)>PL.maxWade)return 2;                       // she stops at the waterline
+    if(inBld(nx,nz))return 3;                                          // solid walls
+    // stairs: a step up of at most one riser is automatic (riser = displayed riser); elsewhere the walkable slope limit applies
+    const ok=(inNew||st.on)?Math.abs(dh)<=ST.riser+1e-6:Math.abs(dh)/md<=TANL;
+    if(ok){st.x=nx;st.z=nz;st.y=g;st.on=inNew;return 0;}
+    st.x-=dx*PL.slideBack;st.z-=dz*PL.slideBack;st.y=groundY(st.x,st.z);st.on=stairHit>=0;return 1;   // too steep: slide back a little
+  };
+  const walkableAt=(x,z)=>Math.abs(x)<=LIM&&Math.abs(z)<=LIM&&waterDepth(x,z,meshY(x,z))<=PL.maxWade;
+  const lineWalkable=(ax,az,bx,bz)=>{const L=Math.hypot(bx-ax,bz-az),n=Math.max(1,Math.ceil(L/0.8)),sl=L/n;let py=meshY(ax,az);
+    for(let i=1;i<=n;i++){const t=i/n,x=ax+(bx-ax)*t,z=az+(bz-az)*t;if(Math.abs(x)>LIM||Math.abs(z)>LIM)return false;const y=meshY(x,z);
+      if(Math.abs(y-py)/sl>TANL*0.92||waterDepth(x,z,y)>PL.maxWade||inBld(x,z))return false;py=y;}return true;};
+  // chain of way-points along the three flights (1 m apart): shore -> stair head -> yard -> service route -> lookout
+  const chain=[];const chainMark={};
+  {const add=(F,rev)=>{const a=F.pts.filter((p,i)=>i%2===0||i===F.pts.length-1);chain.push(...a);};
+   chainMark.f1lo=0;add(F1);chainMark.f1hi=chain.length-1;chain.push([YARD[0],YARD[1]]);chainMark.yard=chain.length-1;
+   chainMark.f2lo=chain.length;add(F2);chainMark.f2hi=chain.length-1;chainMark.f3lo=chain.length;add(F3);chainMark.f3hi=chain.length-1;}
+  const planPath=(sx,sz,tx,tz)=>{if(!walkableAt(tx,tz))return null;if(lineWalkable(sx,sz,tx,tz))return [[tx,tz]];
+    const near=(px,pz)=>{let best=-1,bd=1e18;for(let i=0;i<chain.length;i++){const d=(chain[i][0]-px)*(chain[i][0]-px)+(chain[i][1]-pz)*(chain[i][1]-pz);if(d<bd&&lineWalkable(px,pz,chain[i][0],chain[i][1])){bd=d;best=i;}}return best;};
+    const a=near(sx,sz),b=near(tx,tz);if(a<0||b<0)return null;const wp=[],step=a<=b?1:-1;for(let i=a;i!==b+step;i+=step)wp.push(chain[i]);wp.push([tx,tz]);return wp;};
+  const simulateRoute=(wps,speed)=>{const dt=CFG.audit.simDt,st={x:wps[0][0],z:wps[0][1],y:0,on:false};st.y=groundY(st.x,st.z);st.on=stairHit>=0;
+    let t=0,steps=0,stairSteps=0,treadSteps=0,minClear=1e9,maxUp=0,idx=1,stuck=0,nan=0;
+    while(idx<wps.length&&t<900){const w=wps[idx],dx=w[0]-st.x,dz=w[1]-st.z;if(Math.hypot(dx,dz)<PL.glideTol){idx++;continue;}
+      const py=st.y,r=walkerStep(st,dx,dz,speed*(st.on?PL.stairFactor:1),dt);t+=dt;steps++;if(st.on)stairSteps++;if(stairKind===1)treadSteps++;
+      const mc=st.y-meshY(st.x,st.z);if(mc<minClear)minClear=mc;if(st.y-py>maxUp)maxUp=st.y-py;if(!isFinite(st.x+st.y+st.z))nan++;
+      if(r!==0){stuck++;if(stuck>240)break;}else stuck=0;}
+    return {done:idx>=wps.length,time:t,steps,stairSteps,treadSteps,minClear,maxUp,nan,end:[st.x,st.z]};};
+
+  /* ---- pose (walk / idle / climb), driven by a phase; angles in rad, + = backward swing / knee flexion ---- */
+  const pose=(o,ph,t,move,climb)=>{
+    const A=(0.46+0.18*climb)*move,K=(0.55+0.65*climb)*move,Aa=0.42*move,s=Math.sin(ph),c=Math.cos(ph);
+    o.hipL=-A*s;o.hipR=A*s;o.kneeL=K*Math.max(0,c);o.kneeR=K*Math.max(0,-c);
+    o.armL=Aa*s;o.armR=-Aa*s;o.lean=0.04*move+0.16*climb*move;
+    o.breath=0.005*Math.sin(6.2831*0.22*t)*(1-move)+0.012*move*Math.abs(s)*0;o.headYaw=0.22*Math.sin(6.2831*0.07*t)*(1-move);
+    o.bob=0.012*move*Math.abs(Math.cos(ph));return o;};
+  /* ---- rain pool: fixed typed arrays, hard cap, no allocation after construction ---- */
+  const makeRain=()=>{const max=CFG.rain.max,pos=new Float32Array(max*3),r=rngMake(SEED+99),bx=CFG.rain.box[0],by=CFG.rain.box[1],bz=CFG.rain.box[2];
+    const o={pos,max,active:0,
+      reset(fx,fy,fz){for(let i=0;i<max;i++){pos[i*3]=fx+(r()-0.5)*bx;pos[i*3+1]=fy-4+r()*by;pos[i*3+2]=fz+(r()-0.5)*bz;}},
+      setActive(n){o.active=Math.max(0,Math.min(max,n|0));},
+      step(dt,fx,fy,fz){const n=o.active,v=CFG.rain.speed*dt;for(let i=0;i<n;i++){const k=i*3;pos[k+1]-=v;
+        if(pos[k+1]<fy-4||Math.abs(pos[k]-fx)>bx*0.5||Math.abs(pos[k+2]-fz)>bz*0.5){pos[k]=fx+(r()-0.5)*bx;pos[k+1]=fy+by*(0.5+r()*0.5);pos[k+2]=fz+(r()-0.5)*bz;}}}};
+    return o;};
+  const effects=s=>({easing:!s.reducedMotion,rain:!s.reducedMotion&&!!s.rain,shimmer:!s.reducedMotion});
+
+  /* ---- hash of the terrain lattice (FNV-1a over quantised displayed heights) ---- */
+  const terrainHash=()=>{let h=2166136261>>>0;const n=CFG.audit.hashN;for(let j=0;j<n;j++)for(let i=0;i<n;i++){const q=Math.round(heightAt(-HALF+i/(n-1)*WS,-HALF+j/(n-1)*WS)*100)|0;
+      h^=q&255;h=Math.imul(h,16777619);h^=(q>>8)&255;h=Math.imul(h,16777619);h^=(q>>16)&255;h=Math.imul(h,16777619);}return (h>>>0).toString(16);};
+  const gridHash=()=>{if(!HG)buildGrid();let h=2166136261>>>0;for(let i=0;i<HG.length;i+=7){const q=Math.round(HG[i]*100)|0;h^=q&255;h=Math.imul(h,16777619);h^=(q>>8)&255;h=Math.imul(h,16777619);}return (h>>>0).toString(16);};
+
+  const places=[
+    {id:'powerhouse',name:'Powerhouse',x:YARD[0],z:YARD[1],r:12},
+    {id:'lower',name:'Lower lake shore',x:E1[0],z:E1[1],r:8},
+    {id:'service',name:'Upper lake service route',x:T2[0],z:T2[1],r:9},
+    {id:'lookout',name:'Rim lookout',x:LKC[0],z:LKC[1],r:8}];
+  const snapshot=()=>JSON.parse(JSON.stringify({seed:SEED,size:WS,exag:EX,river:{zin,zout},
+    lakes:lakes.map(L=>({name:L.name,x:L.x,z:L.z,R0:L.R0,level:L.level,depth:L.depth,p1:L.p1,p2:L.p2,p3:L.p3})),
+    sites:{E1,H1,PHC,YARD,T2,L3,LKC,L3D},places,
+    flights:FLIGHTS.map(F=>({name:F.name,n:F.n,riser:F.riser,tread:F.tread,len:F.len,L:F.L,lo:F.lo,hi:F.hi,pts:F.pts}))}));
+  return {CFG,EX,WS,HALF,CELL,NC,NV,SEED,clamp,sstep,vnoise,fbm,hash2,rngMake,cx,riverLevel,riverW,lakeR,lakeSd,lakes,LOW,UP,FLIGHTS,FEATS,
+    heightReal,heightAt,buildGrid,getGrid:()=>HG,meshY,meshNormalY,groundY,stairTop,treadInfo,waterDepth,walkerStep,walkableAt,lineWalkable,planPath,simulateRoute,
+    chain,chainMark,pose,makeRain,effects,terrainHash,gridHash,places,snapshot,project,pointAt,sampleAt,PR,pad:{PH:padPH,SR:padSR,LK:padLK},
+    sites:{E1,H1,PHC,YARD,T2,L3,LKC,L3D},baseOnly,TANL,LIM,stairHitIndex:()=>stairHit,stairKindIndex:()=>stairKind};
+}
+
+/* ================= Audit: runs inside a background worker (this function is stringified into it) ================= */
+function runAudit(makeCore,CFG){
+  const t0=Date.now(),res=[];let nanCount=0;
+  const add=(name,expected,actual,pass)=>res.push({name,expected:String(expected),actual:String(actual),pass:!!pass});
+  const A=makeCore(CFG),tb=Date.now();A.buildGrid();const buildMs=Date.now()-tb;
+  const h1=A.terrainHash(),h2=makeCore(CFG).terrainHash(),h3=makeCore(Object.assign({},CFG,{seed:CFG.seed+1})).terrainHash();
+  add('Same seed gives the same terrain hash twice','identical',h1+' / '+h2,h1===h2);
+  add('A different seed gives a different hash','different',h1+' vs '+h3,h1!==h3);
+  let maxStep=0;const stp=CFG.audit.contStep,half=A.HALF;
+  for(const c of [-150,-60,0,50,120]){let pa=A.heightAt(-half,c),pb=A.heightAt(c,-half);
+    for(let t=stp;t<=A.WS;t+=stp){const a=A.heightAt(-half+t,c),b=A.heightAt(c,-half+t);maxStep=Math.max(maxStep,Math.abs(a-pa),Math.abs(b-pb));pa=a;pb=b;}}
+  add('Height samples are continuous','max step < '+CFG.audit.contBound+' m per '+stp+' m',maxStep.toFixed(3)+' m',maxStep<CFG.audit.contBound);
+  let maxRiser=0,minTread=1e9,maxDev=0,maxDevMesh=0,floating=0,stepsTot=0;
+  for(const F of A.FLIGHTS){minTread=Math.min(minTread,F.tread);let prev=F.loD;
+    for(let i=0;i<F.n;i++){const ti=A.treadInfo(F,i);maxRiser=Math.max(maxRiser,ti.top-prev);prev=ti.top;
+      maxDev=Math.max(maxDev,Math.abs(ti.top-A.heightAt(ti.x,ti.z)));maxDevMesh=Math.max(maxDevMesh,Math.abs(ti.top-ti.ground));if(ti.bottom>ti.ground)floating++;stepsTot++;}
+    maxRiser=Math.max(maxRiser,Math.abs(F.hiD-prev));}
+  add('Every stair step up is at most one riser (displayed m)','<= '+CFG.stairs.riser+' (spec max '+CFG.stairs.specMaxRiser+')',maxRiser.toFixed(4)+' over '+stepsTot+' steps',maxRiser<=CFG.stairs.riser+1e-9&&maxRiser<=CFG.stairs.specMaxRiser);
+  add('Tread depth is at least the spec minimum','>= '+CFG.stairs.specMinTread+' m',minTread+' m',minTread>=CFG.stairs.specMinTread);
+  add('Treads snap to the displayed heightfield (top vs graded ground at the tread centre)','<= '+CFG.stairs.riser+' m',maxDev.toFixed(3)+' m',maxDev<=CFG.stairs.riser+0.02);
+  add('Mesh under every tread is within reach of the tread foundation','<= '+(CFG.stairs.riser+0.25).toFixed(2)+' m (2 m mesh bends at the ramp ends)',maxDevMesh.toFixed(3)+' m',maxDevMesh<=CFG.stairs.riser+0.25);
+  add('Every step has a solid foundation below the ground','0 floating steps',floating+' floating',floating===0);
+  let landSlope=0,landMesh=0;
+  for(const F of A.FLIGHTS){for(const end of [0,1]){const s0=end?F.len-F.L+0.3:0.2,s1=end?F.len-0.2:F.L-0.3;
+      for(let s=s0;s+0.5<=s1;s+=0.5){const a=A.sampleAt(F,s),b=A.sampleAt(F,s+0.5);landSlope=Math.max(landSlope,Math.atan2(Math.abs(A.groundY(b.x,b.z)-A.groundY(a.x,a.z)),0.5)*180/Math.PI);}
+      const o0=end?F.len-F.L+2.3:0.2,o1=end?F.len-0.2:F.L-2.3;   // outer part of the landing, clear of the 2 m mesh cell that meets the ramp
+      for(let s=o0;s+0.5<=o1;s+=0.5){const a=A.sampleAt(F,s),b=A.sampleAt(F,s+0.5);landMesh=Math.max(landMesh,Math.atan2(Math.abs(A.meshY(b.x,b.z)-A.meshY(a.x,a.z)),0.5)*180/Math.PI);}}}
+  add('Landings are flat: displayed ground along the landing (slope in degrees)','<= '+CFG.stairs.landingMaxSlopeDeg,landSlope.toFixed(2),landSlope<=CFG.stairs.landingMaxSlopeDeg);
+  add('Landings are flat: terrain mesh in the outer landing (slope in degrees)','<= '+CFG.stairs.landingMaxSlopeDeg,landMesh.toFixed(2),landMesh<=CFG.stairs.landingMaxSlopeDeg);
+  const ch=A.chain,m=A.chainMark,S=A.sites,sp=CFG.audit.routeSpeed;
+  const routes=[['Walk route: powerhouse to the lower lake shore',[[S.YARD[0],S.YARD[1]]].concat(ch.slice(m.f1lo,m.f1hi+1).reverse()),0],
+    ['Walk route: powerhouse to the upper lake service route',[[S.YARD[0],S.YARD[1]]].concat(ch.slice(m.f2lo,m.f2hi+1)),1],
+    ['Walk route: service route to the rim lookout',ch.slice(m.f3lo,m.f3hi+1),2]];
+  let minClear=1e9,simNan=0;
+  for(const r of routes){const o=A.simulateRoute(r[1],sp);minClear=Math.min(minClear,o.minClear);simNan+=o.nan;const F=A.FLIGHTS[r[2]];
+    const last=r[1][r[1].length-1],dEnd=Math.hypot(o.end[0]-last[0],o.end[1]-last[1]),treadDist=o.treadSteps*CFG.audit.simDt*sp*CFG.player.stairFactor,need=0.85*F.n*F.tread;
+    add(r[0],'completes, climbing every tread of the flight (>= '+need.toFixed(1)+' m on treads)','done='+o.done+', end '+dEnd.toFixed(2)+' m away, '+treadDist.toFixed(1)+' m on treads of '+(F.n*F.tread).toFixed(1)+' m, max step up '+o.maxUp.toFixed(3)+' m, '+o.time.toFixed(0)+' s',o.done&&dEnd<1&&treadDist>=need&&o.maxUp<=CFG.stairs.riser+1e-6);}
+  add('Player stays above the displayed terrain on every route sample','min clearance >= 0',minClear.toFixed(4)+' m',minClear>=-1e-6);
+  const gh0=A.gridHash(),th0=A.terrainHash();
+  // 60 s of walking and idling: no NaN in position, rotation or height
+  const dt=CFG.audit.simDt,st={x:S.YARD[0],z:S.YARD[1],y:A.groundY(S.YARD[0],S.YARD[1]),on:false},po={},wp=ch.slice(m.f2lo,m.f2hi+1);let idx=0,ph=0,yaw=0,mv=0,cb=0,rainOk=true;const rain=A.makeRain();rain.reset(0,0,0);rain.setActive(CFG.rain.max);
+  for(let f=0,N=Math.round(CFG.audit.simSeconds/dt);f<N;f++){const t=f*dt,walking=t<35;
+    if(walking&&idx<wp.length){const dx=wp[idx][0]-st.x,dz=wp[idx][1]-st.z;if(Math.hypot(dx,dz)<0.45)idx++;else{A.walkerStep(st,dx,dz,sp*(st.on?CFG.player.stairFactor:1),dt);yaw=Math.atan2(dx,dz);}}
+    const target=walking&&idx<wp.length?1:0;mv+=(target-mv)*Math.min(1,dt*6);cb+=((st.on?1:0)-cb)*Math.min(1,dt*6);ph+=mv*dt*6.2831*sp/CFG.player.stride;
+    A.pose(po,ph,t,mv,cb);rain.step(dt,st.x,st.y,st.z);if(rain.active>CFG.rain.max)rainOk=false;
+    for(const v of [st.x,st.y,st.z,yaw,po.hipL,po.hipR,po.kneeL,po.kneeR,po.armL,po.armR,po.lean,po.breath,po.headYaw,po.bob])if(!isFinite(v))nanCount++;}
+  nanCount+=simNan;
+  add('No NaN in any position, rotation or height over 60 s of walking and idling','0 NaN',nanCount+' NaN',nanCount===0);
+  add('Walking does not change the terrain hash','unchanged',(A.gridHash()===gh0&&A.terrainHash()===th0)?'unchanged':'changed',A.gridHash()===gh0&&A.terrainHash()===th0);
+  add('Rain never exceeds 1,500 particles','<= 1500',rain.active+' (pool '+rain.max+')',rainOk&&rain.active<=1500&&rain.max<=1500);
+  const fx=A.effects({reducedMotion:true,rain:true}),fx0=A.effects({reducedMotion:false,rain:false});
+  add('Reduced motion turns off easing, rain and shimmer','easing=false, rain=false, shimmer=false','easing='+fx.easing+', rain='+fx.rain+', shimmer='+fx.shimmer,!fx.easing&&!fx.rain&&!fx.shimmer);
+  add('Rain stays off unless switched on in Settings','rain=false by default','rain='+fx0.rain,fx0.rain===false);
+  return {results:res,nanCount,perf:{auditMs:Date.now()-t0,gridBuildMs:buildMs}};
+}
+/* ================= Shared state, immutable snapshot, audit hook ================= */
+const $=id=>document.getElementById(id);
+const tBuild0=performance.now();
+const core=makeCore(CONFIG);core.buildGrid();
+// Data flows one way: the world reads this frozen snapshot (plus pure height functions) and never writes back.
+const SNAP=(function deepFreeze(o){Object.getOwnPropertyNames(o).forEach(k=>{const v=o[k];if(v&&typeof v==='object')deepFreeze(v);});return Object.freeze(o);})(core.snapshot());
+const AUDIT={status:'pending',testResults:[],allPassed:null,nanCount:0,perf:{fps:0,frameMs:0,worldBuildMs:0,auditMs:0,gridBuildMs:0}};
+window.__WORLD_AUDIT__=AUDIT;
+const S={quality:'Medium',rain:false,reverse:false,reducedMotion:!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches),sound:false,volume:0.5,preset:'follow'};
+const FX=()=>core.effects(S);
+$('seed-val').textContent=String(SNAP.seed);
+
+function renderChecks(){
+  const st=AUDIT.status,n=AUDIT.testResults.length,ok=AUDIT.testResults.filter(r=>r.pass).length;
+  const label={pending:'\u2026 Self-check: pending',complete:'\u2713 Self-check: complete, '+ok+'/'+n+' passed',failed:'\u2717 Self-check: failed, '+ok+'/'+n+' passed',unavailable:'\u2013 Self-check: unavailable (no worker)'}[st];
+  $('audit-status').textContent=label;$('checks-summary').textContent=label+(AUDIT.perf.auditMs?'  \u00b7  audit '+AUDIT.perf.auditMs+' ms in a worker':'');
+  const tb=$('checks-body');tb.textContent='';
+  for(const r of AUDIT.testResults){const tr=document.createElement('tr');
+    [r.name,r.expected,r.actual].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});
+    const td=document.createElement('td');td.className='res';td.textContent=r.pass?'\u2713 Pass':'\u2717 Fail';td.style.color=r.pass?'var(--moss)':'var(--clay)';tr.appendChild(td);tb.appendChild(tr);}
+}
+(function startAudit(){
+  renderChecks();
+  try{
+    const src='const makeCore='+makeCore.toString()+';\nconst runAudit='+runAudit.toString()+';\nself.onmessage=function(e){try{self.postMessage({ok:true,out:runAudit(makeCore,e.data)});}catch(err){self.postMessage({ok:false,err:String(err&&err.message||err)});}};';
+    const w=new Worker(URL.createObjectURL(new Blob([src],{type:'text/javascript'})));
+    w.onmessage=e=>{const d=e.data;
+      if(d.ok){AUDIT.testResults=d.out.results;AUDIT.nanCount=d.out.nanCount;Object.assign(AUDIT.perf,d.out.perf);AUDIT.allPassed=d.out.results.every(r=>r.pass);AUDIT.status=AUDIT.allPassed?'complete':'failed';}
+      else{AUDIT.status='failed';AUDIT.allPassed=false;AUDIT.testResults=[{name:'Audit worker ran',expected:'no error',actual:d.err,pass:false}];}
+      renderChecks();w.terminate();};
+    w.onerror=()=>{AUDIT.status='unavailable';AUDIT.allPassed=null;renderChecks();};
+    w.postMessage(CONFIG);
+  }catch(err){AUDIT.status='unavailable';renderChecks();}
+})();
+
+/* ================= WebGL2 renderer (hand-written, flat-shaded low-poly) ================= */
+const canvas=$('view');
+const gl=canvas.getContext('webgl2',{antialias:false,alpha:false,powerPreference:'high-performance'});
+if(!gl){$('loading').textContent='This browser has no WebGL2, so the valley cannot be drawn.';return {CONFIG,audit:AUDIT};}
+
+const M4={_t:new Float32Array(16),
+  ident(o){o.fill(0);o[0]=o[5]=o[10]=o[15]=1;return o;},
+  mul(o,a,b){const r=M4._t;for(let c=0;c<4;c++)for(let q=0;q<4;q++)r[c*4+q]=a[q]*b[c*4]+a[4+q]*b[c*4+1]+a[8+q]*b[c*4+2]+a[12+q]*b[c*4+3];o.set(r);return o;},
+  persp(o,fy,asp,n,f){const t=1/Math.tan(fy/2);o.fill(0);o[0]=t/asp;o[5]=t;o[10]=(f+n)/(n-f);o[11]=-1;o[14]=2*f*n/(n-f);return o;},
+  ortho(o,l,r,b,t,n,f){o.fill(0);o[0]=2/(r-l);o[5]=2/(t-b);o[10]=-2/(f-n);o[12]=-(r+l)/(r-l);o[13]=-(t+b)/(t-b);o[14]=-(f+n)/(f-n);o[15]=1;return o;},
+  lookAt(o,ex,ey,ez,cx,cy,cz){let fx=cx-ex,fy=cy-ey,fz=cz-ez;let l=Math.hypot(fx,fy,fz);fx/=l;fy/=l;fz/=l;
+    let sx=fy*0-fz*1,sy=fz*0-fx*0,sz=fx*1-fy*0;l=Math.hypot(sx,sy,sz)||1;sx/=l;sy/=l;sz/=l;const ux=sy*fz-sz*fy,uy=sz*fx-sx*fz,uz=sx*fy-sy*fx;
+    o[0]=sx;o[1]=ux;o[2]=-fx;o[3]=0;o[4]=sy;o[5]=uy;o[6]=-fy;o[7]=0;o[8]=sz;o[9]=uz;o[10]=-fz;o[11]=0;
+    o[12]=-(sx*ex+sy*ey+sz*ez);o[13]=-(ux*ex+uy*ey+uz*ez);o[14]=fx*ex+fy*ey+fz*ez;o[15]=1;return o;},
+  T(o,x,y,z){M4.ident(o);o[12]=x;o[13]=y;o[14]=z;return o;},
+  Rx(o,a){M4.ident(o);const c=Math.cos(a),s=Math.sin(a);o[5]=c;o[6]=s;o[9]=-s;o[10]=c;return o;},
+  Ry(o,a){M4.ident(o);const c=Math.cos(a),s=Math.sin(a);o[0]=c;o[2]=-s;o[8]=s;o[10]=c;return o;},
+  Rz(o,a){M4.ident(o);const c=Math.cos(a),s=Math.sin(a);o[0]=c;o[1]=s;o[4]=-s;o[5]=c;return o;},
+  pivot(o,px,py,pz){o[12]=px-(o[0]*px+o[4]*py+o[8]*pz);o[13]=py-(o[1]*px+o[5]*py+o[9]*pz);o[14]=pz-(o[2]*px+o[6]*py+o[10]*pz);return o;}};
+const mat=()=>new Float32Array(16);
+
+function prog(vs,fs){const p=gl.createProgram();
+  [[gl.VERTEX_SHADER,vs],[gl.FRAGMENT_SHADER,fs]].forEach(([t,src])=>{const s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));gl.attachShader(p,s);});
+  gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(p));
+  const u={},n=gl.getProgramParameter(p,gl.ACTIVE_UNIFORMS);for(let i=0;i<n;i++){const inf=gl.getActiveUniform(p,i);u[inf.name.replace('[0]','')]=gl.getUniformLocation(p,inf.name);}
+  return {p,u};}
+
+const VS_LIT=`#version 300 es
+precision highp float;
+layout(location=0) in vec3 aPos;
+layout(location=1) in vec3 aNor;
+layout(location=2) in vec3 aCol;
+layout(location=3) in vec4 aIA;   // instance: xyz offset, w scale
+layout(location=4) in vec4 aIB;   // instance: x yaw, yzw colour multiplier
+uniform mat4 uVP; uniform mat4 uModel; uniform float uInst; uniform float uTime; uniform float uWind;
+out vec3 vPos; out vec3 vNor; out vec3 vCol;
+void main(){
+  vec3 wp; vec3 n; vec3 col=aCol;
+  if(uInst>0.5){
+    float c=cos(aIB.x), s=sin(aIB.x);
+    vec3 p=aPos*aIA.w;
+    wp=vec3(c*p.x+s*p.z, p.y, -s*p.x+c*p.z)+aIA.xyz;
+    n=vec3(c*aNor.x+s*aNor.z, aNor.y, -s*aNor.x+c*aNor.z);
+    if(uWind>0.0){ float hg=aPos.y*aIA.w; // grass sway: vertex shader, tips move most
+      wp.x+=(sin(uTime*1.8+wp.x*0.21+wp.z*0.17)+0.5*sin(uTime*3.1+wp.z*0.4))*0.12*uWind*hg*hg;
+      wp.z+=sin(uTime*1.4+wp.x*0.3)*0.05*uWind*hg*hg; }
+    col*=aIB.yzw;
+  } else { wp=(uModel*vec4(aPos,1.0)).xyz; n=mat3(uModel)*aNor; }
+  vPos=wp; vNor=n; vCol=col;
+  gl_Position=uVP*vec4(wp,1.0);
+}`;
+const FS_LIT=`#version 300 es
+precision highp float; precision highp sampler2DShadow;
+in vec3 vPos; in vec3 vNor; in vec3 vCol;
+uniform vec3 uCam; uniform vec3 uL; uniform mat4 uLVP; uniform sampler2DShadow uShadow; uniform float uTexel;
+uniform vec3 uFog; uniform float uFogD; uniform float uMat; uniform float uTime; uniform float uRain; uniform float uShStr;
+out vec4 o;
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+void main(){
+  vec3 n=normalize(vNor); if(!gl_FrontFacing) n=-n;       // flat shading, double sided
+  float ndl=max(dot(n,uL),0.0);
+  vec4 sp=uLVP*vec4(vPos+n*0.07,1.0);
+  vec3 q=sp.xyz/sp.w*0.5+0.5;
+  float sh=1.0;
+  if(q.x>0.0&&q.x<1.0&&q.y>0.0&&q.y<1.0&&q.z<1.0){
+    float s=0.0;
+    for(int i=-1;i<=1;i++)for(int j=-1;j<=1;j++) s+=texture(uShadow,vec3(q.xy+vec2(float(i),float(j))*uTexel,q.z-0.0008));
+    s/=9.0; float e=min(min(q.x,1.0-q.x),min(q.y,1.0-q.y)); sh=mix(1.0,s,smoothstep(0.0,0.06,e));
+  }
+  sh=mix(1.0,sh,uShStr);
+  vec3 hemi=mix(vec3(0.50,0.43,0.35),vec3(0.66,0.76,0.90),n.y*0.5+0.5);
+  vec3 col=vCol*(hemi*0.80+vec3(1.0,0.93,0.78)*ndl*sh*0.80);
+  if(uMat>1.5){
+    vec3 V=normalize(uCam-vPos); vec3 R=reflect(-uL,n); float g=pow(max(dot(R,V),0.0),24.0)*0.30; float sp2=0.0;
+    if(uRain>0.5){ vec2 cell=floor(vPos.xz*9.0+vPos.y*3.0); sp2=step(0.965,hash(cell+floor(uTime*5.0)))*0.9; }  // rain sparkle
+    col+=vec3(g+sp2);
+  }
+  float d=length(vPos-uCam); float f=1.0-exp(-d*d*uFogD*uFogD); col=mix(col,uFog,clamp(f,0.0,1.0));
+  o=vec4(col,1.0);
+}`;
+const FS_EMPTY=`#version 300 es
+precision highp float; out vec4 o; void main(){o=vec4(1.0);}`;
+const VS_WATER=`#version 300 es
+precision highp float; precision highp sampler2D;
+layout(location=0) in vec3 aPos;
+uniform mat4 uVP; uniform sampler2D uHeight; uniform vec3 uGrid; uniform float uTime; uniform float uYOff; uniform float uShimmer;
+out vec3 vPos; out float vLevel; out vec2 vUV;
+void main(){
+  vec3 p=aPos; vLevel=p.y;
+  vec2 uv=((p.xz+uGrid.x)/uGrid.y+0.5)/uGrid.z; vUV=uv;
+  float h=textureLod(uHeight,uv,0.0).r; float depth=vLevel-h;
+  float shore=1.0-smoothstep(0.0,1.6,depth);               // displaced a little near the shore
+  p.y+=uYOff+uShimmer*shore*0.05*(sin(p.x*0.9+uTime*0.9)+sin(p.z*1.1-uTime*0.7));
+  vPos=p; gl_Position=uVP*vec4(p,1.0);
+}`;
+const FS_WATER=`#version 300 es
+precision highp float; precision highp sampler2D;
+in vec3 vPos; in float vLevel; in vec2 vUV;
+uniform sampler2D uHeight; uniform sampler2D uScene; uniform vec2 uRes; uniform vec3 uCam; uniform vec3 uL; uniform vec3 uFog; uniform float uFogD;
+uniform float uTime; uniform float uShimmer; uniform float uMode; uniform float uFoam;
+out vec4 o;
+vec2 wave(vec2 p,vec2 d,float f,float s,float a,float t){return d*cos(dot(p,d)*f+t*s)*f*a;}
+void main(){
+  float h=texture(uHeight,vUV).r; float depth=max(vLevel-h,0.0);
+  float t=uTime*uShimmer;                                   // shimmer off => static normals
+  vec2 p=vPos.xz;
+  vec2 g=wave(p,vec2(0.8,0.6),1.3,1.1,0.06,t)+wave(p,vec2(-0.6,0.8),2.1,1.5,0.04,t)+wave(p,vec2(0.2,-0.98),3.7,2.1,0.022,t)+wave(p,vec2(-0.95,-0.3),5.3,2.6,0.014,t);
+  vec3 n=normalize(vec3(-g.x,1.0,-g.y));                    // animated procedural normal map
+  vec3 V=normalize(uCam-vPos);
+  float dp=smoothstep(0.0,9.0,depth);
+  vec3 tint=mix(vec3(0.16,0.74,0.72),vec3(0.05,0.20,0.50),dp);  // turquoise shallows -> deep blue
+  float dist=length(uCam-vPos); float fog=1.0-exp(-dist*dist*uFogD*uFogD);
+  if(uMode>0.5){ o=vec4(mix(tint*0.9,uFog,fog),0.15*(0.4+dp)); return; }  // translucent volume slice
+  vec2 suv=gl_FragCoord.xy/uRes;
+  vec2 off=n.xz*0.035*clamp(depth*0.6,0.0,1.0);
+  vec3 sc=texture(uScene,suv+off).rgb;                      // refraction of what lies under the surface
+  float ab=1.0-exp(-depth*0.30);
+  vec3 col=mix(sc*vec3(0.92,1.0,1.0),tint,clamp(ab*0.85+0.08,0.0,1.0));
+  float fr=pow(1.0-max(dot(n,V),0.0),4.0)*0.8+0.03;
+  vec3 sky=mix(vec3(0.80,0.84,0.82),vec3(0.50,0.68,0.88),clamp(n.y*0.6+0.2,0.0,1.0));
+  col=mix(col,sky,fr);
+  vec3 H=normalize(uL+V); col+=vec3(1.0,0.95,0.8)*pow(max(dot(n,H),0.0),110.0)*0.55;
+  float w1=sin(vPos.x*1.7+t*1.2)*0.07*uFoam+sin(vPos.z*1.3-t*0.9)*0.07*uFoam;
+  float foam=(1.0-smoothstep(0.0,uFoam,depth+w1))*0.9+(1.0-smoothstep(0.0,0.20*uFoam,abs(depth-uFoam*1.5-0.25*uFoam*sin(t*0.8+vPos.x*0.6))))*0.45;
+  foam=clamp(foam,0.0,1.0);
+  col=mix(col,vec3(0.97,0.98,0.95),foam*0.85);
+  col=mix(col,uFog,fog);
+  float a=max(smoothstep(0.0,0.22,depth)*0.97,foam*0.8);
+  o=vec4(col,a);
+}`;
+const VS_FS=`#version 300 es
+out vec2 vN; void main(){vec2 p=vec2(float((gl_VertexID<<1)&2),float(gl_VertexID&2));vN=p*2.0-1.0;gl_Position=vec4(vN,0.9999,1.0);}`;
+const FS_SKY=`#version 300 es
+precision highp float; in vec2 vN; uniform vec3 uR; uniform vec3 uU; uniform vec3 uF; uniform vec2 uT; out vec4 o;
+void main(){vec3 d=normalize(uF+vN.x*uT.x*uT.y*uR+vN.y*uT.x*uU);float t=d.y;
+  vec3 hor=vec3(0.88,0.85,0.74),mid=vec3(0.66,0.80,0.90),top=vec3(0.36,0.58,0.84);
+  vec3 c=mix(hor,mid,smoothstep(0.0,0.25,t));c=mix(c,top,smoothstep(0.2,0.8,t));if(t<0.0)c=mix(hor,vec3(0.78,0.78,0.70),smoothstep(0.0,0.3,-t));o=vec4(c,1.0);}`;
+const FS_BLIT=`#version 300 es
+precision highp float; precision highp sampler2D; in vec2 vN; uniform sampler2D uTex; out vec4 o; void main(){o=vec4(texture(uTex,vN*0.5+0.5).rgb,1.0);}`;
+const VS_RAIN=`#version 300 es
+precision highp float; layout(location=0) in vec3 aPos; uniform mat4 uVP; void main(){gl_Position=uVP*vec4(aPos,1.0);}`;
+const FS_RAIN=`#version 300 es
+precision highp float; out vec4 o; void main(){o=vec4(0.74,0.82,0.90,0.38);}`;
+let PG;
+try{PG={lit:prog(VS_LIT,FS_LIT),shadow:prog(VS_LIT,FS_EMPTY),water:prog(VS_WATER,FS_WATER),sky:prog(VS_FS,FS_SKY),blit:prog(VS_FS,FS_BLIT),rain:prog(VS_RAIN,FS_RAIN)};}
+catch(err){$('loading').textContent='Shader error: '+err.message;return {CONFIG,audit:AUDIT};}
+
+/* ---- mesh builder (flat colours, normals from winding; the shader makes shading double-sided) ---- */
+class Mesh{constructor(){this.p=[];this.n=[];this.c=[];}
+  tri(a,b,c,col){const ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2],vx=c[0]-a[0],vy=c[1]-a[1],vz=c[2]-a[2];let nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;const l=Math.hypot(nx,ny,nz);if(l<1e-12)return;nx/=l;ny/=l;nz/=l;
+    this.p.push(a[0],a[1],a[2],b[0],b[1],b[2],c[0],c[1],c[2]);for(let i=0;i<3;i++){this.n.push(nx,ny,nz);this.c.push(col[0],col[1],col[2]);}}
+  quad(a,b,c,d,col){this.tri(a,b,c,col);this.tri(a,c,d,col);}
+  hex(P,col){this.quad(P[0],P[1],P[3],P[2],col);this.quad(P[4],P[6],P[7],P[5],col);this.quad(P[0],P[4],P[5],P[1],col);this.quad(P[2],P[3],P[7],P[6],col);this.quad(P[0],P[2],P[6],P[4],col);this.quad(P[1],P[5],P[7],P[3],col);}
+  box(cx,y0,cz,sx,sy,sz,yaw,col){const c=Math.cos(yaw),s=Math.sin(yaw),hx=sx/2,hz=sz/2,P=[];
+    for(let i=0;i<8;i++){const lx=(i&1)?hx:-hx,lz=(i&4)?hz:-hz,ly=(i&2)?sy:0;P.push([cx+lx*c+lz*s,y0+ly,cz-lx*s+lz*c]);}this.hex(P,col);}
+  lbox(cx,cz,yaw,lx,lz,y0,sx,sy,sz,col){const c=Math.cos(yaw),s=Math.sin(yaw);this.box(cx+lx*c+lz*s,y0,cz-lx*s+lz*c,sx,sy,sz,yaw,col);}
+  beam(a,b,w,h,col){const dx=b[0]-a[0],dy=b[1]-a[1],dz=b[2]-a[2],l=Math.hypot(dx,dy,dz);if(l<1e-6)return;const d=[dx/l,dy/l,dz/l];
+    let sx=d[2],sz=-d[0];const sl=Math.hypot(sx,sz);if(sl<1e-4){sx=1;sz=0;}else{sx/=sl;sz/=sl;}
+    const ux=d[1]*sz,uy=d[2]*sx-d[0]*sz,uz=-d[1]*sx,P=[];
+    for(let i=0;i<8;i++){const e=(i&4)?b:a,s=(i&1)?w/2:-w/2,u=(i&2)?h/2:-h/2;P.push([e[0]+sx*s+ux*u,e[1]+uy*u,e[2]+sz*s+uz*u]);}this.hex(P,col);}
+  frustum(cx,y0,cz,r0,r1,h,seg,col,rot){rot=rot||0;for(let i=0;i<seg;i++){const a0=rot+i/seg*6.2831853,a1=rot+(i+1)/seg*6.2831853;
+    const A=[cx+Math.cos(a0)*r0,y0,cz+Math.sin(a0)*r0],B=[cx+Math.cos(a1)*r0,y0,cz+Math.sin(a1)*r0];
+    if(r1<1e-6)this.tri(A,B,[cx,y0+h,cz],col);else this.quad(A,B,[cx+Math.cos(a1)*r1,y0+h,cz+Math.sin(a1)*r1],[cx+Math.cos(a0)*r1,y0+h,cz+Math.sin(a0)*r1],col);}}
+}
+function makeGeo(P,N,C,inst){const vao=gl.createVertexArray();gl.bindVertexArray(vao);
+  const att=(a,loc,size)=>{const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,a,gl.STATIC_DRAW);gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,size,gl.FLOAT,false,0,0);};
+  att(P,0,3);if(N)att(N,1,3);if(C)att(C,2,3);
+  let n=0;if(inst){const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,inst,gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(3);gl.vertexAttribPointer(3,4,gl.FLOAT,false,32,0);gl.vertexAttribDivisor(3,1);gl.enableVertexAttribArray(4);gl.vertexAttribPointer(4,4,gl.FLOAT,false,32,16);gl.vertexAttribDivisor(4,1);n=inst.length/8;}
+  gl.bindVertexArray(null);return {vao,count:P.length/3,n};}
+const fromMesh=(m,inst)=>makeGeo(new Float32Array(m.p),new Float32Array(m.n),new Float32Array(m.c),inst);
+
+/* ---- terrain: thick solid (top, four edge walls with strata, underside), flat colours by elevation + slope ---- */
+const EXG=core.EX,HALFW=core.HALF;
+const CL={gl:[0.40,0.62,0.22],gm:[0.62,0.68,0.28],hi:[0.60,0.58,0.36],rock:[0.58,0.53,0.48],rock2:[0.44,0.40,0.38],snow:[0.96,0.97,1.0],gravel:[0.78,0.70,0.54],path:[0.82,0.74,0.56],bed:[0.66,0.60,0.44]};
+const mix3=(o,a,b,t)=>{o[0]=a[0]+(b[0]-a[0])*t;o[1]=a[1]+(b[1]-a[1])*t;o[2]=a[2]+(b[2]-a[2])*t;};
+function gravelMask(x,z,h){let g=0;
+  for(const L of core.lakes){if(Math.abs(x-L.x)<L.R0*1.7+10&&Math.abs(z-L.z)<L.R0*1.7+10){const sd=core.lakeSd(L,x,z);if(sd<4)g=Math.max(g,1-core.sstep(0,4,sd));}}
+  const d=Math.abs(x-core.cx(z)),W=core.riverW(z);if(d<2.4*W&&h<core.riverLevel(z)*EXG+7)g=Math.max(g,1-core.sstep(1.0*W,2.4*W,d));return g;}
+function padMask(x,z){let m=0;for(const F of core.FEATS){const b=F.bb;if(x<b[0]||x>b[2]||z<b[1]||z>b[3])continue;const d=core.project(F,x,z),w=1-core.sstep(F.cr*0.92,F.cr*1.08+0.4,d);if(w>m)m=w;}return m;}
+function terrainColor(x,z,hD,ny,fi,o){
+  const j=(core.hash2(fi,7,3)-0.5)*0.10;
+  mix3(o,CL.gl,CL.gm,core.sstep(12,60,hD));mix3(o,o,CL.hi,core.sstep(70,100,hD)*0.6);
+  const rk=Math.max(core.sstep(0.88,0.72,ny),core.sstep(80,135,hD)*0.55);mix3(o,o,ny<0.8?CL.rock2:CL.rock,rk);
+  const sn=core.sstep(98,118,hD+(core.vnoise(x/20,z/20,5)-0.5)*14)*core.sstep(0.5,0.72,ny);mix3(o,o,CL.snow,sn);
+  const g=gravelMask(x,z,hD);if(g>0)mix3(o,o,CL.gravel,g*0.9);
+  if(core.waterDepth(x,z,hD)>0)mix3(o,o,CL.bed,0.9);
+  const pm=padMask(x,z);if(pm>0)mix3(o,o,CL.path,pm);
+  for(let k=0;k<3;k++)o[k]=Math.max(0,Math.min(1,o[k]*(1+j)));}
+function buildTerrain(){
+  const NC=core.NC,NV=core.NV,CELL=core.CELL,HG=core.getGrid(),nT=NC*NC*2;
+  const P=new Float32Array(nT*9),N=new Float32Array(nT*9),C=new Float32Array(nT*9),col=[0,0,0];let o=0,fi=0;
+  const X=i=>-HALFW+i*CELL;
+  const put=(ia,ja,ib,jb,ic,jc)=>{const ax=X(ia),az=X(ja),ay=HG[ja*NV+ia],bx=X(ib),bz=X(jb),by=HG[jb*NV+ib],cx2=X(ic),cz=X(jc),cy=HG[jc*NV+ic];
+    const ux=bx-ax,uy=by-ay,uz=bz-az,vx=cx2-ax,vy=cy-ay,vz=cz-az;let nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;const l=Math.hypot(nx,ny,nz)||1;nx/=l;ny/=l;nz/=l;
+    terrainColor((ax+bx+cx2)/3,(az+bz+cz)/3,(ay+by+cy)/3,Math.abs(ny),fi++,col);
+    P[o]=ax;P[o+1]=ay;P[o+2]=az;P[o+3]=bx;P[o+4]=by;P[o+5]=bz;P[o+6]=cx2;P[o+7]=cy;P[o+8]=cz;
+    for(let k=0;k<3;k++){N[o+k*3]=nx;N[o+k*3+1]=ny;N[o+k*3+2]=nz;C[o+k*3]=col[0];C[o+k*3+1]=col[1];C[o+k*3+2]=col[2];}o+=9;};
+  for(let j=0;j<NC;j++)for(let i=0;i<NC;i++){put(i,j,i+1,j+1,i+1,j);put(i,j,i,j+1,i+1,j+1);}
+  // solid sides + bottom
+  const m=new Mesh(),bot=CONFIG.world.bottom,lv=[bot,10,24,40,60,85,120,500];
+  const SC=[[0.50,0.34,0.22],[0.62,0.45,0.28],[0.46,0.32,0.22],[0.70,0.52,0.32],[0.56,0.42,0.30],[0.62,0.55,0.48],[0.78,0.78,0.80]];
+  const side=(get)=>{for(let i=0;i<NC;i++){const A=get(i),B=get(i+1);for(let k=0;k<7;k++){const al=Math.min(lv[k],A[1]),ah=Math.min(lv[k+1],A[1]),bl=Math.min(lv[k],B[1]),bh=Math.min(lv[k+1],B[1]);
+      if(ah-al<1e-4&&bh-bl<1e-4)continue;m.quad([A[0],al,A[2]],[B[0],bl,B[2]],[B[0],bh,B[2]],[A[0],ah,A[2]],SC[k]);}}};
+  side(i=>[X(i),HG[i],-HALFW]);side(i=>[X(i),HG[NC*NV+i],HALFW]);side(j=>[-HALFW,HG[j*NV],X(j)]);side(j=>[HALFW,HG[j*NV+NC],X(j)]);
+  m.quad([-HALFW,bot,-HALFW],[HALFW,bot,-HALFW],[HALFW,bot,HALFW],[-HALFW,bot,HALFW],[0.34,0.26,0.20]);
+  return {top:makeGeo(P,N,C),sides:fromMesh(m)};}
+/* ================= World assembly (reads the frozen snapshot / pure functions only) ================= */
+const TER=buildTerrain();
+const LAKEG=core.lakes.map(buildLake);
+const RIVERG=buildRiver();
+const texH=gl.createTexture();
+gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texH);
+gl.texImage2D(gl.TEXTURE_2D,0,gl.R16F,core.NV,core.NV,0,gl.RED,gl.FLOAT,core.getGrid());
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+
+const K={wall:[0.88,0.78,0.60],trim:[0.40,0.26,0.16],roof:[0.62,0.27,0.17],con:[0.64,0.62,0.58],floor:[0.40,0.38,0.36],wood:[0.52,0.36,0.20],wood2:[0.62,0.46,0.28],
+  stone:[0.78,0.74,0.66],stone2:[0.72,0.68,0.60],dash:[0.95,0.91,0.76],steel:[0.45,0.47,0.50],panel:[0.10,0.18,0.38],panel2:[0.14,0.24,0.46],
+  clay:[0.64,0.28,0.17],ochre:[0.77,0.55,0.16],moss:[0.31,0.42,0.23],brass:[0.80,0.62,0.22]};
+const MS=new Mesh(),MP=new Mesh(),ST=CONFIG.stairs;
+const SITE=core.sites;
+
+// ---- powerhouse: foundation, hollow chamber (door + windows, empty inside), roof with parapet + crest rail, solar panels on supports ----
+(function buildPowerhouse(){
+  const px=SITE.PHC[0],pz=SITE.PHC[1],y0=CONFIG.sites.padY*EXG,fY=y0+0.28,H=4.0,t=0.35;
+  MS.box(px,y0-1.6,pz,11,1.88,8,0,K.con);                       // foundation / plinth, grounded below the pad
+  MS.box(px,fY-0.02,pz,10.2,0.04,7.2,0,K.floor);                // interior floor
+  const runX=(zc,x0,x1,ops)=>{let cur=x0;for(const o of ops){
+      if(o[0]>cur)MS.box((cur+o[0])/2,fY,zc,o[0]-cur,H,t,0,K.wall);
+      if(o[2]>0){MS.box((o[0]+o[1])/2,fY,zc,o[1]-o[0],o[2],t,0,K.wall);MS.box((o[0]+o[1])/2,fY+o[2]-0.05,zc,o[1]-o[0]+0.3,0.08,t+0.25,0,K.trim);}
+      if(o[3]<H)MS.box((o[0]+o[1])/2,fY+o[3],zc,o[1]-o[0],H-o[3],t,0,K.wall);cur=o[1];}
+    if(x1>cur)MS.box((cur+x1)/2,fY,zc,x1-cur,H,t,0,K.wall);};
+  const runZ=(xc,z0,z1,ops)=>{let cur=z0;for(const o of ops){
+      if(o[0]>cur)MS.box(xc,fY,(cur+o[0])/2,t,H,o[0]-cur,0,K.wall);
+      if(o[2]>0){MS.box(xc,fY,(o[0]+o[1])/2,t,o[2],o[1]-o[0],0,K.wall);MS.box(xc,fY+o[2]-0.05,(o[0]+o[1])/2,t+0.25,0.08,o[1]-o[0]+0.3,0,K.trim);}
+      if(o[3]<H)MS.box(xc,fY+o[3],(o[0]+o[1])/2,t,H-o[3],o[1]-o[0],0,K.wall);cur=o[1];}
+    if(z1>cur)MS.box(xc,fY,(cur+z1)/2,t,H,z1-cur,0,K.wall);};
+  runX(pz-3.5,px-5.175,px+5.175,[[px-3.0,px-0.8,0.9,2.7],[px+0.8,px+3.0,0.9,2.7]]);
+  runX(pz+3.5,px-5.175,px+5.175,[[px-1.2,px+1.2,0.9,2.7]]);
+  runZ(px-5,pz-3.325,pz+3.325,[]);
+  runZ(px+5,pz-3.325,pz+3.325,[[pz-0.65,pz+0.65,0,2.3],[pz+1.5,pz+2.9,0.9,2.6]]);
+  // door frame + a leaf standing ajar (geometry choice: door 1.3 m wide x 2.3 m high, so a 1.74 m person passes under the lintel)
+  MS.box(px+5,fY,pz-0.72,0.42,2.3,0.1,0,K.trim);MS.box(px+5,fY,pz+0.72,0.42,2.3,0.1,0,K.trim);MS.box(px+5,fY+2.3,pz,0.42,0.14,1.55,0,K.trim);
+  MS.box(px+5.5,fY-0.12,pz,0.9,0.12,1.5,0,K.stone);             // door step
+  {const a=1.22,hx=px+5.18,hz=pz+0.62,dx=Math.sin(a),dz=-Math.cos(a);MS.box(hx+dx*0.6,fY,hz+dz*0.6,1.2,2.2,0.06,Math.atan2(-dz,dx),K.wood2);}
+  MS.box(px,fY+H,pz,11,0.3,8,0,K.roof);                         // roof slab
+  const rt=fY+H+0.3;
+  MS.box(px,rt,pz-3.9,11,0.4,0.22,0,K.wall);MS.box(px,rt,pz+3.9,11,0.4,0.22,0,K.wall);MS.box(px-5.4,rt,pz,0.22,0.4,8,0,K.wall);MS.box(px+5.4,rt,pz,0.22,0.4,8,0,K.wall);
+  {const per=[[-5.4,-3.9],[5.4,-3.9],[5.4,3.9],[-5.4,3.9],[-5.4,-3.9]];let prev=null;   // crest rail: a scale cue on top of the wall
+   for(let e=0;e<4;e++){const a=per[e],b=per[e+1],n=Math.max(1,Math.round(Math.hypot(b[0]-a[0],b[1]-a[1])/1.8));
+     for(let i=0;i<=n;i++){if(e>0&&i===0)continue;const x=px+a[0]+(b[0]-a[0])*i/n,z=pz+a[1]+(b[1]-a[1])*i/n;MS.box(x,rt+0.4,z,0.07,0.8,0.07,0,K.trim);
+       const top=[x,rt+1.2,z],mid=[x,rt+0.8,z];if(prev){MS.beam(prev[0],top,0.06,0.06,K.trim);MS.beam(prev[1],mid,0.05,0.05,K.trim);}prev=[top,mid];}}}
+  // solar panels: two rows of four, tilted ~22 degrees toward the afternoon sun, standing on short grounded supports
+  for(const r of [[pz-0.3,pz-1.32],[pz+2.3,pz+1.28]]){const zF=r[0],zB=r[1],yF=rt+0.32,yB=yF+0.41;const pt=(x,tt)=>[x,yF+(yB-yF)*tt,zF+(zB-zF)*tt];
+    for(let i=0;i<4;i++){const x0=px-4.2+i*2.1,x1=x0+2.0;
+      for(let a=0;a<2;a++)for(let b=0;b<2;b++){const xa=x0+(x1-x0)*a/2,xb=x0+(x1-x0)*(a+1)/2;MP.quad(pt(xa,b/2),pt(xb,b/2),pt(xb,(b+1)/2),pt(xa,(b+1)/2),(a+b)%2?K.panel:K.panel2);}
+      MS.beam(pt(x0,0),pt(x1,0),0.06,0.06,K.steel);MS.beam(pt(x0,1),pt(x1,1),0.06,0.06,K.steel);MS.beam(pt(x0,0),pt(x0,1),0.06,0.06,K.steel);MS.beam(pt(x1,0),pt(x1,1),0.06,0.06,K.steel);
+      for(const x of [x0+0.2,(x0+x1)/2,x1-0.2]){MS.box(x,rt,zF,0.08,yF-rt,0.08,0,K.steel);MS.box(x,rt,zB,0.08,yB-rt,0.08,0,K.steel);}}}
+  // interior: only a few decorative panels (no machinery)
+  [[px-3,K.clay],[px,K.ochre],[px+3,K.moss]].forEach(p=>MS.box(p[0],fY+1.3,pz+3.5-0.175-0.03,1.6,1.1,0.06,0,p[1]));
+  MS.box(px-4.82,fY+1.2,pz,0.06,1.2,2.4,0,K.moss);
+  // service yard: a few crates and bollards (not machines)
+  MS.box(px+7.8,y0-0.05,pz+4.5,1.0,0.95,1.0,0.3,K.wood);MS.box(px+7.9,y0+0.9,pz+4.45,0.8,0.8,0.8,0.7,K.wood2);MS.box(px+9.2,y0-0.05,pz+3.8,1.1,0.85,0.9,-0.2,K.wood);
+  MS.box(px+9.0,y0-0.05,pz-5.0,0.9,0.7,0.9,0.5,K.wood2);
+  for(const dz of [-1.5,1.5])MS.box(SITE.H1[0]-0.4,y0-0.05,SITE.H1[1]+dz,0.2,0.8,0.2,0,K.trim);
+})();
+
+// ---- stairs: every tread has a solid foundation down into the ground; rails on both open sides; dashed footpath ----
+core.FLIGHTS.forEach(F=>{
+  for(let i=0;i<F.n;i++){const ti=core.treadInfo(F,i);
+    MS.box(ti.x,ti.bottom,ti.z,F.width,ti.top-ti.bottom,F.tread*1.002,ti.yaw,i%2?K.stone:K.stone2);
+    if(i%2===0)MS.box(ti.x,ti.top,ti.z,0.26,0.012,0.2,ti.yaw,K.dash);}
+  // flat landing slabs (stone, solid down into the ground) with a dashed footpath along the middle
+  for(const end of [0,1]){const s0=end?F.L+F.n*F.tread:0,s1=end?F.len:F.L,y=end?F.hiD:F.loD,q={x:0,z:0,tx:0,tz:0};
+    for(let s=s0;s<s1-0.01;s+=1.0){const sl=Math.min(1.0,s1-s);core.pointAt(F,s+sl/2,q);const yaw=Math.atan2(q.tx,q.tz),hw=ST.landingHalfW,cs=Math.cos(yaw),sn=Math.sin(yaw);let g=1e9;
+      for(const sx of [-hw,hw])for(const sz of [-sl/2,sl/2])g=Math.min(g,core.meshY(q.x+sx*cs+sz*sn,q.z-sx*sn+sz*cs));
+      MS.box(q.x,Math.min(g,y)-0.3,q.z,hw*2,y-(Math.min(g,y)-0.3),sl*1.004,yaw,K.stone2);
+      if(Math.floor(s)%2===0&&s>s0+0.3&&s<s1-0.6)MS.box(q.x,y,q.z,0.28,0.012,0.7,yaw,K.dash);}}
+  const yR=s=>F.loD+core.clamp((s-F.L)/(F.n*F.tread),0,1)*(F.hiD-F.loD),o={x:0,z:0,tx:0,tz:0};let pL=null,pR=null;
+  for(let s=F.L-0.4;s<=F.L+F.n*F.tread+0.4+1e-6;s+=1.6){core.pointAt(F,s,o);const nx=o.tz,nz=-o.tx;
+    for(const side of [-1,1]){const x=o.x+nx*side*ST.railOffset,z=o.z+nz*side*ST.railOffset,yb=yR(s);
+      MS.box(x,yb-0.18,z,0.08,ST.railH+0.18,0.08,0,K.wood);
+      const top=[x,yb+ST.railH,z],mid=[x,yb+ST.railH*0.5,z],pr=side<0?pL:pR;
+      if(pr){MS.beam(pr[0],top,0.07,0.06,K.wood2);MS.beam(pr[1],mid,0.05,0.05,K.wood);}
+      if(side<0)pL=[top,mid];else pR=[top,mid];}}
+});
+
+// ---- dashed footpaths draped on the displayed ground ----
+function drape(poly,dashL,gapL,w,lift,skip){
+  const cum=[0];for(let i=1;i<poly.length;i++)cum.push(cum[i-1]+Math.hypot(poly[i][0]-poly[i-1][0],poly[i][1]-poly[i-1][1]));
+  const total=cum[cum.length-1];let seg=0;
+  const at=s=>{while(seg<poly.length-2&&cum[seg+1]<s)seg++;const a=poly[seg],b=poly[seg+1],l=(cum[seg+1]-cum[seg])||1,t=core.clamp((s-cum[seg])/l,0,1);return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,(b[0]-a[0])/l,(b[1]-a[1])/l];};
+  for(let s=0;s+dashL<=total;s+=dashL+gapL){const p0=at(s),p1=at(s+dashL),mx=(p0[0]+p1[0])/2,mz=(p0[1]+p1[1])/2;
+    if(skip&&skip(mx,mz))continue;if(core.waterDepth(mx,mz,core.meshY(mx,mz))>0)continue;
+    const hw=w/2,q=(p,sg)=>{const x=p[0]+p[3]*hw*sg,z=p[1]-p[2]*hw*sg;return [x,core.meshY(x,z)+lift,z];};
+    MS.quad(q(p0,1),q(p0,-1),q(p1,-1),q(p1,1),K.dash);}}
+const onStairs=(x,z)=>!Number.isNaN(core.stairTop(x,z));
+core.FLIGHTS.forEach(F=>drape(F.pts,0.7,0.6,0.28,0.05,onStairs));
+{const PHC=SITE.PHC,Y=SITE.YARD;
+ drape([[PHC[0]+5.9,PHC[1]],[Y[0],Y[1]]],0.7,0.6,0.28,0.05);drape([[Y[0],Y[1]],[SITE.H1[0],SITE.H1[1]]],0.7,0.6,0.28,0.05);drape([[Y[0],Y[1]],[core.FLIGHTS[1].pts[0][0],core.FLIGHTS[1].pts[0][1]]],0.7,0.6,0.28,0.05);
+ drape([[SITE.L3[0],SITE.L3[1]],[SITE.LKC[0],SITE.LKC[1]]],0.7,0.6,0.28,0.05);
+ const shore=(L,a0,a1,off)=>{const p=[];for(let a=a0;a<=a1;a+=0.05)p.push([L.x+Math.cos(a)*(core.lakeR(L,a)+off),L.z+Math.sin(a)*(core.lakeR(L,a)+off)]);drape(p,0.8,0.7,0.3,0.05);};
+ shore(core.LOW,Math.PI-1.3,Math.PI+1.3,3.0);shore(core.UP,-1.0,1.0,3.0);}
+
+// ---- rim lookout: flat, fenced, a bench and a marker post (no sign, not a dam site) ----
+(function(){const C=SITE.LKC,y0=CONFIG.sites.lookoutY*EXG,gapA=Math.atan2(-SITE.L3D[1],-SITE.L3D[0]),posts=[];
+  for(let i=0;i<18;i++){const a=i/18*6.2831853,d=Math.atan2(Math.sin(a-gapA),Math.cos(a-gapA));posts.push({x:C[0]+Math.cos(a)*5.6,z:C[1]+Math.sin(a)*5.6,gap:Math.abs(d)<0.3});}
+  posts.forEach((p,i)=>{if(p.gap)return;MS.box(p.x,y0-0.05,p.z,0.12,1.2,0.12,0,K.wood);const q=posts[(i+1)%18];if(q.gap)return;
+    MS.beam([p.x,y0+0.55,p.z],[q.x,y0+0.55,q.z],0.07,0.07,K.wood2);MS.beam([p.x,y0+1.08,p.z],[q.x,y0+1.08,q.z],0.08,0.07,K.wood2);});
+  const ab=gapA+Math.PI,bx=C[0]+Math.cos(ab)*4.2,bz=C[1]+Math.sin(ab)*4.2,yaw=Math.atan2(Math.cos(ab),Math.sin(ab));  // local +z points outward, over the view
+  MS.lbox(bx,bz,yaw,0,0,y0+0.42,1.8,0.07,0.5,K.wood2);MS.lbox(bx,bz,yaw,0,-0.22,y0+0.5,1.8,0.42,0.06,K.wood2);
+  for(const lx of [-0.75,0.75])MS.lbox(bx,bz,yaw,lx,0,y0-0.05,0.08,0.47,0.4,K.wood);
+  const ap=gapA+Math.PI/2,mx=C[0]+Math.cos(ap)*3.2,mz=C[1]+Math.sin(ap)*3.2;
+  MS.box(mx,y0-0.05,mz,0.22,1.55,0.22,0,K.clay);MS.box(mx,y0+1.5,mz,0.32,0.08,0.32,0,K.ochre);MS.frustum(mx,y0+1.58,mz,0.07,0.07,0.02,8,K.brass,0);
+})();
+const STATIC=fromMesh(MS),PANELS=fromMesh(MP);
+
+// ---- seeded scatter: clustered evergreens, boulders, riverbank gravel, grass (no repeating pattern) ----
+const rs=core.rngMake(core.SEED*31+7);
+const gauss=()=>(rs()+rs()+rs()-1.5)/0.5;
+const clearOf=(x,z,extra)=>{for(const F of core.FEATS){const b=F.bb;if(x<b[0]-extra||x>b[2]+extra||z<b[1]-extra||z>b[3]+extra)continue;if(core.project(F,x,z)<F.w0+extra)return false;}return true;};
+const dry=(x,z,margin)=>core.waterDepth(x,z,core.meshY(x,z)-margin)<=0;
+const inMap=(x,z)=>Math.abs(x)<HALFW-6&&Math.abs(z)<HALFW-6;
+const packInst=list=>{const a=new Float32Array(list.length*8);list.forEach((v,i)=>a.set(v,i*8));return a;};
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(rs()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;};
+const trees=[];
+{const addTree=(x,z)=>{if(!inMap(x,z))return;const h=core.meshY(x,z);if(h>105||core.meshNormalY(x,z)<0.74||!dry(x,z,0.9)||!clearOf(x,z,4))return;
+    const s=0.75+Math.pow(rs(),1.7)*1.35,g=0.85+rs()*0.3;trees.push([x,h-0.1,z,s,rs()*6.283,g*(0.95+rs()*0.1),g,g*(0.92+rs()*0.16)]);};
+ let cl=0,tries=0;while(cl<60&&tries<8000){tries++;const x=(rs()*2-1)*(HALFW-14),z=(rs()*2-1)*(HALFW-14),h=core.meshY(x,z);
+   if(rs()>1-core.sstep(55,98,h)||core.meshNormalY(x,z)<0.8||!dry(x,z,1.0)||!clearOf(x,z,5))continue;
+   cl++;const r=6+rs()*16,cnt=16+Math.floor(rs()*46);for(let k=0;k<cnt;k++)addTree(x+gauss()*r*0.5,z+gauss()*r*0.5);}
+ for(let k=0;k<500;k++)if(rs()<0.5)addTree((rs()*2-1)*(HALFW-14),(rs()*2-1)*(HALFW-14));}
+shuffle(trees);
+const rocksA=[],rocksB=[],gravel=[],grass=[];
+{for(let k=0;k<5000&&rocksA.length<330;k++){const x=(rs()*2-1)*(HALFW-10),z=(rs()*2-1)*(HALFW-10),h=core.meshY(x,z),ny=core.meshNormalY(x,z);
+   if(h>150||ny>0.88||ny<0.3||rs()>0.35||!dry(x,z,1.0)||!clearOf(x,z,3))continue;const g=0.85+rs()*0.25;(rs()<0.5?rocksA:rocksB).push([x,h-0.2,z,1+rs()*2.8,rs()*6.283,g,g*0.97,g*0.93]);}
+ for(let z=-HALFW+4;z<HALFW-4;z+=3.2){const W=core.riverW(z);for(const sd of [-1,1]){if(rs()>0.6)continue;const x=core.cx(z)+sd*(0.95+rs()*1.4)*W,h=core.meshY(x,z);
+     if(!inMap(x,z)||core.waterDepth(x,z,h)>0||core.lakeSd(core.LOW,x,z)<2)continue;const g=0.9+rs()*0.2;(rs()<0.5?rocksA:rocksB).push([x,h-0.15,z,0.4+rs()*1.0,rs()*6.283,g,g*0.97,g*0.93]);}}
+ for(let z=-HALFW+4;z<HALFW-4;z+=1.1){const W=core.riverW(z);for(const sd of [-1,1]){if(rs()>0.8)continue;const x=core.cx(z)+sd*(0.8+rs()*1.3)*W,h=core.meshY(x,z);
+     if(!inMap(x,z)||core.waterDepth(x,z,h)>0||core.lakeSd(core.LOW,x,z)<1)continue;const g=1.1+rs()*0.25;gravel.push([x,h-0.04,z,0.12+rs()*0.23,rs()*6.283,g,g*0.94,g*0.8]);}}
+ for(const L of core.lakes)for(let k=0;k<420;k++){const a=rs()*6.2831853,sd=0.1+rs()*3.7,R=core.lakeR(L,a)+sd,x=L.x+Math.cos(a)*R,z=L.z+Math.sin(a)*R,h=core.meshY(x,z);
+     if(!inMap(x,z)||core.waterDepth(x,z,h)>0||!clearOf(x,z,0.2))continue;const g=1.1+rs()*0.25;gravel.push([x,h-0.04,z,0.12+rs()*0.25,rs()*6.283,g,g*0.94,g*0.8]);}
+ for(let k=0;k<60000&&grass.length<26000;k++){const x=(rs()*2-1)*(HALFW-8),z=(rs()*2-1)*(HALFW-8),h=core.meshY(x,z);
+   if(h>82||core.meshNormalY(x,z)<0.9||!dry(x,z,0.7)||!clearOf(x,z,1.2)||gravelMask(x,z,h)>0.15)continue;
+   grass.push([x,h-0.03,z,0.55+rs()*0.75,rs()*6.283,0.85+rs()*0.3,0.9+rs()*0.25,0.8+rs()*0.3]);}}
+shuffle(rocksA);shuffle(rocksB);shuffle(gravel);shuffle(grass);
+function treeMesh(){const m=new Mesh();m.frustum(0,0,0,0.30,0.22,1.3,6,[0.36,0.24,0.14],0.3);
+  m.frustum(0,0.9,0,1.9,0,2.6,7,[0.12,0.36,0.20],0);m.frustum(0,2.3,0,1.5,0,2.5,7,[0.15,0.43,0.22],0.4);m.frustum(0,3.7,0,1.05,0,2.4,7,[0.20,0.50,0.25],0.8);return m;}
+function rockMesh(seed,col){const r=core.rngMake(seed),ph=(1+Math.sqrt(5))/2;
+  const V=[[-1,ph,0],[1,ph,0],[-1,-ph,0],[1,-ph,0],[0,-1,ph],[0,1,ph],[0,-1,-ph],[0,1,-ph],[ph,0,-1],[ph,0,1],[-ph,0,-1],[-ph,0,1]].map(v=>{const l=Math.hypot(v[0],v[1],v[2]),j=0.82+r()*0.36;return [v[0]/l*j,v[1]/l*j*0.8+0.55,v[2]/l*j];});
+  const F=[[0,11,5],[0,5,1],[0,1,7],[0,7,10],[0,10,11],[1,5,9],[5,11,4],[11,10,2],[10,7,6],[7,1,8],[3,9,4],[3,4,2],[3,2,6],[3,6,8],[3,8,9],[4,9,5],[2,4,11],[6,2,10],[8,6,7],[9,8,1]];
+  const m=new Mesh();F.forEach(f=>{const k=1+(r()-0.5)*0.18;m.tri(V[f[0]],V[f[1]],V[f[2]],[col[0]*k,col[1]*k,col[2]*k]);});return m;}
+function grassMesh(){const m=new Mesh(),dk=[0.28,0.46,0.15],lt=[0.60,0.78,0.30];
+  for(let b=0;b<3;b++){const a=b*Math.PI/3,dx=Math.cos(a),dz=Math.sin(a),o=0.05*(b-1);
+    const P=(l,y)=>[dx*l+dz*o,y,dz*l-dx*o];m.quad(P(-0.07,0),P(0.07,0),P(0.05,0.5),P(-0.05,0.5),dk);m.tri(P(-0.05,0.5),P(0.05,0.5),P(0.02,1.0),lt);}return m;}
+const G_TREE=fromMesh(treeMesh(),packInst(trees)),G_RA=fromMesh(rockMesh(5,[0.56,0.52,0.48]),packInst(rocksA)),G_RB=fromMesh(rockMesh(11,[0.50,0.47,0.44]),packInst(rocksB));
+const G_GRAVEL=fromMesh(rockMesh(23,[0.62,0.58,0.50]),packInst(gravel)),G_GRASS=fromMesh(grassMesh(),packInst(grass));
+const NTREES=trees.length,NRA=rocksA.length,NRB=rocksB.length,NGRAVEL=gravel.length,NGRASS=grass.length;
+
+/* ================= The athlete: parametric swimmer, split into rigid pieces with pivots (built once per body, cached) ================= */
+const RIGS=new Map();
+function athleteRig(body){
+  if(RIGS.has(body.name))return RIGS.get(body.name);
+  const g=swimmerGB(0,body),Bd=g.body;                       // pose 0 = T-pose, origin at the pelvis, faces +Z
+  const lerpN=(a,b,t)=>a+(b-a)*t,bld=Math.max(0,Math.min(1,Bd.build)),bw=1+(bld-0.5)*0.5,lr=1+(bld-0.5)*0.6,fsz=1+(lr-1)*0.4;
+  const SC=Bd.height/((0.79*Bd.legs+0.075*fsz)+(0.50+0.08*Bd.neck+0.26*Bd.head));  // same uniform scale the generator used
+  const hipR=Bd.hips*bw,shR=Bd.shoulders*(0.8+0.2*bw);
+  const V=pickVariant(()=>0.5,5,1);                          // navy solid suit, white cap, tan skin, dark-brown hair (palette index 5, look 1)
+  const skin=SWIM_SKIN[SWIM_LOOK[V.look][0]],hairC=SWIM_HAIR[SWIM_LOOK[V.look][1]],capSrc=Math.floor(V.icol[3]/262144)&3,strapSrc=Math.floor(V.icol[3]/1048576)&1;
+  const colOf=m=>m<0.0625?skin:m<0.1875?hairC:m<0.375?(capSrc===0?V.a:capSrc===1?V.b:[1,1,1]):m<0.625?V.b:m<0.875?(strapSrc?V.b:V.a):V.a;   // same tint mask as the reference
+  const names=['torso','head','armR','armL','thighR','thighL','shinR','shinL'],grp={};names.forEach(n=>grp[n]={p:[],n:[],c:[]});
+  const kneeY=-0.40*Bd.legs*SC*0.9995,thrX=0.172*shR*SC;
+  for(let t=0;t<g.p.length/9;t++){const o=t*9,cxm=(g.p[o]+g.p[o+3]+g.p[o+6])/3,cym=(g.p[o+1]+g.p[o+4]+g.p[o+7])/3;let k;
+    if(cym>0.575*SC)k='head';
+    else if(cym<-0.044*SC)k=(cym>kneeY?'thigh':'shin')+(cxm>=0?'R':'L');
+    else if(Math.abs(cxm)>thrX&&cym>0.30*SC)k=cxm>0?'armR':'armL';
+    else k='torso';
+    const G=grp[k];for(let v=0;v<3;v++){const i=o+v*3,j=(t*3+v)*4,c=colOf(g.c[j+3]);G.p.push(g.p[i],g.p[i+1],g.p[i+2]);G.n.push(g.n[i],g.n[i+1],g.n[i+2]);G.c.push(c[0],c[1],c[2]);}}
+  const geo={};names.forEach(n=>{const G=grp[n];geo[n]=makeGeo(new Float32Array(G.p),new Float32Array(G.n),new Float32Array(G.c));});
+  const hx=0.070*lerpN(1,hipR,0.6)*SC,sx=0.155*shR*SC,Lt=0.40*Bd.legs*SC,Ls=0.39*Bd.legs*SC;
+  const rig={geo,SC,tris:g.tris,standH:-g.seat,Lt,Ls,sole:-g.seat-Lt-Ls,hipX:hx,hipZ:-0.006*SC,shX:sx,shY:0.455*SC,shZ:-0.005*SC,headY:0.545*SC,kneeDrop:Lt*0.9995,body:Bd};
+  RIGS.set(body.name,rig);return rig;}
+const RIG=athleteRig(ATHLETE_F);
+AUDIT.perf.worldBuildMs=Math.round(performance.now()-tBuild0);
+/* ================= Render targets, shadow map, per-frame state ================= */
+const T={fboA:null,rbC:null,rbD:null,fboB:null,texB:null,w:0,h:0,samples:-1};
+function makeTargets(w,h,samples){
+  if(T.fboA){gl.deleteFramebuffer(T.fboA);gl.deleteRenderbuffer(T.rbC);gl.deleteRenderbuffer(T.rbD);gl.deleteFramebuffer(T.fboB);gl.deleteTexture(T.texB);}
+  gl.activeTexture(gl.TEXTURE5);
+  T.fboA=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,T.fboA);
+  T.rbC=gl.createRenderbuffer();gl.bindRenderbuffer(gl.RENDERBUFFER,T.rbC);gl.renderbufferStorageMultisample(gl.RENDERBUFFER,samples,gl.RGBA8,w,h);gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.RENDERBUFFER,T.rbC);
+  T.rbD=gl.createRenderbuffer();gl.bindRenderbuffer(gl.RENDERBUFFER,T.rbD);gl.renderbufferStorageMultisample(gl.RENDERBUFFER,samples,gl.DEPTH_COMPONENT24,w,h);gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.RENDERBUFFER,T.rbD);
+  T.texB=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,T.texB);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,w,h,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  T.fboB=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,T.fboB);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,T.texB,0);
+  T.w=w;T.h=h;T.samples=samples;gl.bindFramebuffer(gl.FRAMEBUFFER,null);}
+const SH={fbo:null,tex:null,size:0};
+function makeShadow(size){
+  if(SH.tex){gl.deleteTexture(SH.tex);gl.deleteFramebuffer(SH.fbo);}
+  gl.activeTexture(gl.TEXTURE5);SH.tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,SH.tex);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.DEPTH_COMPONENT24,size,size,0,gl.DEPTH_COMPONENT,gl.UNSIGNED_INT,null);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_COMPARE_MODE,gl.COMPARE_REF_TO_TEXTURE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_COMPARE_FUNC,gl.LEQUAL);
+  SH.fbo=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,SH.fbo);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.TEXTURE_2D,SH.tex,0);
+  gl.drawBuffers([gl.NONE]);gl.readBuffer(gl.NONE);SH.size=size;gl.bindFramebuffer(gl.FRAMEBUFFER,null);}
+const rain=core.makeRain();let rainInit=false;
+const rainBuf=gl.createBuffer(),rainLines=new Float32Array(CONFIG.rain.max*6),rainVAO=gl.createVertexArray();
+gl.bindVertexArray(rainVAO);gl.bindBuffer(gl.ARRAY_BUFFER,rainBuf);gl.bufferData(gl.ARRAY_BUFFER,rainLines.byteLength,gl.DYNAMIC_DRAW);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);gl.bindVertexArray(null);
+const emptyVAO=gl.createVertexArray();
+const MAXS=gl.getParameter(gl.MAX_SAMPLES);
+PG.shadow.u.uMat=null;                      // the shadow program has no material uniform; null locations are ignored by WebGL
+
+/* ================= Player (the walker state comes from core.walkerStep; the rig is presentation only) ================= */
+const PCFG=CONFIG.player,PO={hipL:0,hipR:0,kneeL:0,kneeR:0,armL:0,armR:0,lean:0,breath:0,headYaw:0,bob:0};
+const P={st:{x:SITE.YARD[0]+1.5,z:SITE.YARD[1]+0.8,y:0,on:false},vy:0,yaw:-Math.PI/2,move:0,climb:0,phase:0,speed:0,glide:null,lastStep:0};
+P.st.y=core.groundY(P.st.x,P.st.z);P.st.on=core.stairHitIndex()>=0;P.vy=P.st.y;
+const keys={};
+const PM={};['torso','head','armR','armL','thighR','thighL','shinR','shinL'].forEach(n=>PM[n]=mat());
+const mRoot=mat(),mLean=mat(),mA=mat(),mB=mat(),mR1=mat(),mR2=mat(),mR3=mat(),mT=mat(),mH=mat();
+function posePlayer(time){
+  core.pose(PO,P.phase,time,P.move,P.climb);
+  const eL=RIG.Lt*Math.cos(PO.hipL)+(RIG.Ls+RIG.sole)*Math.cos(PO.hipL+PO.kneeL),eR=RIG.Lt*Math.cos(PO.hipR)+(RIG.Ls+RIG.sole)*Math.cos(PO.hipR+PO.kneeR);
+  M4.Ry(mRoot,P.yaw);mRoot[12]=P.st.x;mRoot[13]=P.vy+Math.max(eL,eR);mRoot[14]=P.st.z;     // the lower foot rests on the ground
+  M4.Rx(mLean,PO.lean);M4.mul(mA,mRoot,mLean);M4.T(mT,0,PO.breath,0);M4.mul(mB,mA,mT);      // mB = torso frame (lean + breathing)
+  PM.torso.set(mB);
+  M4.Ry(mR1,PO.headYaw);M4.pivot(mR1,0,RIG.headY,0);M4.mul(PM.head,mB,mR1);
+  for(const s of [1,-1]){
+    const hang=-s*(Math.PI/2-0.12),swing=s>0?PO.armR:PO.armL;
+    M4.Rz(mR1,hang);M4.Rx(mR2,swing);M4.mul(mR3,mR2,mR1);M4.pivot(mR3,s*RIG.shX,RIG.shY,RIG.shZ);M4.mul(PM[s>0?'armR':'armL'],mB,mR3);
+    const hip=s>0?PO.hipR:PO.hipL,knee=s>0?PO.kneeR:PO.kneeL,hx=s*RIG.hipX;
+    M4.Rx(mR1,hip);M4.pivot(mR1,hx,0,RIG.hipZ);M4.mul(PM[s>0?'thighR':'thighL'],mRoot,mR1);
+    M4.Rx(mR2,knee);M4.pivot(mR2,hx-0.03*s*RIG.Lt,-RIG.Lt,RIG.hipZ+0.02*RIG.Lt);M4.mul(mR3,PM[s>0?'thighR':'thighL'],mR2);PM[s>0?'shinR':'shinL'].set(mR3);}}
+function drawPlayer(U){for(const n of ['torso','head','armR','armL','thighR','thighL','shinR','shinL']){gl.uniformMatrix4fv(U.uModel,false,PM[n]);drawGeo(RIG.geo[n]);}}
+
+/* ================= Camera ================= */
+const CC=CONFIG.camera;
+const cam={yaw:Math.PI/2,pitch:CC.pitchDefault,tpitch:CC.pitchDefault,dist:CC.distDefault,tdist:CC.distDefault,fx:P.st.x,fy:P.vy+1.25,fz:P.st.z,free:{x:P.st.x,z:P.st.z},ex:0,ey:0,ez:0,R:[1,0,0],U:[0,1,0],F:[0,0,-1]};
+const clampN=core.clamp;
+function updateCamera(dt){
+  const fxn=FX(),k=fxn.easing?1-Math.exp(-dt/CC.spring):1;
+  if(keys.KeyQ)cam.yaw-=CC.rotSpeed*dt;if(keys.KeyE)cam.yaw+=CC.rotSpeed*dt;
+  let tx,ty,tz;
+  if(S.preset==='follow'){tx=P.st.x;ty=P.vy+1.25;tz=P.st.z;}
+  else if(S.preset==='overview'){tx=0;ty=28;tz=0;}
+  else{const iz=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0),ix=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0),sp=(keys.ShiftLeft||keys.ShiftRight?CC.freeFast:CC.freeSpeed)*dt;
+    const fxv=-Math.sin(cam.yaw),fzv=-Math.cos(cam.yaw),rx=Math.cos(cam.yaw),rz=-Math.sin(cam.yaw);
+    cam.free.x=clampN(cam.free.x+(fxv*iz+rx*ix)*sp,-core.LIM,core.LIM);cam.free.z=clampN(cam.free.z+(fzv*iz+rz*ix)*sp,-core.LIM,core.LIM);
+    tx=cam.free.x;tz=cam.free.z;ty=core.meshY(tx,tz)+1.5;}
+  cam.fx+=(tx-cam.fx)*k;cam.fy+=(ty-cam.fy)*k;cam.fz+=(tz-cam.fz)*k;
+  const ov=S.preset==='overview';cam.tdist=clampN(cam.tdist,ov?150:CC.distMin,ov?700:CC.distMax);cam.tpitch=clampN(cam.tpitch,CC.pitchMin,CC.pitchMax);
+  cam.dist+=(cam.tdist-cam.dist)*k;cam.pitch+=(cam.tpitch-cam.pitch)*k;
+  const cp=Math.cos(cam.pitch);let ex=cam.fx+Math.sin(cam.yaw)*cp*cam.dist,ey=cam.fy+Math.sin(cam.pitch)*cam.dist,ez=cam.fz+Math.cos(cam.yaw)*cp*cam.dist;
+  if(!ov){ex=clampN(ex,-core.LIM,core.LIM);ez=clampN(ez,-core.LIM,core.LIM);ey=Math.max(ey,core.meshY(ex,ez)+1.2);}   // above the terrain, inside the map
+  cam.ex=ex;cam.ey=ey;cam.ez=ez;
+  let fx=cam.fx-ex,fy=cam.fy-ey,fz=cam.fz-ez;const fl=Math.hypot(fx,fy,fz)||1;fx/=fl;fy/=fl;fz/=fl;
+  let rx=-fz,rz=fx;const rl=Math.hypot(rx,rz)||1;rx/=rl;rz/=rl;
+  cam.F=[fx,fy,fz];cam.R=[rx,0,rz];cam.U=[-rz*fy,rz*fx-rx*fz,rx*fy];}   // U = R x F (matches the view matrix)
+function recentre(){S.preset='follow';syncPresets();cam.yaw=P.yaw+Math.PI;cam.tpitch=CC.pitchDefault;cam.tdist=CC.distDefault;}
+
+/* ================= Picking, places, cards ================= */
+function pickGround(cx,cy){const r=canvas.getBoundingClientRect(),nx=((cx-r.left)/r.width)*2-1,ny=1-((cy-r.top)/r.height)*2,th=Math.tan(CC.fov*Math.PI/360),asp=r.width/r.height;
+  let dx=cam.F[0]+cam.R[0]*nx*th*asp+cam.U[0]*ny*th,dy=cam.F[1]+cam.R[1]*nx*th*asp+cam.U[1]*ny*th,dz=cam.F[2]+cam.R[2]*nx*th*asp+cam.U[2]*ny*th;const l=Math.hypot(dx,dy,dz);dx/=l;dy/=l;dz/=l;
+  let t=0.5,pt=0.5;for(let i=0;i<900;i++){const x=cam.ex+dx*t,y=cam.ey+dy*t,z=cam.ez+dz*t;
+    if(Math.abs(x)<=HALFW&&Math.abs(z)<=HALFW&&y<core.meshY(x,z)){let a=pt,b=t;for(let k=0;k<14;k++){const m=(a+b)/2;if(cam.ey+dy*m<core.meshY(cam.ex+dx*m,cam.ez+dz*m))b=m;else a=m;}
+      return [cam.ex+dx*b,cam.ez+dz*b];}
+    pt=t;t+=Math.max(0.5,t*0.012);if(t>2800)break;}
+  return null;}
+function placeAt(x,z){let best=null,bd=1e9;
+  for(const p of SNAP.places){const d=Math.hypot(x-p.x,z-p.z);if(d<p.r*1.15&&d<bd){bd=d;best=p;}}
+  if(best)return best;
+  core.lakes.forEach((L,i)=>{if(core.lakeSd(L,x,z)<2)best={id:i?'upperLake':'lowerLake',name:L.name};});return best;}
+const SKT='<svg viewBox="0 0 300 110" aria-hidden="true" fill="none" stroke="#2b2a26" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">';
+const CARDS={
+ powerhouse:{t:'Powerhouse',x:'A small plaster station on a concrete foundation, set beside the lower lake. The chamber inside is empty for now, and the roof carries a grid of solar panels.',
+  s:SKT+'<path d="M6 96 Q60 86 110 92 T200 90 T294 94"/><rect x="96" y="52" width="104" height="40"/><rect x="92" y="46" width="112" height="7"/><rect x="142" y="66" width="16" height="26"/><rect x="108" y="62" width="20" height="14"/><rect x="172" y="62" width="20" height="14"/><path d="M104 46l14-14h26M130 46l14-14h26M156 46l14-14h26" stroke="#2f6f86"/><path d="M214 96l10-5 10-5 10-5M18 72l22-24 22 24M244 72l18-28 24 28" opacity=".6"/></svg>'},
+ lower:{t:'Lower lake shore',x:'Gravel, foam and a gentle edge. The water turns from turquoise in the shallows to deep blue in the middle. A short flight of stairs climbs from here to the powerhouse.',
+  s:SKT+'<path d="M6 60Q80 40 150 56T294 50"/><path d="M6 76q24-8 48 0t48 0 48 0 48 0 48 0 48 0" stroke="#2f6f86"/><path d="M6 92q24-8 48 0t48 0 48 0 48 0 48 0 48 0" stroke="#2f6f86"/><path d="M200 70h14v-8h14v-8h14v-8h14v-8h14"/></svg>'},
+ service:{t:'Upper lake service route',x:'A level gravel track along the upper lake, high on the shelf. Stairs climb here from the powerhouse and carry on up to the rim.',
+  s:SKT+'<path d="M6 80q40-30 90-24t96-4 102 8" opacity=".6"/><path d="M20 94q30-10 60 0t60 0 60 0 60 0" stroke="#2f6f86"/><path d="M170 96h16v-9h16v-9h16v-9h16v-9h16" /><path d="M120 70h50" stroke-dasharray="6 6"/></svg>'},
+ lookout:{t:'Rim lookout',x:'A fenced viewpoint with a bench and a survey marker post. Nothing is built here; it is only a place to stand and look over the valley.',
+  s:SKT+'<path d="M6 92q60-30 120-12t168-30" opacity=".6"/><path d="M70 90V66M100 90V66M130 90V66M160 90V66M60 72h110M60 82h110"/><path d="M190 90v-8h34v8M190 78h34v-8"/><path d="M250 90V50M244 50h12"/></svg>'},
+ lowerLake:{t:'Lower lake',x:'The valley lake. Its level never changes in this part of the game, and the river slips in at the north end and out at the south.',
+  s:SKT+'<path d="M40 60q50-34 110-20t110 22q-30 36-110 34T40 60z" stroke="#2f6f86"/><path d="M80 62q30 8 60 0t60 2" stroke="#2f6f86" opacity=".6"/></svg>'},
+ upperLake:{t:'Upper lake',x:'A cold lake held in a basin on the high shelf, with a rim of ground around it. It is for looking at.',
+  s:SKT+'<path d="M60 64q30-30 90-22t90 20q-30 28-90 26T60 64z" stroke="#2f6f86"/><path d="M20 40q30-24 60-6M220 36q30-20 60 4" opacity=".6"/></svg>'}};
+const visited=new Set();let cardId=null,cardMode=null,started=false;
+function showCard(id,mode){const c=CARDS[id];if(!c)return;cardId=id;cardMode=mode;$('card-title').textContent=c.t;$('card-text').textContent=c.x;$('card-sketch').innerHTML=c.s;$('card-stamp').hidden=!visited.has(id);$('card').hidden=false;}
+function closeCard(){$('card').hidden=true;cardId=null;cardMode=null;}
+function toast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast._h);toast._h=setTimeout(()=>{t.hidden=true;},2400);}
+let lastPlace=null;
+function updatePlaces(){let cur=null,bd=1e9;for(const p of SNAP.places){const d=Math.hypot(P.st.x-p.x,P.st.z-p.z);if(d<p.r&&d<bd){bd=d;cur=p;}}
+  let name=cur?cur.name:'The valley';
+  if(!cur){core.lakes.forEach(L=>{if(core.lakeSd(L,P.st.x,P.st.z)<14)name=L.name+' (shore)';});if(Math.abs(P.st.x-core.cx(P.st.z))<2.4*core.riverW(P.st.z))name='River bank';}
+  if($('place-name').textContent!==name)$('place-name').textContent=name;
+  const id=cur?cur.id:null;
+  if(id!==lastPlace){lastPlace=id;if(id&&started){visited.add(id);showCard(id,'arrive');}}}
+
+/* ================= Input ================= */
+const ptrs=new Map();let drag=null,pinch0=0,hoverT=0,touchT=0;
+function goTo(x,z){const plan=core.planPath(P.st.x,P.st.z,x,z);if(!plan){toast('She cannot walk there from here.');return;}P.glide={wps:plan,i:0,stuck:0};}
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+canvas.addEventListener('pointerdown',e=>{try{canvas.setPointerCapture(e.pointerId);}catch(_){}ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(e.pointerType==='mouse'){if(e.button===2)drag='orbit';}
+  else{if(ptrs.size===1){const p=pickGround(e.clientX,e.clientY);if(p)goTo(p[0],p[1]);}else if(ptrs.size===2){const a=[...ptrs.values()];pinch0=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);P.glide=null;}}});
+canvas.addEventListener('pointermove',e=>{const o=ptrs.get(e.pointerId);const sg=S.reverse?-1:1;
+  if(e.pointerType==='mouse'){
+    if(drag==='orbit'){cam.yaw-=e.movementX*0.005*sg;cam.tpitch+=e.movementY*0.004*sg;}
+    else if(performance.now()-hoverT>90){hoverT=performance.now();const p=pickGround(e.clientX,e.clientY),pl=p?placeAt(p[0],p[1]):null;
+      if(pl){if(!cardId||(cardMode==='hover'&&cardId!==pl.id))showCard(pl.id,'hover');}else if(cardMode==='hover')closeCard();}
+    return;}
+  if(!o)return;const px=o.x,py=o.y;o.x=e.clientX;o.y=e.clientY;
+  if(ptrs.size===1){if(performance.now()-touchT>220){touchT=performance.now();const p=pickGround(e.clientX,e.clientY);if(p)goTo(p[0],p[1]);}}
+  else if(ptrs.size===2){const a=[...ptrs.values()],d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
+    if(pinch0>0){cam.tdist*=Math.pow(pinch0/d,sg>0?1:-1);}pinch0=d;
+    const dx=(e.clientX-px)/2,dy=(e.clientY-py)/2;
+    if(S.preset==='free'){const f=[-Math.sin(cam.yaw),-Math.cos(cam.yaw)],r=[Math.cos(cam.yaw),-Math.sin(cam.yaw)];cam.free.x=clampN(cam.free.x-(r[0]*dx*0.05*sg)+f[0]*dy*0.05*sg,-core.LIM,core.LIM);cam.free.z=clampN(cam.free.z-(r[1]*dx*0.05*sg)+f[1]*dy*0.05*sg,-core.LIM,core.LIM);}
+    else{cam.yaw-=dx*0.006*sg;cam.tpitch+=dy*0.004*sg;}}});
+const endPtr=e=>{ptrs.delete(e.pointerId);if(ptrs.size<2)pinch0=0;if(e.pointerType==='mouse'&&e.button===2)drag=null;};
+canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercancel',endPtr);
+canvas.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&cardMode==='hover')closeCard();});
+canvas.addEventListener('dblclick',e=>{const p=pickGround(e.clientX,e.clientY);if(p)goTo(p[0],p[1]);});
+canvas.addEventListener('wheel',e=>{e.preventDefault();cam.tdist*=Math.exp(e.deltaY*0.0012*(S.reverse?-1:1));},{passive:false});
+document.addEventListener('pointerdown',e=>{if(!$('card').hidden&&!$('card').contains(e.target)&&cardMode==='arrive')closeCard();});
+const typing=t=>t&&(t.tagName==='INPUT'||t.tagName==='SELECT'||t.tagName==='TEXTAREA');
+window.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){if(!$('about').hidden)$('about').hidden=true;else if(!$('settings').hidden||!$('checks').hidden){showPanel(null);}else closeCard();if(!$('start').hidden)startGame();return;}
+  if(typing(e.target))return;
+  if(e.code==='KeyF'){recentre();return;}
+  if(e.code==='Space'||e.code==='Tab')return;                           // Space does nothing; Tab keeps normal focus navigation
+  if(['KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ShiftLeft','ShiftRight'].includes(e.code)){keys[e.code]=true;if(e.code.startsWith('Arrow')&&e.target===document.body)e.preventDefault();if(!$('start').hidden&&!e.code.startsWith('Shift'))startGame();}});
+window.addEventListener('keyup',e=>{keys[e.code]=false;});window.addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
+
+/* ================= UI wiring ================= */
+function startGame(){$('start').hidden=true;started=true;canvas.focus({preventScroll:true});}
+$('start-go').addEventListener('click',startGame);
+function showPanel(which){$('settings').hidden=which!=='settings';$('checks').hidden=which!=='checks';$('btn-settings').setAttribute('aria-expanded',String(which==='settings'));$('btn-checks').setAttribute('aria-expanded',String(which==='checks'));}
+$('btn-settings').addEventListener('click',()=>showPanel($('settings').hidden?'settings':null));
+$('btn-checks').addEventListener('click',()=>{renderChecks();showPanel($('checks').hidden?'checks':null);});
+$('btn-about').addEventListener('click',()=>{$('about').hidden=false;$('about-close').focus();});$('about-close').addEventListener('click',()=>{$('about').hidden=true;});
+function syncPresets(){document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.preset===S.preset)));}
+function setPreset(p){S.preset=p;syncPresets();
+  if(p==='overview'){cam.tdist=CC.overviewDist;cam.tpitch=0.85;}
+  else if(p==='follow'){cam.tdist=CC.distDefault;cam.tpitch=CC.pitchDefault;}
+  else{cam.free.x=cam.fx;cam.free.z=cam.fz;cam.tdist=Math.min(cam.tdist,CC.distMax);if(cam.tpitch>CC.pitchMax)cam.tpitch=CC.pitchDefault;cam.tdist=Math.max(cam.tdist,CC.distMin);if(cam.dist>CC.distMax){cam.dist=CC.distMax;}}}
+document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>setPreset(b.dataset.preset)));
+function applyQuality(){const q=CONFIG.quality[S.quality];document.querySelectorAll('[data-q]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.q===S.quality)));
+  if(SH.size!==q.shadow)makeShadow(q.shadow);T.samples=-1;}
+document.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>{S.quality=b.dataset.q;applyQuality();}));
+$('opt-rain').addEventListener('change',e=>{S.rain=e.target.checked;});
+$('opt-rev').addEventListener('change',e=>{S.reverse=e.target.checked;});
+$('opt-rm').checked=S.reducedMotion;$('opt-rm').addEventListener('change',e=>{S.reducedMotion=e.target.checked;if(S.reducedMotion){S.rain=false;$('opt-rain').checked=false;}});
+$('opt-rain').addEventListener('change',e=>{if(e.target.checked&&S.reducedMotion){S.rain=false;e.target.checked=false;toast('Rain is off while Reduced motion is on.');}});
+$('opt-snd').addEventListener('change',e=>{S.sound=e.target.checked;if(S.sound)audioStart();audioApply();});
+$('opt-vol').addEventListener('input',e=>{S.volume=e.target.value/100;audioApply();});
+
+/* ================= Sound: WebAudio synth only, off by default, one master volume + mute ================= */
+const AU={ctx:null,master:null,water:null,noise:null};
+function audioStart(){if(AU.ctx){AU.ctx.resume();return;}const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;const ctx=AU.ctx=new AC();
+  AU.master=ctx.createGain();AU.master.connect(ctx.destination);
+  const n=ctx.sampleRate*2,buf=ctx.createBuffer(1,n,ctx.sampleRate),d=buf.getChannelData(0);let b=0;for(let i=0;i<n;i++){b=b*0.97+(Math.random()*2-1)*0.03;d[i]=b*8;}AU.noise=buf;
+  const mk=(type,f,q,gain)=>{const s=ctx.createBufferSource();s.buffer=buf;s.loop=true;const fl=ctx.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const g=ctx.createGain();g.gain.value=gain;s.connect(fl);fl.connect(g);g.connect(AU.master);s.start();return g;};
+  mk('lowpass',420,0.7,0.16);AU.water=mk('bandpass',900,0.9,0.0);}
+function audioApply(){if(!AU.master)return;AU.master.gain.value=S.sound?S.volume:0;}
+function footstep(){if(!S.sound||!AU.ctx)return;const c=AU.ctx,t=c.currentTime,s=c.createBufferSource();s.buffer=AU.noise;const f=c.createBiquadFilter();f.type='lowpass';f.frequency.value=700;const g=c.createGain();
+  g.gain.setValueAtTime(0.5,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.1);s.connect(f);f.connect(g);g.connect(AU.master);s.start(t,Math.random(),0.12);}
+
+/* ================= Minimap (survey sketch) + compass ================= */
+const MAPC=document.createElement('canvas');MAPC.width=MAPC.height=160;
+(function(){const c=MAPC.getContext('2d'),img=c.createImageData(160,160),W=core.WS,d=4;
+  for(let py=0;py<160;py++)for(let px=0;px<160;px++){const x=-HALFW+(px+0.5)/160*W,z=-HALFW+(py+0.5)/160*W,h=core.meshY(x,z);
+    const lit=(core.meshY(x+d,z)-core.meshY(x-d,z))+(core.meshY(x,z+d)-core.meshY(x,z-d)),sh=Math.max(0,Math.min(1,0.5+lit*0.05));
+    let r=241,g=234,b=217;const k=0.78+0.4*sh;r*=k;g*=k;b*=k;
+    const low=1-core.sstep(10,70,h);r=r*(1-0.12*low)+79*0.12*low;g=g*(1-0.12*low)+107*0.12*low;b=b*(1-0.12*low)+58*0.12*low;
+    const a=Math.floor(h/15);if(a!==Math.floor(core.meshY(x+W/160,z)/15)||a!==Math.floor(core.meshY(x,z+W/160)/15)){r*=0.62;g*=0.6;b*=0.55;}
+    if(core.waterDepth(x,z,h)>0){r=47;g=111;b=134;}
+    const i=(py*160+px)*4;img.data[i]=r;img.data[i+1]=g;img.data[i+2]=b;img.data[i+3]=255;}
+  c.putImageData(img,0,0);c.strokeStyle='#2b2a26';c.lineWidth=1.4;c.setLineDash([3,2]);
+  const m=(x,z)=>[(x+HALFW)/W*160,(z+HALFW)/W*160];
+  core.FLIGHTS.forEach(F=>{c.beginPath();F.pts.forEach((p,i)=>{const q=m(p[0],p[1]);i?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1]);});c.stroke();});
+  c.setLineDash([]);c.fillStyle='#f1ead9';SNAP.places.forEach(p=>{const q=m(p.x,p.z);c.fillRect(q[0]-2.5,q[1]-2.5,5,5);c.strokeRect(q[0]-2.5,q[1]-2.5,5,5);});
+  c.strokeStyle='#2b2a26';c.strokeRect(0.5,0.5,159,159);})();
+const mctx=$('minimap').getContext('2d');let mapFrame=0,lastDeg=999;
+function drawMinimap(){mctx.drawImage(MAPC,0,0);const x=(P.st.x+HALFW)/core.WS*160,z=(P.st.z+HALFW)/core.WS*160;
+  mctx.save();mctx.translate(x,z);mctx.rotate(Math.atan2(Math.cos(P.yaw),Math.sin(P.yaw)));mctx.fillStyle='#a3472c';mctx.strokeStyle='#2b2a26';mctx.lineWidth=1.2;
+  mctx.beginPath();mctx.moveTo(6,0);mctx.lineTo(-4,4);mctx.lineTo(-2,0);mctx.lineTo(-4,-4);mctx.closePath();mctx.fill();mctx.stroke();mctx.restore();
+  const dx=-Math.sin(cam.yaw)*14,dz=-Math.cos(cam.yaw)*14;mctx.strokeStyle='#2b2a26';mctx.setLineDash([2,2]);mctx.beginPath();mctx.moveTo(x,z);mctx.lineTo(x+dx,z+dz);mctx.stroke();mctx.setLineDash([]);}
+
+/* ================= Per-frame update + render ================= */
+const L3v=(()=>{const d=CONFIG.light.dir,l=Math.hypot(d[0],d[1],d[2]);return [d[0]/l,d[1]/l,d[2]/l];})();
+const IDENT=M4.ident(mat()),proj=mat(),view=mat(),vp=mat(),lview=mat(),lproj=mat(),lvp=mat();
+const FOG=[0.88,0.85,0.74],FOGD=1/1000;
+let simTime=0;
+function updatePlayer(dt){
+  const st=P.st,fast=keys.ShiftLeft||keys.ShiftRight;let dx=0,dz=0,have=false;const ox=st.x,oz=st.z;
+  const iz=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0),ix=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0);
+  if(S.preset!=='free'&&(ix||iz)){const f=[-Math.sin(cam.yaw),-Math.cos(cam.yaw)],r=[Math.cos(cam.yaw),-Math.sin(cam.yaw)];dx=f[0]*iz+r[0]*ix;dz=f[1]*iz+r[1]*ix;have=true;P.glide=null;}
+  else if(P.glide){const g=P.glide;while(g.i<g.wps.length&&Math.hypot(g.wps[g.i][0]-st.x,g.wps[g.i][1]-st.z)<PCFG.glideTol)g.i++;
+    if(g.i>=g.wps.length)P.glide=null;else{dx=g.wps[g.i][0]-st.x;dz=g.wps[g.i][1]-st.z;have=true;}}
+  let res=0;
+  if(have){const sp=(fast?PCFG.run:PCFG.walk)*(st.on?PCFG.stairFactor:1);res=core.walkerStep(st,dx,dz,sp,dt);
+    const tyaw=Math.atan2(dx,dz);let dy=Math.atan2(Math.sin(tyaw-P.yaw),Math.cos(tyaw-P.yaw));P.yaw+=dy*Math.min(1,PCFG.turnRate*dt);
+    if(P.glide){if(res!==0){P.glide.stuck+=dt;if(P.glide.stuck>1.5){P.glide=null;toast('She stopped: the way ahead is too steep or wet.');}}else P.glide.stuck=0;}}
+  const moved=Math.hypot(st.x-ox,st.z-oz)/Math.max(dt,1e-4);P.speed+=(moved-P.speed)*Math.min(1,dt*10);
+  const moving=have&&res===0&&moved>0.2*PCFG.walk;P.move+=((moving?1:0)-P.move)*Math.min(1,dt*8);P.climb+=((st.on&&moving?1:0)-P.climb)*Math.min(1,dt*6);
+  const prevPh=P.phase;P.phase+=P.move*dt*6.2831853*Math.max(P.speed,0)/PCFG.stride;if(Math.floor(prevPh/Math.PI)!==Math.floor(P.phase/Math.PI))footstep();
+  // visual height follows the logical (ground) height; a rise is never allowed to lag more than 6 cm below the ground
+  const k=Math.min(1,dt*30);P.vy+=(st.y-P.vy)*k;if(P.vy<st.y-0.06)P.vy=st.y-0.06;if(Math.abs(st.y-P.vy)>1)P.vy=st.y;}
+function render(time){
+  const q=CONFIG.quality[S.quality],pr=Math.min(window.devicePixelRatio||1,q.pr),w=Math.max(2,Math.floor(canvas.clientWidth*pr)),h=Math.max(2,Math.floor(canvas.clientHeight*pr));
+  if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
+  const ms=Math.min(q.msaa,MAXS);if(T.w!==w||T.h!==h||T.samples!==ms)makeTargets(w,h,ms);
+  const fxn=FX(),shim=fxn.shimmer?1:0,wind=S.reducedMotion?0.35:1,aspect=w/h;
+  M4.persp(proj,CC.fov*Math.PI/180,aspect,CC.near,CC.far);M4.lookAt(view,cam.ex,cam.ey,cam.ez,cam.fx,cam.fy,cam.fz);M4.mul(vp,proj,view);
+  // soft shadow map follows the camera focus (snapped to texels so it never shimmers); one fixed sun
+  const E=CONFIG.light.shadowExtent,D=CONFIG.light.shadowDist,f=[-L3v[0],-L3v[1],-L3v[2]];let rl=Math.hypot(f[2],f[0]);const rt=[-f[2]/rl,0,f[0]/rl],up=[rt[1]*f[2]-rt[2]*f[1],rt[2]*f[0]-rt[0]*f[2],rt[0]*f[1]-rt[1]*f[0]];
+  const texel=2*E/SH.size,fr=cam.fx*rt[0]+cam.fy*rt[1]+cam.fz*rt[2],fu=cam.fx*up[0]+cam.fy*up[1]+cam.fz*up[2],sx=Math.round(fr/texel)*texel-fr,sy=Math.round(fu/texel)*texel-fu;
+  const cx=cam.fx+rt[0]*sx+up[0]*sy,cy=cam.fy+rt[1]*sx+up[1]*sy,cz=cam.fz+rt[2]*sx+up[2]*sy;
+  M4.lookAt(lview,cx+L3v[0]*D,cy+L3v[1]*D,cz+L3v[2]*D,cx,cy,cz);M4.ortho(lproj,-E,E,-E,E,1,2*D);M4.mul(lvp,lproj,lview);
+  posePlayer(time);
+  const nT=Math.floor(NTREES*q.trees),nRA=NRA,nRB=NRB,nGr=NGRAVEL,nGs=Math.floor(NGRASS*q.grass);
+  const scene=(U,shadow)=>{gl.uniform1f(U.uInst,0);gl.uniformMatrix4fv(U.uModel,false,IDENT);gl.uniform1f(U.uWind,0);gl.uniform1f(U.uMat,0);
+    drawGeo(TER.top);drawGeo(TER.sides);drawGeo(STATIC);gl.uniform1f(U.uMat,2);drawGeo(PANELS);gl.uniform1f(U.uMat,0);drawPlayer(U);
+    gl.uniform1f(U.uInst,1);drawInst(G_TREE,nT);drawInst(G_RA,nRA);drawInst(G_RB,nRB);drawInst(G_GRAVEL,nGr);
+    if(!shadow){gl.uniform1f(U.uWind,wind);drawInst(G_GRASS,nGs);gl.uniform1f(U.uWind,0);}gl.uniform1f(U.uInst,0);};
+  // 1) shadow pass
+  gl.bindFramebuffer(gl.FRAMEBUFFER,SH.fbo);gl.viewport(0,0,SH.size,SH.size);gl.depthMask(true);gl.enable(gl.DEPTH_TEST);gl.clear(gl.DEPTH_BUFFER_BIT);
+  gl.enable(gl.POLYGON_OFFSET_FILL);gl.polygonOffset(2,4);gl.useProgram(PG.shadow.p);gl.uniformMatrix4fv(PG.shadow.u.uVP,false,lvp);gl.uniform1f(PG.shadow.u.uTime,time);scene(PG.shadow.u,true);gl.disable(gl.POLYGON_OFFSET_FILL);
+  // 2) main pass
+  gl.bindFramebuffer(gl.FRAMEBUFFER,T.fboA);gl.viewport(0,0,w,h);gl.clearColor(FOG[0],FOG[1],FOG[2],1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  gl.disable(gl.CULL_FACE);gl.disable(gl.BLEND);
+  gl.disable(gl.DEPTH_TEST);gl.depthMask(false);gl.useProgram(PG.sky.p);const SK=PG.sky.u;gl.uniform3f(SK.uR,cam.R[0],cam.R[1],cam.R[2]);gl.uniform3f(SK.uU,cam.U[0],cam.U[1],cam.U[2]);gl.uniform3f(SK.uF,cam.F[0],cam.F[1],cam.F[2]);gl.uniform2f(SK.uT,Math.tan(CC.fov*Math.PI/360),aspect);
+  gl.bindVertexArray(emptyVAO);gl.drawArrays(gl.TRIANGLES,0,3);
+  gl.enable(gl.DEPTH_TEST);gl.depthMask(true);
+  gl.useProgram(PG.lit.p);const U=PG.lit.u;gl.uniformMatrix4fv(U.uVP,false,vp);gl.uniformMatrix4fv(U.uLVP,false,lvp);gl.uniform3f(U.uCam,cam.ex,cam.ey,cam.ez);gl.uniform3f(U.uL,L3v[0],L3v[1],L3v[2]);
+  gl.uniform3f(U.uFog,FOG[0],FOG[1],FOG[2]);gl.uniform1f(U.uFogD,FOGD);gl.uniform1f(U.uTime,time);gl.uniform1f(U.uTexel,1/SH.size);gl.uniform1f(U.uRain,fxn.rain?1:0);gl.uniform1f(U.uShStr,CONFIG.light.shadowStrength);
+  gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,SH.tex);gl.uniform1i(U.uShadow,2);
+  scene(U,false);
+  // 3) copy the opaque scene for refraction, then draw the water volume over it
+  gl.bindFramebuffer(gl.READ_FRAMEBUFFER,T.fboA);gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER,T.fboB);gl.blitFramebuffer(0,0,w,h,0,0,w,h,gl.COLOR_BUFFER_BIT,gl.NEAREST);
+  gl.bindFramebuffer(gl.FRAMEBUFFER,T.fboA);
+  gl.useProgram(PG.water.p);const WU=PG.water.u;gl.uniformMatrix4fv(WU.uVP,false,vp);gl.uniform3f(WU.uGrid,HALFW,core.CELL,core.NV);gl.uniform1f(WU.uTime,time);gl.uniform1f(WU.uShimmer,shim);gl.uniform2f(WU.uRes,w,h);
+  gl.uniform3f(WU.uCam,cam.ex,cam.ey,cam.ez);gl.uniform3f(WU.uL,L3v[0],L3v[1],L3v[2]);gl.uniform3f(WU.uFog,FOG[0],FOG[1],FOG[2]);gl.uniform1f(WU.uFogD,FOGD);
+  gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texH);gl.uniform1i(WU.uHeight,0);gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,T.texB);gl.uniform1i(WU.uScene,1);
+  gl.enable(gl.BLEND);gl.blendFuncSeparate(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA,gl.ZERO,gl.ONE);
+  gl.depthMask(false);gl.uniform1f(WU.uMode,1);gl.uniform1f(WU.uFoam,0.5);
+  core.lakes.forEach((L,i)=>{for(const fr2 of [0.2,0.45,0.7]){gl.uniform1f(WU.uYOff,-fr2*L.depth*EXG);drawGeo(LAKEG[i]);}});
+  gl.depthMask(true);gl.uniform1f(WU.uMode,0);gl.uniform1f(WU.uYOff,0);gl.uniform1f(WU.uFoam,0.5);LAKEG.forEach(drawGeo);
+  gl.uniform1f(WU.uFoam,0.25);drawGeo(RIVERG);
+  // 4) optional rain: pooled, capped at CONFIG.rain.max, no allocation here
+  if(fxn.rain){if(!rainInit){rain.reset(cam.fx,cam.fy,cam.fz);rainInit=true;}rain.setActive(CONFIG.rain.max);rain.step(simDt,cam.fx,cam.fy,cam.fz);
+    const n=rain.active,pp=rain.pos;for(let i=0;i<n;i++){const a=i*6,b=i*3;rainLines[a]=pp[b];rainLines[a+1]=pp[b+1];rainLines[a+2]=pp[b+2];rainLines[a+3]=pp[b]+0.06;rainLines[a+4]=pp[b+1]+0.5;rainLines[a+5]=pp[b+2]+0.02;}
+    gl.depthMask(false);gl.useProgram(PG.rain.p);gl.uniformMatrix4fv(PG.rain.u.uVP,false,vp);gl.bindVertexArray(rainVAO);gl.bindBuffer(gl.ARRAY_BUFFER,rainBuf);gl.bufferSubData(gl.ARRAY_BUFFER,0,rainLines);gl.drawArrays(gl.LINES,0,n*2);gl.depthMask(true);}
+  else rain.setActive(0);
+  gl.disable(gl.BLEND);
+  // 5) resolve and present
+  gl.bindFramebuffer(gl.READ_FRAMEBUFFER,T.fboA);gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER,T.fboB);gl.blitFramebuffer(0,0,w,h,0,0,w,h,gl.COLOR_BUFFER_BIT,gl.NEAREST);
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,w,h);gl.disable(gl.DEPTH_TEST);gl.useProgram(PG.blit.p);gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,T.texB);gl.uniform1i(PG.blit.u.uTex,1);
+  gl.bindVertexArray(emptyVAO);gl.drawArrays(gl.TRIANGLES,0,3);gl.enable(gl.DEPTH_TEST);}
+function drawGeo(g){gl.bindVertexArray(g.vao);gl.drawArrays(gl.TRIANGLES,0,g.count);}
+function drawInst(g,n){if(n<=0)return;gl.bindVertexArray(g.vao);gl.drawArraysInstanced(gl.TRIANGLES,0,g.count,n);}
+
+let simDt=0.016,lastT=performance.now(),fpsAcc=0,fpsN=0,firstFrame=true;
+applyQuality();
+function frame(now){
+  requestAnimationFrame(frame);
+  const t0=performance.now();let dt=Math.min(0.05,(now-lastT)/1000);if(!(dt>0))dt=0.016;lastT=now;simDt=dt;simTime+=dt;
+  updatePlayer(dt);updateCamera(dt);updatePlaces();render(simTime);
+  if((mapFrame++&3)===0)drawMinimap();
+  const deg=Math.round(cam.yaw*180/Math.PI*2)/2;if(deg!==lastDeg){lastDeg=deg;$('needle').setAttribute('transform','rotate('+deg+')');}
+  if(AU.ctx&&S.sound){const L=core.lakes;let m=1e9;for(const l of L)m=Math.min(m,core.lakeSd(l,P.st.x,P.st.z));const rv=Math.abs(P.st.x-core.cx(P.st.z))-core.riverW(P.st.z);m=Math.min(m,rv);AU.water.gain.setTargetAtTime(Math.max(0,1-m/30)*0.12,AU.ctx.currentTime,0.3);}
+  fpsAcc+=performance.now()-t0;fpsN++;if(fpsN>=30){AUDIT.perf.frameMs=Math.round(fpsAcc/fpsN*100)/100;AUDIT.perf.fps=Math.round(30000/Math.max(1,(now-(frame._t||now-500))));frame._t=now;fpsAcc=0;fpsN=0;}
+  if(firstFrame){firstFrame=false;$('loading').hidden=true;}
+}
+requestAnimationFrame(frame);
+return {CONFIG,snapshot:SNAP,audit:AUDIT,rain,rig:{tris:RIG.tris,height:RIG.body.height,name:RIG.body.name},get player(){return {x:P.st.x,y:P.st.y,z:P.st.z,yaw:P.yaw};}};
+
+/* ---- water geometry: terrain-clipped lake surfaces (irregular shore), river ribbon, translucent slices ---- */
+function buildLake(L){const NT=72,NR=26,y=L.level*EXG,pts=[];
+  const V=(r,t)=>{const th=t/NT*6.2831853,R=core.lakeR(L,th)*1.06*r;return [L.x+Math.cos(th)*R,y,L.z+Math.sin(th)*R];};
+  const push=(a)=>pts.push(a[0],a[1],a[2]);
+  for(let k=0;k<NR;k++)for(let t=0;t<NT;t++){const a=V(k/NR,t),b=V(k/NR,t+1),c=V((k+1)/NR,t+1),d=V((k+1)/NR,t);push(a);push(b);push(c);push(a);push(c);push(d);}
+  return makeGeo(new Float32Array(pts));}
+function buildRiver(){const pts=[],step=2,H=HALFW;const inL=z=>core.lakeSd(core.LOW,core.cx(z),z)<0.5;
+  const row=z=>{const W=core.riverW(z)*0.84,x=core.cx(z),y=core.riverLevel(z)*EXG-0.03;return [[x-W,y,z],[x,y,z],[x+W,y,z]];};
+  let prev=row(-H),pl=inL(-H);
+  for(let z=-H+step;z<=H+1e-6;z+=step){const cur=row(z),cl=inL(z);
+    if(!(pl&&cl)){for(let c=0;c<2;c++){const a=prev[c],b=prev[c+1],d=cur[c],e=cur[c+1];[a,b,e,a,e,d].forEach(p=>pts.push(p[0],p[1],p[2]));}}
+    prev=cur;pl=cl;}
+  return makeGeo(new Float32Array(pts));}
+
+})();
+</script>
+</body>
+</html>
