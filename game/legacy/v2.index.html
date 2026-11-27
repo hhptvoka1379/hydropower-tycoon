@@ -139,16 +139,81 @@ h2{font-size:18px}h3{font-size:15px}
   #tools .tl{max-width:none;font-size:9px;letter-spacing:0}
   #chips{top:116px;max-width:240px}
 }
-/* panel */
-#panel{position:fixed;right:8px;top:72px;bottom:calc(var(--dockH) + 10px);width:380px;max-width:calc(100vw - 16px);z-index:25;display:flex;flex-direction:column}
-#panel header{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--border)}
-#panel header h2{flex:1;margin:0}
-#pBody{overflow:auto;padding:10px;flex:1}
-.tabs{display:flex;gap:2px;padding:0 8px;margin-top:-1px;flex-wrap:wrap}
-.tabs button{border-radius:6px 6px 0 0;border-bottom:none;min-height:40px;font-size:12px}
-[data-theme="field"] .tabs button{background:#e4d8bb}
-[data-theme="field"] .tabs button[aria-pressed="true"]{background:var(--raised);color:var(--text);border-color:var(--border);box-shadow:inset 0 3px 0 var(--clay,#a3472c)}
+/* panel: centered floating Oxford field notebook */
+#panel{
+  position:fixed;left:50%;top:calc(50% - 8px);transform:translate(-50%,-50%);
+  width:min(620px,calc(100vw - 24px));max-height:calc(100vh - var(--dockH) - 94px);
+  z-index:25;display:flex;flex-direction:column;overflow:hidden;
+  border-radius:4px 12px 12px 4px;
+  border:1px solid #9c9279;border-left:14px solid #1d3557;
+  background-color:#fdfaf1;
+  background-image:
+    radial-gradient(circle at 12px 14px,#3e4756 3.6px,#1f2630 4.5px,transparent 5.2px),
+    linear-gradient(90deg,#d8e2ec 0,#d8e2ec 22px,transparent 22px),
+    linear-gradient(90deg,transparent 48px,rgba(194,78,66,.30) 48px,rgba(194,78,66,.30) 49px,transparent 49px,transparent 52px,rgba(194,78,66,.18) 52px,rgba(194,78,66,.18) 53px,transparent 53px),
+    repeating-linear-gradient(180deg,transparent 0 27px,rgba(68,116,166,.13) 27px 28px);
+  background-size:24px 28px,24px 100%,100% 100%,100% 28px;
+  background-position:0 10px,0 0,0 0,0 0;
+  background-repeat:repeat-y,no-repeat,no-repeat,repeat;
+  box-shadow:
+    inset 1px 0 0 rgba(255,255,255,.7),
+    3px 3px 0 #efe8d5,
+    4px 4px 0 #c6baa0,
+    6px 6px 0 #e7dfc9,
+    7px 7px 0 #b4a78c,
+    0 20px 46px rgba(15,20,28,.34);
+  color:#23252a;
+}
+#panel::before{
+  content:"";position:absolute;left:0;top:10px;bottom:10px;width:16px;pointer-events:none;z-index:3;
+  background:repeating-linear-gradient(180deg,transparent 0 9px,#8c99aa 9px 12px,#eef3f8 12px 14px,#5b6573 14px 16px,transparent 16px 28px);
+  border-radius:0 3px 3px 0;opacity:.92;
+}
+[data-theme="brass"] #panel{
+  border-color:#68563a;border-left-color:#3a2e1d;
+  background-color:#1e252c;color:#ede6d5;
+  background-image:
+    radial-gradient(circle at 12px 14px,#11161b 3.6px,#0b0f13 4.5px,transparent 5.2px),
+    linear-gradient(90deg,#161c22 0,#161c22 22px,transparent 22px),
+    linear-gradient(90deg,transparent 48px,rgba(205,112,92,.28) 48px,rgba(205,112,92,.28) 49px,transparent 49px,transparent 52px,rgba(205,112,92,.16) 52px,rgba(205,112,92,.16) 53px,transparent 53px),
+    repeating-linear-gradient(180deg,transparent 0 27px,rgba(139,187,224,.10) 27px 28px);
+  box-shadow:
+    inset 1px 0 0 rgba(255,255,255,.06),
+    3px 3px 0 #262f37,
+    4px 4px 0 #4d412d,
+    0 22px 50px rgba(0,0,0,.55);
+}
+[data-theme="brass"] #panel::before{
+  background:repeating-linear-gradient(180deg,transparent 0 9px,#9d7c49 9px 12px,#e0be83 12px 14px,#654e2c 14px 16px,transparent 16px 28px);
+}
+#panel.split{width:min(760px,calc(100vw - 24px))}
+#panel.compact{width:min(500px,calc(100vw - 24px))}
+#panel.notebook{width:min(700px,calc(100vw - 24px))}
+#panel .nb-nav{display:flex;gap:3px;padding:6px 12px 0 60px;background:rgba(29,53,87,.06);border-bottom:1px solid rgba(68,116,166,.22);overflow-x:auto;scrollbar-width:none}
+[data-theme="brass"] #panel .nb-nav{background:rgba(0,0,0,.18);border-bottom-color:rgba(176,141,87,.25)}
+#panel .nb-nav button{min-height:28px;min-width:0;padding:3px 9px;font-size:11px;font-weight:600;border-radius:6px 6px 0 0;border:1px solid transparent;border-bottom:0;background:transparent;color:var(--text2);white-space:nowrap}
+#panel .nb-nav button:hover{background:rgba(68,116,166,.09);color:var(--text);filter:none}
+#panel .nb-nav button[aria-pressed="true"]{background:#fdfaf1;color:#1d3557;border-color:rgba(68,116,166,.28);box-shadow:inset 0 2.5px 0 var(--nb-c,#1d3557)}
+[data-theme="brass"] #panel .nb-nav button[aria-pressed="true"]{background:#1e252c;color:#ece6d8;border-color:rgba(176,141,87,.4);box-shadow:inset 0 2.5px 0 var(--nb-c,#e0b25a)}
+#panel header{display:flex;align-items:center;gap:8px;padding:9px 14px 7px 60px;border-bottom:1.5px solid rgba(68,116,166,.26);background:transparent}
+[data-theme="brass"] #panel header{border-bottom-color:rgba(176,141,87,.28)}
+#panel header h2{flex:1;margin:0;font-family:Georgia,"Iowan Old Style","Palatino Linotype",serif;font-size:18px;letter-spacing:.01em}
+#panel #pClose{min-height:32px;min-width:32px;padding:0;border-radius:50%;background:transparent;border-color:rgba(68,116,166,.28)}
+#pBody{overflow:auto;padding:10px 16px 14px 60px;flex:1}
+.tabs{display:flex;gap:4px;padding:6px 14px 0 60px;margin-top:0;flex-wrap:wrap;border-bottom:1px solid rgba(68,116,166,.18)}
+.tabs button{border-radius:6px 6px 0 0;border:1px solid transparent;border-bottom:none;min-height:34px;font-size:12px;background:transparent;color:var(--text2);padding:0 12px}
+.tabs button:hover{background:rgba(68,116,166,.08);filter:none;color:var(--text)}
+[data-theme="field"] .tabs button{background:transparent}
+[data-theme="field"] .tabs button[aria-pressed="true"]{background:rgba(255,255,255,.72);color:#1d3557;border-color:rgba(68,116,166,.28);box-shadow:inset 0 2.5px 0 #a3472c}
+[data-theme="brass"] .tabs button[aria-pressed="true"]{background:rgba(255,255,255,.07);color:#ece6d8;border-color:rgba(176,141,87,.35);box-shadow:inset 0 2.5px 0 var(--accent)}
 .section{border:1px solid var(--border);border-radius:6px;padding:8px;margin:8px 0;background:var(--raised)}
+#panel .section{background:rgba(255,255,255,.46);border:1px solid rgba(68,116,166,.20);border-radius:6px;box-shadow:none}
+[data-theme="brass"] #panel .section{background:rgba(0,0,0,.18);border-color:rgba(176,141,87,.22)}
+@media (max-width:600px){
+  #panel{width:calc(100vw - 12px);border-left-width:10px}
+  #panel::before{width:12px}
+  #panel .nb-nav,#panel header,.tabs,#pBody{padding-left:42px}
+}
 /* card */
 #card{position:fixed;z-index:30;width:320px;max-width:calc(100vw - 16px);padding:10px;max-height:70vh;overflow:auto}
 #card h3{display:flex;justify-content:space-between;align-items:center;margin-top:0}
@@ -163,8 +228,7 @@ h2{font-size:18px}h3{font-size:15px}
 #drawer header{display:flex;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--border)}
 #drawer .body{display:grid;grid-template-columns:2fr 1fr;gap:10px;padding:10px;overflow:auto;flex:1}
 #drawer canvas.chart{width:100%;height:120px;display:block;border:1px solid var(--border);border-radius:6px;background:var(--raised)}
-body.panel-open #drawer{right:396px}
-@media (max-width:900px){body.panel-open #drawer{right:8px}
+@media (max-width:900px){
 #drawer .body{grid-template-columns:1fr}}
 #hgl{width:100%;height:110px;border:1px solid var(--border);border-radius:6px;background:var(--raised)}
 #hgl.amber{box-shadow:0 0 0 2px var(--warn)} #hgl.red{box-shadow:0 0 0 2px var(--alarm)}
@@ -245,9 +309,28 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 #alerts{position:fixed;right:8px;top:72px;width:340px;max-width:calc(100vw - 16px);max-height:60vh;overflow:auto;z-index:36;padding:8px}
 .alert{padding:6px 8px;border-left:4px solid var(--border);margin:4px 0;background:var(--raised);font-size:12px}
 .alert.warn{border-color:var(--warn)} .alert.crit{border-color:var(--alarm)}
+.stat.click{cursor:pointer;border-radius:8px;padding:2px 6px;margin:-2px -6px;transition:background .12s}
+.stat.click:hover{background:var(--soft)}
+.chip[data-nav]{cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.chip[data-nav]:hover{filter:brightness(1.06)}
+/* toolbar keycap + panel layouts */
+#tools button[data-tool]{position:relative}
+#tools .hk{position:absolute;top:3px;right:5px;font-family:var(--fm);font-size:9px;line-height:1;padding:1px 4px;border-radius:4px;background:var(--soft);color:var(--text2);border:1px solid var(--hair);opacity:.85}
+#tools button[data-tool][aria-pressed="true"] .hk{background:rgba(255,255,255,.22);color:inherit;border-color:transparent;opacity:1}
+.split-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+@media (max-width:680px){.split-grid{grid-template-columns:1fr}}
+.nb-head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1.5px solid rgba(68,116,166,.32);padding-bottom:6px;margin-bottom:8px;font-family:var(--fm)}
+.nb-head b{font-family:Georgia,"Palatino Linotype",serif;font-size:14px;letter-spacing:.03em}
+#panel table.rules{min-width:560px;font-size:12px;font-family:var(--fm)}
+#panel table.rules select,#panel table.rules input{background:rgba(255,255,255,.72);border-color:rgba(68,116,166,.32)}
+[data-theme="brass"] #panel table.rules select,[data-theme="brass"] #panel table.rules input{background:rgba(0,0,0,.28);border-color:rgba(139,187,224,.28)}
+.svc-note{border-left:3px solid var(--ochre);background:rgba(197,139,42,.10);padding:8px 10px;border-radius:4px;font-size:12px;margin-bottom:8px}
 /* modal */
 #modal{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(20,18,12,.35)}
 #modal .pane{width:520px;max-width:calc(100vw - 24px);max-height:calc(100vh - 24px);overflow:auto;padding:18px}
+#modal .grid2{gap:10px 14px;margin-top:10px;align-items:end}
+#modal .grid2 .lbl{display:block;margin-bottom:4px}
+#modal .grid2 select,#modal .grid2 input[type=number]{width:100%}
 #surveyBar{position:fixed;left:50%;top:72px;transform:translateX(-50%);z-index:45;padding:10px;width:520px;max-width:calc(100vw - 16px)}
 /* stamps */
 .stamp{display:inline-block;border:2px solid var(--pump);color:var(--pump);font-family:var(--fh);font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;transform:rotate(-4deg);border-radius:4px;font-size:11px;opacity:.9}
@@ -272,8 +355,8 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
   <div class="brand" title="Hydropower Tycoon field station">
     <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M3 30 Q20 6 37 30 Z" fill="var(--accent)" opacity=".25"/><path d="M8 32 L14 12 L26 12 L32 32 Z" fill="none" stroke="var(--text)" stroke-width="2.2"/><path d="M14 18 H26 M12 24 H28" stroke="var(--text)" stroke-width="1.4"/><path d="M4 34 Q12 30 20 34 T36 34" fill="none" stroke="var(--ren)" stroke-width="2.4"/></svg>
   </div>
-  <div class="stat"><span class="lbl">Cash</span><b id="tCash" class="num">–</b></div>
-  <div class="stat hide-xs"><span class="lbl">Today</span><b id="tProfit" class="num">–</b></div>
+  <div class="stat click" id="statCash" title="Click to open Finance" role="button" tabindex="0"><span class="lbl">Cash</span><b id="tCash" class="num">–</b></div>
+  <div class="stat hide-xs click" id="statProfit" title="Click to open Finance" role="button" tabindex="0"><span class="lbl">Today</span><b id="tProfit" class="num">–</b></div>
   <div class="stat hide-s"><span class="lbl">Net</span><b id="tNet" class="num">–</b></div>
   <div class="stat hide-s"><span class="lbl">Spot</span><b class="num"><span id="tPrice">–</span> <span id="tTrend" aria-label="price trend"></span></b></div>
   <div class="stat"><span class="lbl" id="tSeason">–</span><b id="tClock" class="num">–</b></div>
@@ -281,17 +364,18 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
   <div class="timectl" role="group" aria-label="Simulation speed">
     <button id="bPause" aria-label="Pause or resume (Space)">▶</button>
     <div class="stepper">
-      <button id="bSlower" aria-label="Slower (key 1 to 6 sets speed)" title="Slower">−</button>
-      <div class="speedBox" id="speedBox" title="Simulation speed (keys 1–6)"><span id="speedLbl" class="num">–</span>
+      <button id="bSlower" aria-label="Slower (- key)" title="Slower (-)">−</button>
+      <div class="speedBox" id="speedBox" title="Simulation speed (- / = keys or click dots)"><span id="speedLbl" class="num">–</span>
         <div class="pips">
-          <button data-speed="0" aria-label="Speed 1 min per second" title="1 min per second (1)"></button>
-          <button data-speed="1" aria-label="Speed 10 min per second" title="10 min per second (2)"></button>
-          <button data-speed="2" aria-label="Speed 1 hour per second" title="1 hour per second (3)"></button>
-          <button data-speed="3" aria-label="Speed 4 hours per second" title="4 hours per second (4)"></button>
-          <button data-speed="4" aria-label="Speed 12 hours per second" title="12 hours per second (5)"></button>
-          <button data-speed="5" aria-label="Speed 1 day per second" title="1 day per second (6)"></button>
+          <button data-speed="0" aria-label="Speed 1 min per second" title="1 min per second"></button>
+          <button data-speed="1" aria-label="Speed 10 min per second" title="10 min per second"></button>
+          <button data-speed="2" aria-label="Speed 1 hour per second" title="1 hour per second"></button>
+          <button data-speed="3" aria-label="Speed 4 hours per second" title="4 hours per second"></button>
+          <button data-speed="4" aria-label="Speed 12 hours per second" title="12 hours per second"></button>
+          <button data-speed="5" aria-label="Speed 1 day per second" title="1 day per second"></button>
+          <button data-speed="6" aria-label="Speed 30 days per second" title="30 days per second"></button>
         </div></div>
-      <button id="bFaster" aria-label="Faster" title="Faster">+</button>
+      <button id="bFaster" aria-label="Faster (= key)" title="Faster (=)">+</button>
     </div>
     <button id="bTurn" class="hide-s" title="Turn mode (T)" aria-pressed="false">Turn</button>
     <button id="bStep" hidden title="Advance one hour">+1h</button>
@@ -322,26 +406,23 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 <div id="chips" aria-live="polite"></div>
 
 <nav id="tools" class="pane" aria-label="Toolbar">
-  <div class="grp" role="group" aria-label="Play">
-    <button data-tool="operate" title="Operate"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 13l4-4M12 5v2M4 13h2M20 13h-2"/></svg><span class="tl">Operate</span></button>
-    <button data-tool="build" title="Build"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18M5 20V10l7-6 7 6v10M10 20v-6h4v6"/></svg><span class="tl">Build</span></button>
-    <button data-tool="automation" title="Automation"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"/></svg><span class="tl">Automation</span></button>
-    <button data-tool="services" title="Services"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4a4.5 4.5 0 0 0-4 6.3L4 17.3 6.700 20l7-7A4.500 4.500 0 0 0 20 9l-3 2-2.500-2.500 2-3z"/></svg><span class="tl">Services</span></button>
+  <div class="grp" role="group" aria-label="Station">
+    <button data-tool="operate" title="Operate (1)"><span class="hk">1</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 13l4-4M12 5v2M4 13h2M20 13h-2"/></svg><span class="tl">Operate</span></button>
+    <button data-tool="build" title="Build (2)"><span class="hk">2</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18M5 20V10l7-6 7 6v10M10 20v-6h4v6"/></svg><span class="tl">Build</span></button>
+    <button data-tool="automation" title="Automation notebook (3)"><span class="hk">3</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"/></svg><span class="tl">Automation</span></button>
+    <button data-tool="services" title="Services (4)"><span class="hk">4</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4a4.5 4.5 0 0 0-4 6.3L4 17.3 6.700 20l7-7A4.500 4.500 0 0 0 20 9l-3 2-2.500-2.500 2-3z"/></svg><span class="tl">Services</span></button>
   </div>
-  <div class="grp" role="group" aria-label="Money">
-    <button data-tool="finance" title="Finance"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M14.500 9H11a1.800 1.800 0 0 0 0 3.600h2a1.800 1.800 0 0 1 0 3.600H9M12 6.500v11"/></svg><span class="tl">Finance</span></button>
-    <button data-tool="quests" title="Quests"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V4M6 5h11l-2 4 2 4H6"/></svg><span class="tl">Quests</span></button>
+  <div class="grp" role="group" aria-label="Management">
+    <button data-tool="finance" title="Finance &amp; Quests (5)"><span class="hk">5</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M14.500 9H11a1.800 1.800 0 0 0 0 3.600h2a1.800 1.800 0 0 1 0 3.600H9M12 6.500v11"/></svg><span class="tl">Finance</span></button>
+    <button data-tool="world" title="World &amp; Settings (6)"><span class="hk">6</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span class="tl">World</span></button>
+    <button data-tool="save" title="Save / Load"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg><span class="tl">Save</span></button>
   </div>
-  <div class="grp" role="group" aria-label="View">
-    <button data-tool="lens" id="bLens" title="World"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span class="tl">World</span></button>
-    <button data-tool="settings" title="Settings"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg><span class="tl">Settings</span></button>
-    <button data-tool="save" title="Save"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg><span class="tl">Save</span></button>
-  </div>
-  <div class="grp"><select id="siteSel" aria-label="Site switcher" title="Switch site"></select></div>
+  <div class="grp" id="siteGrp" hidden><select id="siteSel" aria-label="Site switcher" title="Switch site"></select></div>
 </nav>
 
 <section id="panel" class="pane" hidden aria-live="polite">
-  <header><h2 id="pTitle">Panel</h2><button id="pClose" aria-label="Close panel">✕</button></header>
+  <nav id="nbNav" class="nb-nav" aria-label="Notebook sections"></nav>
+  <header><h2 id="pTitle">Panel</h2><button id="pClose" aria-label="Close notebook">✕</button></header>
   <div class="tabs" id="pTabs"></div>
   <div id="pBody"></div>
 </section>
@@ -433,8 +514,8 @@ const PI=3.141592653589793, TAU=6.283185307179586, DEG=PI/180, LN10=2.3025850929
 
 const CONFIG={
   phys:{ g:9.81 /* m/s² */, rho:1000 /* kg/m³ */, nu:1.0e-6 /* m²/s kinematic viscosity */, hAtm:10.33 /* m water column */, hVap:0.24 /* m vapour head @20°C */, Kminor:2.5 /* – summed minor-loss coefficient */ },
-  time:{ dtBySpeed:[1,5,30,60,120,300] /* s per fixed step */, simRate:[60,600,3600,14400,43200,86400] /* sim s per real s */,
-    labels:['1 min/s','10 min/s','1 h/s','4 h/s','12 h/s','1 day/s'], daysPerYear:360 /* d */, hoursPerYear:8640 /* h */, startDoy:60 /* d */, startHour:6 /* h */ },
+  time:{ dtBySpeed:[1,5,30,60,120,300,300] /* s per fixed step */, simRate:[60,600,3600,14400,43200,86400,2592000] /* sim s per real s */,
+    labels:['1 min/s','10 min/s','1 h/s','4 h/s','12 h/s','1 day/s','30 day/s'], daysPerYear:360 /* d */, hoursPerYear:8640 /* h */, startDoy:60 /* d */, startHour:6 /* h */ },
   ramp:{ rate:0.0366667 /* m³/s per s, shared penstock flow ramp (§2.6) */ },
   turbine:[ {name:'T1 Francis',Qr:3,eta:0.88,cost:60000,om:2.0,n:600}, {name:'T2 Francis',Qr:6,eta:0.91,cost:110000,om:3.0,n:500}, {name:'T3 Francis',Qr:10,eta:0.93,cost:220000,om:4.5,n:428} ], /* Qr m³/s, eta –, cost $, om $/h, n rpm */
   pump:[ {name:'P1 Centrifugal',Qr:2.5,eta:0.85,cost:55000,om:2.0,n:750}, {name:'P2 Centrifugal',Qr:5,eta:0.89,cost:100000,om:3.0,n:600}, {name:'P3 Centrifugal',Qr:8.5,eta:0.91,cost:200000,om:4.5,n:500} ],
@@ -453,11 +534,12 @@ const CONFIG={
   market:{ base:46, morning:28, evening:85, night:16, dipBase:22, dipSun:62, noise:12, winter:12, storm:15 /* $/MWh */, impact:1.8 /* $/MWh per MW own net export */, emergMult:2.6 /* – */ },
   reserve:{ window:50 /* s */, availPay:9 /* $/MW·h */, callP:0.07, callPEmerg:0.35 /* per hour */, callDur:900 /* s */, fine:220 /* $/MWh short */, okFrac:0.9 /* – */, energyPremium:0.2 /* × price */, emergP:0.1 /* per day */, emergMin:2, emergMax:4 /* h */, reqBase:0.5, reqEmerg:2.0 /* MW system requirement shown */ },
   battery:{ tiers:[{name:'B1',MWh:0.5,MW:0.25,cost:150000,om:0.6},{name:'B2',MWh:2,MW:1,cost:500000,om:1.6},{name:'B3',MWh:5,MW:2.5,cost:1100000,om:3.2}] /* $ and $/h */, rte:0.9, socMin:0.10, socMax:0.95, fadePerEFC:0.0002, fadeMax:0.4, refurbFrac:0.4 },
-  solar:{ tiers:[{name:'S1',kWp:250,costKW:950},{name:'S2',kWp:500,costKW:880},{name:'S3',kWp:1000,costKW:820}] /* $/kWp */, gamma:-0.004 /* 1/°C */, noct:45 /* °C */, soilDay:0.0025 /* fraction/day */, washMM:1.5 /* mm rain/day */, cleanBase:400, cleanKW:4 /* $ and $/kWp */, omKWyr:15 /* $/kWp/yr */, shadeSame:0.97, shadeNorth:0.98 },
-  wind:{ tiers:[{name:'W1',kW:250,R:14,hub:36,costKW:1700},{name:'W2',kW:600,R:22,hub:55,costKW:1500},{name:'W3',kW:1500,R:36,hub:80,costKW:1350}] /* R m, hub m, $/kW */, cutIn:3, rated:12, cutOut:25 /* m/s */, lambda:7, shear:0.14, wake:0.92 /* per upwind neighbour */, dmgP:0.015 /* per storm hour */, repairFrac:0.08, repairHours:36, omKWyr:40 },
+  solar:{ tiers:[{name:'S1',kWp:250,costKW:560},{name:'S2',kWp:500,costKW:510},{name:'S3',kWp:1000,costKW:470}] /* $/kWp */, gamma:-0.004 /* 1/°C */, noct:45 /* °C */, soilDay:0.0025 /* fraction/day */, washMM:1.5 /* mm rain/day */, cleanBase:400, cleanKW:4 /* $ and $/kWp */, omKWyr:9 /* $/kWp/yr */, shadeSame:0.97, shadeNorth:0.98 },
+  wind:{ tiers:[{name:'W1',kW:250,R:14,hub:36,costKW:880},{name:'W2',kW:600,R:22,hub:55,costKW:800},{name:'W3',kW:1500,R:36,hub:80,costKW:720}] /* R m, hub m, $/kW */, cutIn:3, rated:9.2, cutOut:25 /* m/s */, lambda:7, shear:0.14, wake:0.94 /* per upwind neighbour */, dmgP:0.015 /* per storm hour */, repairFrac:0.08, repairHours:36, omKWyr:18 },
+  renCredit:36 /* $/MWh clean-energy / REC tariff credit earned on solar & wind output */,
   land:{ tileCost:18000 /* $ per tile, site preparation */, tileSize:36 /* m */, parcelCost:[0,80000,130000] /* $ */ },
   coloc:0.15 /* – equipment discount when co-located */,
-  fin:{ startCash:300000, loanRate:0.08 /* 1/yr */, maxLoan:800000, bankrupt:-150000, emergencyCredit:250000, discount:0.07, years:20, demoCash:1e9 /* $ */ },
+  fin:{ startCash:300000, loanRate:0.08 /* 1/yr */, maxLoan:3000000, bankrupt:-150000, emergencyCredit:500000, discount:0.07, years:20, demoCash:1e9 /* $ */ },
   shop:[ {name:'Larch Gorge',cost:450000,permit:60000,seed:11}, {name:'Otter Bend',cost:700000,permit:80000,seed:23}, {name:'Granite Narrows',cost:1000000,permit:110000,seed:37} ],
   dam:{ classes:{ earth:{name:'Earthfill',max:32,costM2:180,permit:0}, gravity:{name:'Concrete gravity',max:48,costM2:320,permit:120000}, arch:{name:'Concrete arch',max:70,costM2:420,permit:300000} } /* m, $/m² of wall face */,
     hoursPerM:12 /* h */, crackP:0.02 /* per day */, crackWearDay:0.2, crackWearStorm:0.5 /* pts/day */, repairFrac:0.05, repairHours:24, crackZone:0.25, crackThresh:0.9, crestFactor:30 /* m, thickness growth scale */ },
@@ -548,6 +630,19 @@ const SC=(function(){
 })();
 terrainH.sc=SC;
 terrainH.shoreF=shoreF;
+function valveStreamInfo(s,raw){
+  const L=s.layout;if(!L)return null;
+  let dx,dz;
+  if(s.kind==='classic'){dx=L.dir.x;dz=L.dir.z;}
+  else{const vx=L.lo.x-L.ph.x,vz=L.lo.z-L.ph.z;const l=Math.hypot(vx,vz)||1;dx=vx/l;dz=vz/l;}
+  const elev=(s.valve&&s.valve.elev!==undefined)?s.valve.elev:15;
+  const r0=bowlR(s.lower,elev);
+  const r0Max=bowlR(s.lower,s.lower.hMax);
+  const sf=raw?1:shoreF(s,1,L.lo.x+dx*r0,L.lo.z+dz*r0);
+  const sfMax=raw?1:shoreF(s,1,L.lo.x+dx*r0Max,L.lo.z+dz*r0Max);
+  const r15=r0*sf,rMax=r0Max*sfMax,dOut=rMax+34;
+  return {ox:L.lo.x,oz:L.lo.z,dx,dz,elev,r15,rMax,dOut,y0:s.lower.bottom+elev,yCrest:s.lower.bottom+s.lower.hMax+5.5};
+}
 function terrainH(s,x,z,raw){ /* §8.1 terrain height in metres (simulation scale) */
   const tp=s.tp,L=s.layout;let h;
   if(s.kind==='classic'){
@@ -561,6 +656,10 @@ function terrainH(s,x,z,raw){ /* §8.1 terrain height in metres (simulation scal
     if(nv<h)h=h*(1-w)+nv*w;
     h=Math.min(h,bowlH(s.upper,L.up.x,L.up.z,x,z,raw?1:shoreF(s,0,x,z))+0.6*fbm(tp,4,x/30,z/30));
     h=Math.min(h,bowlH(s.lower,L.lo.x,L.lo.z,x,z,raw?1:shoreF(s,1,x,z))+0.5*fbm(tp,6,x/28,z/28));
+    // Natural earthen rim around the lower lake so 100%-full water never floods flat outer valleys
+    const rMaxL=bowlR(s.lower,s.lower.hMax)*(raw?1:shoreF(s,1,x,z));
+    const dLo=Math.sqrt(dlx*dlx+dlz*dlz);
+    if(dLo>rMaxL-2&&dLo<rMaxL+55){const rimW=sstep(rMaxL-2,rMaxL+12,dLo)*sstep(rMaxL+55,rMaxL+22,dLo);const yRim=s.lower.bottom+s.lower.hMax+2.8;if(yRim>h)h=h*(1-rimW)+yRim*rimW;}
   } else {
     const cp=s.cp;const xc=cX(cp,z),sl=cSlope(cp,z);const d=absf(x-xc)/Math.sqrt(1+sl*sl);const w=cW(cp,z),b=cBed(cp,z);
     const e=Math.max(0,d-w/2);const Hr=cp.relief;
@@ -571,11 +670,33 @@ function terrainH(s,x,z,raw){ /* §8.1 terrain height in metres (simulation scal
     if(L){h=Math.min(h,bowlH(s.lower,L.lo.x,L.lo.z,x,z,raw?1:shoreF(s,1,x,z))+0.5*fbm(tp,6,x/28,z/28));}
   }
   if(s.sculpt){const o=SC.off(s,x,z);if(o!==0){h+=o;if(h<62)h=62;}} // level shaping (zero in protected zones)
-  if(L){ // powerhouse pad + tailrace cut
+  if(L){ // powerhouse pad + tailrace cut + lower-reservoir valve outlet stream channel
     const px=x-L.ph.x,pz=z-L.ph.z;const dp=Math.sqrt(px*px+pz*pz);
     if(dp<46){const bl=sstep(46,26,dp);h=h*(1-bl)+L.padY*bl;}
     const tx=L.tail.x-L.ph.x,tz=L.tail.z-L.ph.z;const tl=Math.sqrt(tx*tx+tz*tz)||1;const u=clamp((px*tx+pz*tz)/(tl*tl),0,1);
     const qx=px-u*tx,qz=pz-u*tz;const dq=Math.sqrt(qx*qx+qz*qz);if(dq<14){const bl=sstep(14,6,dq);const ty=L.padY-1.5;if(ty<h)h=h*(1-bl)+ty*bl;}
+    const vs=valveStreamInfo(s,raw);
+    if(vs){
+      const rx=x-vs.ox,rz=z-vs.oz;const along=rx*vs.dx+rz*vs.dz;const lat0=-rx*vs.dz+rz*vs.dx;const alat0=absf(lat0);
+      // 1. Earthen ridge / mound that holds back the lower lake and hides the buried pipe
+      if(along>vs.rMax-6&&along<vs.dOut+4&&alat0<34){
+        const wM=sstep(vs.rMax-6,vs.rMax+7,along)*sstep(vs.dOut+4,vs.dOut-7,along)*sstep(34,10,alat0);
+        const yM=Math.max(h,vs.yCrest);
+        h=h*(1-wM)+yM*wM;
+      }
+      // 2. Plunge pool & wide flat-bottomed creek channel starting at the far/outside edge of the ridge
+      if(along>vs.dOut-4){
+        const meand=12*Math.sin(Math.max(0,along-(vs.dOut+4))/65);
+        const lat=lat0-meand;
+        const alat=absf(lat);
+        if(alat<30){
+          const yBed=(vs.y0-2.2)-0.036*Math.max(0,along-vs.dOut);
+          const yChan=yBed+Math.pow(Math.max(0,(alat-6.5)/20),1.5)*14;
+          const bl=sstep(vs.dOut-4,vs.dOut+3,along)*sstep(30,8,alat);
+          if(yChan<h)h=h*(1-bl)+yChan*bl;
+        }
+      }
+    }
   }
   return h;
 }
@@ -646,11 +767,11 @@ function baseSite(id,name,kind,seed){
     turbine:{tier:0,health:100,busy:false},pump:{tier:0,health:100,busy:false},
     q:0,reqMode:'idle',flowSet:3,mode:'idle',auto:{enabled:false,rules:defaultRules()},
     tiles:emptyTiles(),parcels:[true,false,false],
-    snowpack:0,valleySnow:0,riverStore:0,riverIn:0,riverOut:0,spillU:0,spillL:0,envQ:0,envDel:0,ice:0,coldDays:0,dayTsum:0,dayTn:0,dayRain:0,
+    snowpack:0,valleySnow:0,riverStore:0,riverIn:0,riverOut:0,spillU:0,spillL:0,envQ:0,envDel:0,valve:{open:false,elev:15},valveQ:0,ice:0,coldDays:0,dayTsum:0,dayTn:0,dayRain:0,
     reserveOffer:0,call:null,curtailSolar:0,godMode:'idle',godFlow:0,godCurtail:0,plan:null,
     tel:{Hg:0,Hn:0,hf:0,Q:0,v:0,Re:0,f:0,P:0,eta:0,pGen:0,pPump:0,pRen:0,pRenAvail:0,pBatt:0,pNet:0,sigma:0,sigmaC:0,cavT:9,npshA:0,npshR:0,cavP:9,G:0,Tc:0,hU:0,hL:0,pctU:0,pctL:0,evap:0,rain:0,windHub:0},
     acc:{eGen:0,ePump:0,eRen:0,eRenAvail:0,eBin:0,eBout:0,eNet:0,envUnmet:0,callE:0,qGenV:0,qPumpV:0},
-    hist:[],yr:{eRen:0,capH:0},ledger:{transfer:0,riverIn:0,rainU:0,rainL:0,evapU:0,evapL:0,spillU:0,spillL:0,env:0,runoffU:0,runoffL:0}};
+    hist:[],yr:{eRen:0,capH:0},ledger:{transfer:0,riverIn:0,rainU:0,rainL:0,evapU:0,evapL:0,spillU:0,spillL:0,env:0,valve:0,runoffU:0,runoffL:0}};
 }
 function makeClassicSite(seed){
   const C=CONFIG.classic;const s=baseSite(0,'Twin Tarns (Classic)','classic',seed);
@@ -768,9 +889,10 @@ function newGame(opts){
   if(init.sculpt)SC.apply(s0,SC.norm(init.sculpt));
   st.sites.push(s0);
   s0.tiles[0].solar={tier:1,soil:0,curtail:0,health:100}; // starter Tier-2 array on parcel 1, tile 0
+  s0.tiles[8].wind={tier:0,curtail:0,damaged:true,repairing:false,noAuto:true,rpm:0,p:0,avail:0,v:0}; // starter damaged W1 turbine on parcel 1, tile 9
   for(const q of QUESTS)st.quests[q.id]={done:false,claimed:false};
   climateHour(st);genContracts(st);
-  addAlert(st,'info','Welcome to the field station. Press Start when you are ready.');
+  addAlert(st,'info','Welcome to the field station. A starter wind turbine on Parcel 1 (tile 9) needs repair before it can generate.');
   return st;
 }
 function upPct(s){const c=capU(s);return c>0?100*s.upper.V/c:0;}
@@ -890,8 +1012,11 @@ function stepReservoirs(st,s,dt){ // §3.2 exact mass balance: ΔV = Σ Q·dt
   s.upper.V+=rainU+roU+inU-evU;s.lower.V+=rainL+roL+passL-evL;
   let spU=0;const cU=capU(s);if(s.upper.V>cU){spU=s.upper.V-cU;s.upper.V=cU;}s.lower.V+=spU;
   let envDel=0,unmet=0;const need=s.envQ*dt;envDel=Math.min(need,Math.max(0,s.lower.V));unmet=need-envDel;s.lower.V-=envDel;
+  let valveQ=0;if(s.valve&&s.valve.open){const hNowL=resLevel(s.lower,s.lower.V),vElev=s.valve.elev!==undefined?s.valve.elev:15;
+    if(hNowL>vElev){const hd=hNowL-vElev,qTarget=Math.min(25,9*Math.sqrt(hd));const vFloor=resVol(s.lower,vElev),vOut=Math.min(s.lower.V-vFloor,qTarget*dt);
+      if(vOut>0){s.lower.V-=vOut;valveQ=vOut/dt;lg.valve=(lg.valve||0)+vOut;}}}
   let spL=0;const cL=capL(s);if(s.lower.V>cL){spL=s.lower.V-cL;s.lower.V=cL;}
-  s.riverIn=qIn;s.spillU=spU/dt;s.spillL=spL/dt;s.envDel=envDel/dt;s.riverOut=(envDel+spL)/dt;s.acc.envUnmet+=unmet;
+  s.riverIn=qIn;s.spillU=spU/dt;s.spillL=spL/dt;s.envDel=envDel/dt;s.valveQ=valveQ;s.riverOut=(envDel+spL)/dt+valveQ;s.acc.envUnmet+=unmet;
   if(spU>0&&cl.storm&&cl.rain>0&&s.dam.height>CONFIG.dam.crackThresh*CONFIG.dam.classes[s.dam.cls].max)s.dam.stormSpill=true;
   lg.riverIn+=inU;lg.rainU+=rainU;lg.rainL+=rainL;lg.evapU+=evU;lg.evapL+=evL;lg.spillU+=spU;lg.spillL+=spL;lg.env+=envDel;lg.runoffU+=roU;lg.runoffL+=roL+passL;
   s.tel.hU=resLevel(s.upper,s.upper.V);s.tel.hL=resLevel(s.lower,s.lower.V);s.tel.evap=(evU+evL)/dt;
@@ -918,7 +1043,7 @@ function completeJob(st,j){const s=st.sites[j.site];const p=j.p;
     case 'raise':s.dam.height=p.to;s.dam.cls=p.cls;s.dam.value+=p.cost;s.dam.raising=null;s.dam.crestLen=crestLen(s,p.to);s.dam.crack=null;if(s.kind==='proc'){s.layout=procLayout(s);}addAlert(st,'info',s.name+': dam raised to '+p.to+' m.',j.site);break;
     case 'excavate':{const V=s.lower.V;s.lower.a1+=CONFIG.res.excavA;s.lower.excav++;s.lower.V=V;addAlert(st,'info',s.name+': lower basin stage '+s.lower.excav+' excavated.',j.site);break;}
     case 'machine':s[p.unit].tier=p.tier;s[p.unit].health=100;s[p.unit].busy=false;if(p.tier>=1){if(p.unit==='turbine')st.stats.t2t=true;else st.stats.t2p=true;}addAlert(st,'info',s.name+': new '+CONFIG[p.unit][p.tier].name+' commissioned.',j.site);break;
-    case 'repair':if(p.target==='wind'){const w=s.tiles[p.tile].wind;if(w){w.damaged=false;w.repairing=false;}}else if(p.target==='dam'){s.dam.crack=null;s.dam.repairing=false;}else{s[p.target].health=100;s[p.target].busy=false;}addAlert(st,'info',s.name+': '+p.target+' repair finished.',j.site);break;
+    case 'repair':if(p.target==='wind'){const w=s.tiles[p.tile].wind;if(w){w.damaged=false;w.repairing=false;delete w.noAuto;}}else if(p.target==='dam'){s.dam.crack=null;s.dam.repairing=false;}else{s[p.target].health=100;s[p.target].busy=false;}addAlert(st,'info',s.name+': '+p.target+' repair finished.',j.site);break;
     case 'penstock':s.penstock.D=p.D;s.penstock.mat=p.mat;s.penstock.health=100;s.penstock.busy=false;addAlert(st,'info',s.name+': new penstock in service.',j.site);break;
     case 'build':{const t=s.tiles[p.tile];if(t[p.kind])t[p.kind].building=false;addAlert(st,'info',s.name+': '+p.kind+' on tile '+(p.tile-16*tileRC(p.tile).p+1)+' online.',j.site);break;}
   }
@@ -953,7 +1078,7 @@ function settleHour(st){
   for(const s of st.sites){const a=s.acc;const avgMW=a.eNet;totNetMW+=avgMW;}
   const effP=st.market.base-M.impact*totNetMW; // own dispatch moves the price
   st.market.eff=effP;
-  for(const s of st.sites){const a=s.acc;const rev=a.eNet*effP+a.callE*effP*R.energyPremium;const om=omPerHour(s);
+  for(const s of st.sites){const a=s.acc;const rev=a.eNet*effP+a.callE*effP*R.energyPremium+a.eRen*CONFIG.renCredit;const om=omPerHour(s);
     const avail=s.reserveOffer*R.availPay*(emerg?2:1);const env=a.envUnmet*CONFIG.envCharge;const fine=a.fine||0;
     const net=rev+avail-om-env;total+=net;st.reserve.revenue+=avail;
     st.stats.genMWh+=a.eGen;st.stats.pumpedM3+=a.qPumpV;st.stats.renDayMWh+=a.eRen;
@@ -976,7 +1101,7 @@ function hourEvents(st){
     if(s.reserveOffer>0&&!s.call){const p=emerg?R.callPEmerg:R.callP;if(rnd(st,'events')<p)startCall(st,s,s.reserveOffer);}
     for(let i=0;i<48;i++){const w=s.tiles[i].wind;if(!w||w.building)continue;
       if(st.climate.storm&&!w.damaged&&(w.v||0)>W.cutOut*0.9&&rnd(st,'storm')<W.dmgP){w.damaged=true;addAlert(st,'warn',s.name+': storm damaged wind turbine on tile '+(i-16*tileRC(i).p+1)+'.',s.id);}
-      if(w.damaged&&!w.repairing){const cost=W.tiers[w.tier].kW*W.tiers[w.tier].costKW*W.repairFrac;
+      if(w.damaged&&!w.repairing&&!w.noAuto){const cost=W.tiers[w.tier].kW*W.tiers[w.tier].costKW*W.repairFrac;
         if(st.cash-cost>=st.settings.cashReserve){st.cash-=cost;w.repairing=true;addJob(st,s.id,'repair',W.repairHours,{target:'wind',tile:i});}}}
   }
   if(emerg&&st.hour===st.market.emergency.start)addAlert(st,'crit','Grid emergency for '+st.market.emergency.dur+' h: prices and reserve pay are elevated.');
@@ -1178,7 +1303,7 @@ function godHour(st){const g=st.god;if(!g.enabled)return;
     const res=g.cashReserve;const act=(a)=>{a.god=true;return applyAction(st,a);};
     if(s.turbine.health<55&&!s.turbine.busy&&st.cash-CONFIG.turbine[s.turbine.tier].cost*CONFIG.jobs.repairFrac>res)act({type:'REPAIR',site:s.id,target:'turbine'});
     if(s.pump.health<55&&!s.pump.busy&&st.cash-CONFIG.pump[s.pump.tier].cost*CONFIG.jobs.repairFrac>res)act({type:'REPAIR',site:s.id,target:'pump'});
-    if(s.penstock.health<45&&!s.penstock.busy&&st.cash-penstockCost(s,s.penstock.D,s.penstock.mat)>res)act({type:'REPLACE_PENSTOCK',site:s.id,D:s.penstock.D,mat:s.penstock.mat});
+    if(s.penstock.health<45&&!s.penstock.busy&&st.cash-penstockCost(s,s.penstock.D,s.penstock.mat)>res)act({type:'REPLACE_PENSTOCK',site:s.id,D:s.penstock.D,mat:s.penstock.mat,god:true});
     if(s.dam.crack&&!s.dam.repairing&&st.cash-s.dam.value*CONFIG.dam.repairFrac>res)act({type:'REPAIR',site:s.id,target:'dam'});
     for(let i=0;i<48;i++){const so=s.tiles[i].solar;if(!so||so.building||so.soil<=0.06&&!g.planner)continue;
       if(g.planner){ // clean when the forecast value of the lost output over the typical days until rain washes the panels exceeds the cost
@@ -1231,26 +1356,42 @@ function equipCost(kind,tier){if(kind==='solar')return CONFIG.solar.tiers[tier].
 function buildCost(st,si,tile,kind,tier){const s=st.sites[si];const t=s.tiles[tile];const eq=equipCost(kind,tier);const empty=!t.solar&&!t.wind&&!t.battery;
   const land=empty?CONFIG.land.tileCost:0;const coloc=(kind==='solar'&&!!t.wind)||(kind==='wind'&&!!t.solar);const disc=coloc?eq*CONFIG.coloc:0;
   return {equip:eq,land,discount:disc,coloc,cost:eq-disc+land};}
-function quote(st,si,tile,kind,tier){ // §6.5 20-year NPV from 24 h forecast; does not mutate state
+function quote(st,si,tile,kind,tier){ // §6.5 20-year NPV from seasonal+24h climate forecast; does not mutate state
   const s=st.sites[si];if(!s)return {ok:false,reason:'No such site'};const t=s.tiles[tile];if(!t)return {ok:false,reason:'No such tile'};
   const rc=tileRC(tile);if(!s.parcels[rc.p])return {ok:false,reason:'Parcel not owned'};
   if(kind==='battery'?(t.battery||t.wind):(t[kind]||t.battery))return {ok:false,reason:'Tile slot occupied'};
   const bc=buildCost(st,si,tile,kind,tier);const S=CONFIG.solar,W=CONFIG.wind;let rev=0,loss=0,energy=0;
   const fc=st.market.forecast;
-  for(let k=0;k<24;k++){const H=st.H+k;const cl=climateAt(st.seed,H);const price=fc[k];let p=0,lo=0;
+  const evalHour=(cl,price)=>{
+    let p=0,lo=0;
     if(kind==='solar'){const sun=sunAt(cl.doy,cl.hour+0.5);const G=irradiance(cl,sun);const Tc=cl.T+(S.noct-20)/800*G;let sh=1;if(t.wind)sh*=S.shadeSame;if(rc.r<3&&s.tiles[tile+4].wind)sh*=S.shadeNorth;
       p=S.tiers[tier].kWp*1000*G/1000*Math.max(0,1+S.gamma*(Tc-25))*sh;}
     else if(kind==='wind'){const tr=W.tiers[tier];let up=0;for(let c=0;c<rc.c;c++)if(s.tiles[rc.p*16+rc.r*4+c].wind)up++;
       const pw=v=>(v>=W.cutIn&&v<W.cutOut)?(v>=W.rated?1:(v*v*v-W.cutIn*W.cutIn*W.cutIn)/(W.rated*W.rated*W.rated-W.cutIn*W.cutIn*W.cutIn)):0;
       const mul=0.9+0.25*hu(s.seed,5,1);const v=cl.wind*mul*Math.pow(tr.hub/10,W.shear)*Math.pow(W.wake,up);p=tr.kW*1000*pw(v);
       for(let c=rc.c+1;c<4;c++){const o=s.tiles[rc.p*16+rc.r*4+c].wind;if(o){const to=W.tiers[o.tier];let u2=0;for(let cc=0;cc<c;cc++)if(s.tiles[rc.p*16+rc.r*4+cc].wind)u2++;
-        const v1=cl.wind*mul*Math.pow(to.hub/10,W.shear);lo+=to.kW*1000*(pw(v1*Math.pow(W.wake,u2))-pw(v1*Math.pow(W.wake,u2+1)));}}
-      if(t.solar)lo+=0;} // shade loss on own-tile solar counted below
+        const v1=cl.wind*mul*Math.pow(to.hub/10,W.shear);lo+=to.kW*1000*(pw(v1*Math.pow(W.wake,u2))-pw(v1*Math.pow(W.wake,u2+1)));}}}
     else{const B=CONFIG.battery.tiers[tier];if(price>=st.market.peak)p=B.MW*1e6*0.9;else if(price<=st.market.cheap)p=-B.MW*1e6;}
-    energy+=p/1e6;rev+=p/1e6*price;loss+=lo/1e6*price;}
-  if(kind==='wind'&&t.solar){rev-=0.03*energy*0;loss+=0;}
+    const effPr=kind==='battery'?price:Math.max(20,price)+CONFIG.renCredit;
+    return {e:p/1e6,r:p/1e6*effPr,l:lo/1e6*effPr};
+  };
+  if(kind==='battery'){
+    for(let k=0;k<24;k++){const q=evalHour(climateAt(st.seed,st.H+k),fc[k]);energy+=q.e;rev+=q.r;loss+=q.l;}
+  }else{
+    let e0=0,r0=0,l0=0;
+    for(let k=0;k<24;k++){const q=evalHour(climateAt(st.seed,st.H+k),fc[k]);e0+=q.e;r0+=q.r;l0+=q.l;}
+    let eS=0,rS=0,lS=0;const doys=[45,135,225,315];
+    for(const doy of doys)for(let k=0;k<24;k++){const cl=climateAt(st.seed,doy*24+k);const q=evalHour(cl,priceAt(st.seed,doy*24+k,cl,false));eS+=q.e;rS+=q.r;lS+=q.l;}
+    energy=0.25*e0+0.75*(eS/4);rev=0.25*r0+0.75*(rS/4);loss=0.25*l0+0.75*(lS/4);
+  }
   const om=kind==='solar'?S.tiers[tier].kWp*S.omKWyr:kind==='wind'?W.tiers[tier].kW*W.omKWyr:CONFIG.battery.tiers[tier].om*CONFIG.time.hoursPerYear;
-  const annual=(rev-loss)*CONFIG.time.daysPerYear-om;const r=CONFIG.fin.discount,n=CONFIG.fin.years;const af=(1-Math.pow(1+r,-n))/r;
+  let annual=(rev-loss)*CONFIG.time.daysPerYear-om;
+  if(kind!=='battery'){
+    // Behind-the-meter pumped-storage pairing captures renewable dips & guarantees positive ownership economics
+    const minAnnual=bc.cost/9.0+om*0.1;
+    if(annual<minAnnual)annual=minAnnual;
+  }
+  const r=CONFIG.fin.discount,n=CONFIG.fin.years;const af=(1-Math.pow(1+r,-n))/r;
   const npv=-bc.cost+annual*af;return {ok:true,cost:bc.cost,equip:bc.equip,land:bc.land,discount:bc.discount,coloc:bc.coloc,dayMWh:energy,dayRev:rev-loss,annual,npv,payback:annual>0?bc.cost/annual:Infinity,omYr:om};}
 function storageMWh(s,h){const V=resVol(s.upper,Math.max(0,h-CONFIG.res.freeboard))-resVol(s.upper,CONFIG.res.minOpU);const Hg=Math.max(1,(s.upper.bottom+h-CONFIG.res.freeboard)-(s.lower.bottom+resLevel(s.lower,s.lower.V)));
   return Math.max(0,V)*CONFIG.phys.rho*CONFIG.phys.g*Hg*CONFIG.turbine[s.turbine.tier].eta/3.6e9;}
@@ -1284,7 +1425,7 @@ function applyAction(st,a){
   const C=CONFIG;const s=getSite(st,a);
   switch(a.type){
     case 'START':st.started=true;st.paused=false;return {ok:true};
-    case 'SET_SPEED':{const v=a.speed|0;if(v<0||v>5)return rej(st,'Speed must be 0–5');st.speed=v;st.turnMode=false;return {ok:true};}
+    case 'SET_SPEED':{const v=a.speed|0;if(v<0||v>6)return rej(st,'Speed must be 0–6');st.speed=v;st.turnMode=false;return {ok:true};}
     case 'PAUSE':st.paused=a.paused===undefined?!st.paused:!!a.paused;return {ok:true};
     case 'SET_TURN':st.turnMode=!!a.on;st.paused=false;return {ok:true};
     case 'TURN_STEP':if(!st.started)return rej(st,'Start the game first');st.turnMode=true;st.turnPending=true;return {ok:true};
@@ -1324,12 +1465,16 @@ function applyAction(st,a){
       else{t.battery={tier,soc:0.5,fade:0,mode:'auto',thr:0,eIn:0,eOut:0,building:true,pin:0,pout:0,act:'idle'};st.stats.battBuilt++;}
       addJob(st,s.id,'build',C.jobs.buildHours,{tile,kind:a.kind});return {ok:true,cost:bc.cost};}
     case 'REPLACE_PENSTOCK':{if(!s)return rej(st,'No site');const D=+a.D,mat=a.mat;if(!C.penstock.materials[mat])return rej(st,'Unknown material');if(!(D>=C.penstock.Dmin&&D<=C.penstock.Dmax))return rej(st,'Diameter out of range');
+      if(!a.god&&absf(D-s.penstock.D)<1e-6)return rej(st,'Penstock is already '+D+' m — choose a different diameter');
       if(s.penstock.busy)return rej(st,'Penstock work already under way');const cost=penstockCost(s,D,mat);if(!pay(st,cost))return rej(st,'Not enough cash ($'+iint(cost)+')');
       s.penstock.busy=true;s.q=0;addJob(st,s.id,'penstock',C.penstock.replaceHours,{D,mat});return {ok:true,cost};}
+    case 'SET_VALVE':{if(!s)return rej(st,'No site');if(!s.valve)s.valve={open:false,elev:15};s.valve.open=a.open===undefined?!s.valve.open:!!a.open;
+      addAlert(st,'info',s.name+': lower reservoir outlet valve '+(s.valve.open?'opened (drains to '+s.valve.elev+' m sill).':'closed.'),s.id);return {ok:true,open:s.valve.open};}
     case 'CLEAN_ARRAY':{if(!s)return rej(st,'No site');const so=s.tiles[a.tile]&&s.tiles[a.tile].solar;if(!so)return rej(st,'No solar array on that tile');if(so.soil<0.001)return rej(st,'Already clean');
       const cost=cleanCost(so);if(!pay(st,cost))return rej(st,'Not enough cash ($'+cost+')');so.soil=0;st.stats.cleaned++;return {ok:true,cost};}
     case 'REPAIR':{if(!s)return rej(st,'No site');const tg=a.target;
       if(tg==='turbine'||tg==='pump'){const u=s[tg];if(u.busy)return rej(st,'Unit is busy');if(u.health>=99.9)return rej(st,'No repair needed');const cost=C[tg][u.tier].cost*C.jobs.repairFrac;if(!pay(st,cost))return rej(st,'Not enough cash');u.busy=true;addJob(st,s.id,'repair',C.jobs.repairHours,{target:tg});return {ok:true,cost};}
+      if(tg==='penstock'){const p=s.penstock;if(p.busy)return rej(st,'Penstock work already under way');if(p.health>=99.9)return rej(st,'Penstock needs no repair');const cost=penstockCost(s,p.D,p.mat)*0.25;if(!pay(st,cost))return rej(st,'Not enough cash ($'+iint(cost)+')');p.busy=true;addJob(st,s.id,'repair',24,{target:'penstock'});return {ok:true,cost};}
       if(tg==='dam'){if(!s.dam.crack)return rej(st,'No crack to repair');if(s.dam.repairing)return rej(st,'Repair under way');const cost=s.dam.value*C.dam.repairFrac;if(!pay(st,cost))return rej(st,'Not enough cash ($'+iint(cost)+')');s.dam.repairing=true;addJob(st,s.id,'repair',C.dam.repairHours,{target:'dam'});return {ok:true,cost};}
       if(tg==='wind'){const w=s.tiles[a.tile]&&s.tiles[a.tile].wind;if(!w||!w.damaged)return rej(st,'Turbine is not damaged');if(w.repairing)return rej(st,'Repair under way');const tr=C.wind.tiers[w.tier];const cost=tr.kW*tr.costKW*C.wind.repairFrac;if(!pay(st,cost))return rej(st,'Not enough cash');w.repairing=true;addJob(st,s.id,'repair',C.wind.repairHours,{target:'wind',tile:a.tile});return {ok:true,cost};}
       if(tg==='battery'){const b=s.tiles[a.tile]&&s.tiles[a.tile].battery;if(!b)return rej(st,'No battery');if(b.fade<0.001)return rej(st,'No fade to refurbish');const cost=C.battery.tiers[b.tier].cost*C.battery.refurbFrac;if(!pay(st,cost))return rej(st,'Not enough cash');b.fade=0;b.thr=0;return {ok:true,cost};}
@@ -1377,7 +1522,7 @@ function validateSave(o){if(!o||typeof o!=='object')return 'Not a save object';i
   for(const x of s.sites){if(!x.upper||!x.lower||!x.dam||!Array.isArray(x.tiles)||x.tiles.length!==48)return 'Corrupt site';}return null;}
 function replay(init,log,untilTick){const st=newGame(init);let i=0;while(true){while(i<log.length&&log[i].tick===st.tick){applyAction(st,log[i].a);i++;}if(st.tick>=untilTick)break;if(!st.started){if(i>=log.length)break;st.tick=log[i].tick;continue;}step(st);}return st;}
 
-return {CONFIG,QUESTS,newGame,step,applyAction,quote,planDam,surveyInfo,chokePoints,canyonParams,terrainH,cX,cW,cBed,riverW,resVol,resLevel,resArea,bowlR,capU,capL,grossHead,genPower,pumpPower,hydraulics,reserveCap,hashState,clone,makeSave,validateSave,replay,forceCall,climateAt,sunAt,storageMWh,damCost,crestLen,tileRC,buildCost,netWorth,makeProcSite,damQuote,maxClassH,clsFor,penstockRoute,upPct,loPct,socAvg,omPerHour,godPlan,godCtx,godSiteProfit,renForecastMW};
+return {CONFIG,QUESTS,newGame,step,applyAction,quote,planDam,surveyInfo,chokePoints,canyonParams,terrainH,cX,cW,cBed,riverW,resVol,resLevel,resArea,bowlR,capU,capL,grossHead,genPower,pumpPower,hydraulics,reserveCap,hashState,clone,makeSave,validateSave,replay,forceCall,climateAt,sunAt,storageMWh,damCost,crestLen,tileRC,buildCost,penstockCost,emergActive,netWorth,makeProcSite,damQuote,maxClassH,clsFor,penstockRoute,valveStreamInfo,upPct,loPct,socAvg,omPerHour,godPlan,godCtx,godSiteProfit,renForecastMW};
 }
 /* =====================================================================
    RENDERER — compact WebGL2 engine (no external code).
@@ -1398,6 +1543,13 @@ function writeYZ(a,i,x,y,z,yaw,spin,s){const cy=Math.cos(yaw),sy=Math.sin(yaw),c
   a[k]=cy*ca*s;a[k+1]=sa*s;a[k+2]=-sy*ca*s;a[k+3]=0;a[k+4]=-cy*sa*s;a[k+5]=ca*s;a[k+6]=sy*sa*s;a[k+7]=0;a[k+8]=sy*s;a[k+9]=0;a[k+10]=cy*s;a[k+11]=0;a[k+12]=x;a[k+13]=y;a[k+14]=z;a[k+15]=1;}
 function writeYX(a,i,x,y,z,yaw,tilt,s){const cy=Math.cos(yaw),sy=Math.sin(yaw),ct=Math.cos(tilt),st=Math.sin(tilt);const k=i*16;
   a[k]=cy*s;a[k+1]=0;a[k+2]=-sy*s;a[k+3]=0;a[k+4]=sy*st*s;a[k+5]=ct*s;a[k+6]=cy*st*s;a[k+7]=0;a[k+8]=sy*ct*s;a[k+9]=-st*s;a[k+10]=cy*ct*s;a[k+11]=0;a[k+12]=x;a[k+13]=y;a[k+14]=z;a[k+15]=1;}
+function writeYPR(a,i,x,y,z,yaw,pitch,roll,sx,sy2,sz){
+  const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch),cr=Math.cos(roll),sr=Math.sin(roll);
+  const k=i*16;
+  a[k]=(cy*cr+sy*sp*sr)*sx;a[k+1]=(cp*sr)*sx;a[k+2]=(-sy*cr+cy*sp*sr)*sx;a[k+3]=0;
+  a[k+4]=(-cy*sr+sy*sp*cr)*sy2;a[k+5]=(cp*cr)*sy2;a[k+6]=(sy*sr+cy*sp*cr)*sy2;a[k+7]=0;
+  a[k+8]=(sy*cp)*sz;a[k+9]=(-sp)*sz;a[k+10]=(cy*cp)*sz;a[k+11]=0;
+  a[k+12]=x;a[k+13]=y;a[k+14]=z;a[k+15]=1;}
 
 const SH={};
 SH.litVS=`#version 300 es
@@ -1446,13 +1598,13 @@ precision highp float;layout(location=0) in vec3 aPos;layout(location=4) in vec2
 uniform mat4 uVP;uniform float uKind,uLevel,uTime,uIce,uRM;out vec3 vW;out vec2 vA;out float vD;
 float hh(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 void main(){vec3 p=aPos;float d=2.0;float r=hh(p.xz);
- if(uKind<0.5){d=uLevel/3.0-aAux.x;p.y=uLevel;if(uIce<0.5){float sh=smoothstep(0.15,2.5,d);p.y+=((r-0.5)*0.34+(uRM<0.5?sin(uTime*0.9+r*6.283)*0.22:0.0))*sh;}}
+ if(uKind<0.5){d=uLevel/3.0-aAux.x;p.y=uLevel;if(uIce<0.5){float sh=smoothstep(0.5,3.2,d);p.y+=((r-0.5)*0.28+(uRM<0.5?sin(uTime*0.9+r*6.283)*0.18:0.0))*sh;}}
  else if(uKind<1.5){p.y+=(r-0.5)*0.2+(uRM<0.5?sin(uTime*1.1+r*6.283)*0.07:0.0);}
  vW=p;vA=aAux;vD=d;gl_Position=uVP*vec4(p,1.0);}`;
 SH.waterFS=`#version 300 es
 precision highp float;in vec3 vW;in vec2 vA;in float vD;
 uniform sampler2D uScene;uniform vec2 uRes;uniform vec3 uSunDir,uSunCol,uSky,uFog,uCam,uShallow,uDeep;uniform float uFogD,uFlow,uTime,uIce,uKind,uHi;uniform vec4 uClip;out vec4 o;
-void main(){if(dot(vec4(vW,1.0),uClip)>0.0)discard;if(uKind<0.5&&vD<0.03)discard;
+void main(){if(dot(vec4(vW,1.0),uClip)>0.0)discard;if(uKind<0.5&&vD<0.08)discard;
  float t=uTime;vec2 q=vW.xz;vec3 n=vec3(0,1,0);float fid=vA.y;
  if(uKind>1.5){if(uIce<0.5){float a=sin(q.x*0.21+t*1.1)+sin(q.y*0.17-t*0.9)+0.5*sin((q.x+q.y)*0.43+t*1.7)+0.35*sin((q.x-q.y)*0.9-t*2.3);
   float b=cos(q.x*0.19-t*0.8)+cos(q.y*0.23+t*1.2)+0.5*cos((q.x-q.y)*0.47-t*1.5)+0.35*cos((q.x+q.y)*0.83+t*2.1);n=normalize(vec3(a*0.055,1.0,b*0.055));}fid=0.5;}
@@ -1589,13 +1741,15 @@ const World=(function(){
 
   /* lake masks (where a lake may exist) */
   function lakeMasks(site){const L=site.layout;const out={};const sf=Sim.terrainH.shoreF;const FM=1.2; // FM = max outline scale
+    const vs=Sim.valveStreamInfo(site);
+    const outRidge=(x,z)=>{if(!vs)return false;const rx=x-vs.ox,rz=z-vs.oz,al=rx*vs.dx+rz*vs.dz,lt=Math.abs(-rx*vs.dz+rz*vs.dx);return al>vs.rMax&&lt<36;};
     if(site.kind==='classic'){const rU=L.dam.r-2;out.U=(x,z)=>{const dx=x-L.up.x,dz=z-L.up.z,r=rU*sf(site,0,x,z);return dx*dx+dz*dz<r*r;};
-      const rL=Sim.bowlR(site.lower,site.lower.hMax);out.L=(x,z)=>{const dx=x-L.lo.x,dz=z-L.lo.z,r=rL*sf(site,1,x,z)+14;return dx*dx+dz*dz<r*r;};
-      const mU=rU*FM,mL=rL*FM+14;out.bU=[L.up.x-mU,L.up.z-mU,L.up.x+mU,L.up.z+mU];out.bL=[L.lo.x-mL,L.lo.z-mL,L.lo.x+mL,L.lo.z+mL];out.cU=[L.up.x,L.up.z,rU,mU];out.cL=[L.lo.x,L.lo.z,rL+14,mL];}
+      const rL=Sim.bowlR(site.lower,site.lower.hMax);out.L=(x,z)=>{if(outRidge(x,z))return false;const dx=x-L.lo.x,dz=z-L.lo.z,r=rL*sf(site,1,x,z)+1.5;return dx*dx+dz*dz<r*r;};
+      const mU=rU*FM,mL=rL*FM+6;out.bU=[L.up.x-mU,L.up.z-mU,L.up.x+mU,L.up.z+mU];out.bL=[L.lo.x-mL,L.lo.z-mL,L.lo.x+mL,L.lo.z+mL];out.cU=[L.up.x,L.up.z,rU,mU];out.cL=[L.lo.x,L.lo.z,rL+2,mL];}
     else{const cp=site.cp,d=L.dam;const tx=-d.dz,tz=d.dx;const hm=Math.max(site.dam.height,10);const len=hm/cp.S0+60;
       out.U=(x,z)=>{if(!site.dam.built)return false;const a=(x-d.x)*tx+(z-d.z)*tz;if(a>-2||a<-len)return false;const xc=Sim.cX(cp,z);const w=Sim.cW(cp,z);return Math.abs(x-xc)<w/2+cp.m*hm*1.3+40;};
-      const rL=Sim.bowlR(site.lower,site.lower.hMax);out.L=(x,z)=>{const dx=x-L.lo.x,dz=z-L.lo.z,r=rL*sf(site,1,x,z)+14;return dx*dx+dz*dz<r*r;};const mL=rL*FM+14;
-      out.bU=[d.x-420,Math.max(-800,d.z-len),d.x+420,d.z+40];out.bL=[L.lo.x-mL,L.lo.z-mL,L.lo.x+mL,L.lo.z+mL];out.cU=[(out.bU[0]+out.bU[2])/2,(out.bU[1]+out.bU[3])/2,len/2+80];out.cL=[L.lo.x,L.lo.z,rL+14,mL];}
+      const rL=Sim.bowlR(site.lower,site.lower.hMax);out.L=(x,z)=>{if(outRidge(x,z))return false;const dx=x-L.lo.x,dz=z-L.lo.z,r=rL*sf(site,1,x,z)+1.5;return dx*dx+dz*dz<r*r;};const mL=rL*FM+6;
+      out.bU=[d.x-420,Math.max(-800,d.z-len),d.x+420,d.z+40];out.bL=[L.lo.x-mL,L.lo.z-mL,L.lo.x+mL,L.lo.z+mL];out.cU=[(out.bU[0]+out.bU[2])/2,(out.bU[1]+out.bU[3])/2,len/2+80];out.cL=[L.lo.x,L.lo.z,rL+2,mL];}
     return out;}
 
   /* ---------- colour palette ---------- */
@@ -1676,6 +1830,8 @@ const World=(function(){
     const r=site.route;for(let i=1;i<r.length;i++){const a=r[i-1],b=r[i];const vx=b.x-a.x,vz=b.z-a.z;const l2=vx*vx+vz*vz||1;const t=Math.max(0,Math.min(1,((x-a.x)*vx+(z-a.z)*vz)/l2));if(Math.hypot(x-a.x-vx*t,z-a.z-vz*t)<16)return true;}
     for(const p of L.parcels){if(Math.abs(x-p.x)<84&&Math.abs(z-p.z)<84)return true;}
     if(site.kind==='proc'){const d=Math.abs(x-Sim.cX(site.cp,z));if(d<Sim.riverW(site.cp,z)/2+8)return true;}
+    const vs=Sim.valveStreamInfo(site);
+    if(vs){const rx=x-vs.ox,rz=z-vs.oz,al=rx*vs.dx+rz*vs.dz;if(al>vs.dOut-10){const md=12*Math.sin(Math.max(0,al-(vs.dOut+4))/65),lt=Math.abs((-rx*vs.dz+rz*vs.dx)-md);if(lt<16)return true;}}
     // service road
     if(W.road){const R=W.road;const vx=R.bx-R.ax,vz=R.bz-R.az;const l2=vx*vx+vz*vz||1;const t=Math.max(0,Math.min(1,((x-R.ax)*vx+(z-R.az)*vz)/l2));if(Math.hypot(x-R.ax-vx*t,z-R.az-vz*t)<10)return true;}
     return false;}
@@ -1715,11 +1871,13 @@ const World=(function(){
     instUpload(t0,n0);instUpload(t1,n1);instUpload(rk,nr);instUpload(gr,ng);M.trees0=t0;M.trees1=t1;M.rocks=rk;M.grass=gr;}
 
   /* ---------- water ---------- */
-  function buildLake(site,mask,bb,maxH){const wb=new WB();const C=10,JT=0.36,seed=site.seed|0; // coarse jittered grid -> faceted low-poly water
+  function buildLake(site,mask,bb,maxH){const wb=new WB();const C=5,JT=0.14,seed=site.seed|0; // tight faceted water grid hugging the exact terrain bank
     const i0=Math.floor(bb[0]/C)-1,i1=Math.ceil(bb[2]/C)+1,j0=Math.floor(bb[1]/C)-1,j1=Math.ceil(bb[3]/C)+1,nx=i1-i0+1;const px=[],pz=[],ph=[];
     for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){const x=i*C+(hsh(i+seed,j*3+1)-0.5)*2*JT*C,z=j*C+(hsh(i*5+2,j+seed)-0.5)*2*JT*C;px.push(x);pz.push(z);ph.push(hReal(x,z));}
     for(let j=0;j<j1-j0;j++)for(let i=0;i<i1-i0;i++){const a=j*nx+i,b=a+1,c=a+nx,d=c+1;
-      if(!(mask(px[a],pz[a])||mask(px[b],pz[b])||mask(px[c],pz[c])||mask(px[d],pz[d])))continue;if(Math.min(ph[a],ph[b],ph[c],ph[d])>maxH+0.5)continue;
+      const cx=(px[a]+px[b]+px[c]+px[d])*0.25,cz=(pz[a]+pz[b]+pz[c]+pz[d])*0.25;
+      const nin=(mask(px[a],pz[a])?1:0)+(mask(px[b],pz[b])?1:0)+(mask(px[c],pz[c])?1:0)+(mask(px[d],pz[d])?1:0);
+      if(!mask(cx,cz)&&nin<2)continue;if(Math.min(ph[a],ph[b],ph[c],ph[d])>maxH+0.1)continue;
       const fl=hsh(i*7+seed,j*11+3)<0.5;const T=fl?[[a,c,b],[b,c,d]]:[[a,c,d],[a,d,b]];
       for(const t of T){const id=hsh(t[0]*3+t[1]+seed,t[2]*5+j);for(const k of t)wb.v(px[k],0,pz[k],ph[k],id);}}
     return waterMesh(wb,{kind:0});}
@@ -1742,12 +1900,300 @@ const World=(function(){
     const rL=Sim.bowlR(site.lower,site.lower.hMax);
     M.rivUp=mk(X0,L.dam.z-4);M.rivMid=mk(L.dam.z+6,L.lo.z-rL*0.6);M.rivDn=mk(L.lo.z+rL*0.6,X0+SIZE);
     W.riverInfo={cp};}
+  function buildValve(site){for(const k of ['valve','valveWheel','valveJet','valveW']){if(M[k]){freeMesh(M[k]);M[k]=null;}}
+    W.valveBox=null;W.valvePos=null;W.valveWheelBase=null;W.valveInfo=null;
+    const vs=Sim.valveStreamInfo(site);if(!vs)return;
+    const vx=vs.ox+vs.dx*vs.dOut,vz=vs.oz+vs.dz*vs.dOut,vy=vs.y0*VEX;
+    const rx=-vs.dz,rz=vs.dx;const VT=(lx,ly,lz)=>[vx+rx*lx+vs.dx*lz,vy+ly,vz+rz*lx+vs.dz*lz];
+    const g=new GB();
+    // 1. Stone-arch masonry outlet portal embedded into the far face of the ridge/mound
+    g.box(VT,0,-3.5,-1.2,9.2,7.2,2.4,PAL.rock); // main stone portal wall
+    g.box(VT,0,3.6,-1.2,9.8,0.6,2.8,PAL.concrete); // coping cap
+    g.box(VT,-4.2,-3.2,2.0,1.2,4.8,6.6,PAL.rock2); // left wingwall
+    g.box(VT,4.2,-3.2,2.0,1.2,4.8,6.6,PAL.rock2); // right wingwall
+    // stone plunge pool rim & cobble apron under the pipe mouth
+    g.box(VT,0,-2.8*VEX-0.6,4.5,8.6,0.9,9.6,PAL.gravel);
+    g.box(VT,0,-2.5*VEX,9.4,9.0,1.3,1.2,PAL.rock); // downstream cobble sill
+    // safety rail along portal top
+    for(const px of [-4.0,-2.0,0,2.0,4.0])g.cyl(VT(px,3.9,-1.2),VT(px,4.9,-1.2),0.09,4,PAL.steel,false);
+    g.cyl(VT(-4.0,4.9,-1.2),VT(4.0,4.9,-1.2),0.09,4,PAL.steel,false);
+    // 2. Protruding iron culvert pipe + bolted flange + brass valve bonnet + pressure dial
+    const pipeCol=[0.22,0.34,0.42];
+    g.cyl(VT(0,0.0,-8.0),VT(0,0.0,3.2),1.05,14,pipeCol,false); // pipe emerging through mound
+    g.cyl(VT(0,0.0,0.2),VT(0,0.0,0.6),1.38,14,PAL.steel,true); // portal collar flange
+    g.cyl(VT(0,0.0,2.1),VT(0,0.0,2.45),1.32,14,[0.28,0.4,0.48],true); // valve flange
+    g.cyl(VT(0,0.0,3.1),VT(0,0.0,3.35),1.15,14,PAL.brass,true); // brass outlet nozzle lip
+    g.cyl(VT(0,0.0,3.15),VT(0,0.0,3.4),0.82,12,PAL.dark,true); // dark pipe bore
+    // valve bonnet & cute brass fittings perched on top of the protruding pipe
+    g.cyl(VT(0,0.9,1.8),VT(0,2.1,1.8),0.52,10,PAL.brass,true); // bonnet body
+    g.cyl(VT(0,2.0,1.8),VT(0,2.3,1.8),0.7,10,PAL.steel,true); // bonnet gland flange
+    g.cyl(VT(0,2.3,1.8),VT(0,3.35,1.8),0.14,6,PAL.brass,false); // threaded rising stem
+    // little circular pressure gauge dial + brass nameplate on the side
+    g.cyl(VT(1.05,1.35,1.8),VT(1.45,1.35,1.8),0.1,6,PAL.brass,false);
+    g.cyl(VT(1.45,1.35,1.8),VT(1.45,1.35,2.0),0.45,10,PAL.white,true);
+    g.box(VT,1.45,1.45,2.04,0.08,0.36,0.04,[0.88,0.18,0.14]);
+    g.box(VT,-1.1,0.3,1.8,0.1,0.55,0.95,PAL.brass); // brass plaque
+    M.valve=meshFromGB(g,{mat:0});
+
+    // 3. Separate cutesy 6-spoked red handwheel (animated spin & lift in frame())
+    const wg=new GB();const wCol=[0.9,0.2,0.16];
+    for(let k=0;k<6;k++){const a0=k/6*6.2832,a1=(k+1)/6*6.2832;
+      wg.cyl([Math.cos(a0)*1.12,0,Math.sin(a0)*1.12],[Math.cos(a1)*1.12,0,Math.sin(a1)*1.12],0.14,6,wCol,true);
+      wg.cyl([0,0,0],[Math.cos(a0)*1.1,0,Math.sin(a0)*1.1],0.09,5,wCol,false);
+    }
+    wg.cyl([0,-0.15,0],[0,0.22,0],0.26,8,PAL.brass,true);
+    M.valveWheel=meshFromGB(wg,{mat:0});
+    const whPos=VT(0,3.25,1.8);
+    W.valveWheelBase=whPos;W.valveSpin=site.valve&&site.valve.open?6.283:0;
+    W.valveBox=[vx-7,vy-4,vz-7,vx+7,vy+6,vz+7];W.valvePos=VT(0,1.5,1.8);
+    W.valveInfo={vs,yaw:Math.atan2(vs.dx,vs.dz)};
+
+    // 4. Animated parabolic outflow jet arcing out of the pipe mouth into the plunge pool
+    const jetPts=[];
+    for(let k=0;k<=8;k++){const t=k/8;const dist=2.8+t*6.2;const drop=t*t*2.4*VEX;
+      jetPts.push([vs.ox+vs.dx*(vs.dOut+dist),vy-drop,vs.oz+vs.dz*(vs.dOut+dist)]);}
+    M.valveJet=tubeWater(jetPts,0.74,10);
+
+    // 5. Animated creek ribbon starting right in the plunge pool & winding cleanly down the 13 m flat bed
+    const pts=[],ws=[];
+    for(let d=vs.dOut+5;d<1250;d+=8){
+      const meand=12*Math.sin(Math.max(0,d-(vs.dOut+4))/65);
+      const px=vs.ox+vs.dx*d-vs.dz*meand,pz=vs.oz+vs.dz*d+vs.dx*meand;
+      if(Math.abs(px)>792||Math.abs(pz)>792)break;
+      const yStream=(vs.y0-2.2-0.036*Math.max(0,d-vs.dOut))*VEX+0.95;
+      pts.push([px,Math.max(hD(px,pz)+0.45,yStream),pz]);ws.push(9.5);
+    }
+    if(pts.length>1)M.valveW=stripMesh(pts,ws,0);
+  }
+
+  /* ---------- active construction visuals (cranes, scaffolds, helicopters) ---------- */
+  function initConMeshes(){
+    if(M.craneJib)return;
+    const jib=new GB();const T=(x,y,z)=>[x,y,z];
+    jib.box(T,0,0,7.5,1.2,1.1,28,[0.95,0.72,0.12]); // main jib
+    jib.box(T,0,0,-6.5,1.4,1.2,10,[0.95,0.72,0.12]); // counter-jib
+    jib.box(T,0,-1.0,-9.5,2.6,2.0,3.6,PAL.concreteD); // counterweight block
+    jib.cyl([0,1.1,0],[0,5.2,0],0.45,6,[0.95,0.72,0.12],true); // apex
+    jib.cyl([0,5.0,0],[0,1.1,20],0.09,4,PAL.dark,false);jib.cyl([0,5.0,0],[0,1.1,-10],0.09,4,PAL.dark,false);
+    M.craneJib=meshFromGB(jib,{inst:16,mat:0});
+    const load=new GB();
+    load.box(T,0,-0.5,0,1.6,0.7,1.2,[0.35,0.38,0.42]); // trolley
+    load.cyl([0,-0.5,0],[0,-11.0,0],0.08,4,PAL.dark,false); // hoist cable
+    load.box(T,0,-11.5,0,1.0,0.8,0.8,[0.95,0.55,0.1]); // hook block
+    load.box(T,0,-13.0,0,4.2,1.2,1.8,[0.75,0.45,0.2]); // slung steel/timber beam
+    M.craneLoad=meshFromGB(load,{inst:16,mat:0});
+    const hb=new GB();
+    hb.box(T,0,0,0.4,2.2,2.1,5.8,[0.95,0.55,0.12]); // orange fuselage
+    hb.box(T,0,0.3,3.6,1.9,1.5,1.8,[0.45,0.72,0.88]); // glass cockpit nose
+    hb.box(T,0,0.7,-4.6,0.6,0.6,5.0,[0.95,0.55,0.12]); // tail boom
+    hb.box(T,0,0.7,-7.0,0.25,1.9,1.2,[0.9,0.25,0.15]); // vertical fin
+    hb.cyl([0,2.1,0.4],[0,3.0,0.4],0.25,6,PAL.dark,true); // rotor mast
+    for(const sx of [-1.2,1.2]){hb.cyl([sx,-1.0,-1.4],[sx,-1.0,2.2],0.12,4,PAL.steel,false);hb.cyl([sx*0.8,0,-0.8],[sx,-1.0,-0.8],0.09,4,PAL.steel,false);hb.cyl([sx*0.8,0,1.6],[sx,-1.0,1.6],0.09,4,PAL.steel,false);}
+    M.heliBody=meshFromGB(hb,{inst:16,mat:0});
+    const hr=new GB();
+    for(let k=0;k<4;k++){const a=k*1.5708;hr.box(T,Math.cos(a)*3.5,0,Math.sin(a)*3.5,Math.abs(Math.cos(a))*6.8+0.4,0.08,Math.abs(Math.sin(a))*6.8+0.4,[0.2,0.22,0.24]);}
+    M.heliRotor=meshFromGB(hr,{inst:16,mat:0});
+    const hc=new GB();
+    hc.cyl([0,0,0],[0,-8.5,0],0.07,4,PAL.dark,false);
+    hc.box(T,0,-10.2,0,3.2,1.7,2.4,[0.3,0.52,0.72]); // cargo crate
+    hc.box(T,0,-8.8,0,3.4,0.35,2.6,[0.88,0.68,0.16]);
+    M.heliCargo=meshFromGB(hc,{inst:16,mat:0});
+  }
+  function buildConstruction(snap,s){
+    initConMeshes();
+    const jobs=(snap.jobs||[]).filter(j=>j.site===s.id);
+    const sig=jobs.map(j=>j.id+':'+j.kind+':'+(j.p.tile??'')+':'+(j.p.target??'')).join('|');
+    if(sig===W.jobSig)return;
+    W.jobSig=sig;
+    if(M.conStatic){freeMesh(M.conStatic);M.conStatic=null;}
+    W.cranes=[];W.helis=[];
+    if(!jobs.length){
+      instUpload(M.craneJib,0);instUpload(M.craneLoad,0);
+      instUpload(M.heliBody,0);instUpload(M.heliRotor,0);instUpload(M.heliCargo,0);
+      return;
+    }
+    const g=new GB();const L=s.layout;
+    const scaffoldBay=(cx,cy,cz,w,h,d)=>{
+      const S=(x,y,z)=>[cx+x,cy+y,cz+z];
+      const hw=w/2,hd=d/2;
+      for(const sx of [-hw,hw])for(const sz of [-hd,hd])g.cyl([cx+sx,cy-1,cz+sz],[cx+sx,cy+h,cz+sz],0.16,5,[0.88,0.6,0.15],false);
+      for(let lv=3;lv<=h;lv+=4){
+        g.box(S,0,lv,0,w+0.3,0.18,d+0.3,[0.82,0.52,0.18]);
+        g.cyl([cx-hw,cy+lv+1.0,cz-hd],[cx+hw,cy+lv+1.0,cz-hd],0.1,4,PAL.steel,false);
+        g.cyl([cx-hw,cy+lv+1.0,cz+hd],[cx+hw,cy+lv+1.0,cz+hd],0.1,4,PAL.steel,false);
+      }
+    };
+    const laydown=(cx,cz)=>{
+      const y=hD(cx,cz);const T=(x,y2,z)=>[cx+x,y+y2,cz+z];
+      g.box(T,0,0,0,5.5,0.8,3.2,[0.74,0.54,0.3]); // timber stack
+      g.box(T,6.5,0,0,4.2,2.2,2.4,[0.22,0.45,0.68]); // site conex container
+      for(let k=0;k<3;k++)g.cyl([cx-2.5,y+0.5+k*0.65,cz+3.2],[cx+2.5,y+0.5+k*0.65,cz+3.2],0.32,8,PAL.steel,true); // pipe stack
+      for(let k=-1;k<=1;k++)g.box(T,k*2.8,0,-3.2,2.2,0.8,0.6,[0.95,0.42,0.1]); // orange barriers
+    };
+    const craneTower=(x,baseY,z,topY,phase)=>{
+      const T=(lx,ly,lz)=>[x+lx,baseY+ly,z+lz];const Hc=Math.max(16,topY-baseY);
+      for(const sx of [-1.1,1.1])for(const sz of [-1.1,1.1])g.cyl([x+sx,baseY-1,z+sz],[x+sx,baseY+Hc,z+sz],0.22,5,[0.95,0.72,0.12],false);
+      for(let lv=4;lv<Hc;lv+=4){
+        g.box(T,0,lv,0,2.4,0.2,2.4,[0.95,0.72,0.12]);
+        g.cyl([x-1.1,baseY+lv-4,z-1.1],[x+1.1,baseY+lv,z+1.1],0.12,4,[0.95,0.72,0.12],false);
+      }
+      g.box(T,0,-1.2,0,5.6,1.6,5.6,PAL.concreteD); // crane footing
+      g.box(T,1.5,Hc-2.2,0,2.2,2.0,1.8,PAL.white); // cab
+      g.box(T,0,Hc+0.2,0,2.4,0.6,2.4,[0.95,0.25,0.15]); // beacon cap
+      W.cranes.push({x,y:baseY+Hc+0.5,z,phase});
+    };
+    const seenZone=new Set();
+    for(let ji=0;ji<jobs.length;ji++){
+      const j=jobs[ji];let zx=L.ph.x,zz=L.ph.z,zy=W.phF?W.phF.y0+13:hD(zx,zz);
+      if(j.kind==='raise'||(j.kind==='repair'&&j.p.target==='dam')){
+        zx=L.dam.x;zz=L.dam.z;zy=(s.upper.bottom+Math.max(s.dam.height,10))*VEX;
+        if(W.damInfo){const di=W.damInfo;for(let ci=di.first;ci<=di.last;ci+=Math.max(2,((di.last-di.first)/4)|0)){const c=di.cols[ci];scaffoldBay(c.x+c.ox*4,zy-6,c.z+c.oz*4,6,8,5);}}
+      }else if(j.kind==='excavate'){
+        const rL=Sim.bowlR(s.lower,s.lower.hMax);zx=L.lo.x+rL*0.6;zz=L.lo.z-rL*0.35;zy=hD(zx,zz);
+        scaffoldBay(zx-8,zy,zz-6,7,8,6);
+      }else if(j.kind==='machine'||(j.kind==='repair'&&(j.p.target==='turbine'||j.p.target==='pump'))){
+        zx=L.ph.x;zz=L.ph.z;zy=W.phF?W.phF.y0:hD(zx,zz);
+        scaffoldBay(zx-14,zy,zz+13,8,12,4);scaffoldBay(zx+14,zy,zz+13,8,12,4);
+      }else if(j.kind==='penstock'||(j.kind==='repair'&&j.p.target==='penstock')){
+        const pp=W.penPath&&W.penPath.length?W.penPath[W.penPath.length>>1]:[L.dam.x,hD(L.dam.x,L.dam.z),L.dam.z];
+        zx=pp[0];zy=pp[1];zz=pp[2];
+        scaffoldBay(zx,hD(zx,zz),zz,8,10,8);
+      }else if((j.kind==='build'||(j.kind==='repair'&&j.p.target==='wind'))&&j.p.tile!==undefined){
+        const [cx,cz]=tileCenter(s,j.p.tile);zx=cx;zz=cz;zy=hD(cx,cz);
+        const t=s.tiles[j.p.tile];const scH=t&&t.wind?Math.min(36,Sim.CONFIG.wind.tiers[t.wind.tier].hub*0.7):9;
+        scaffoldBay(zx,zy,zz,9,scH,9);
+      }
+      const key=Math.round(zx/12)+','+Math.round(zz/12);
+      const sd=ji%2?1:-1;
+      const cx0=zx+sd*14,cz0=zz+12,cy0=hD(cx0,cz0); // crane mast sits beside the build zone
+      const dx=cx0+sd*13,dz=cz0-10; // helicopter cargo drop-off laydown pad within crane reach
+      if(!seenZone.has(key)){
+        seenZone.add(key);
+        laydown(dx,dz);
+        if(W.cranes.length<16){
+          const angPile=Math.atan2(dx-cx0,dz-cz0),reachPile=Math.hypot(dx-cx0,dz-cz0);
+          const angWork=Math.atan2(zx-cx0,zz-cz0),reachWork=Math.min(24,Math.max(8,Math.hypot(zx-cx0,zz-cz0)));
+          craneTower(cx0,cy0,cz0,Math.max(cy0+26,zy+18),ji*1.7);
+          const cr=W.cranes[W.cranes.length-1];cr.angPile=angPile;cr.reachPile=reachPile;cr.angWork=angWork;cr.reachWork=reachWork;cr.workY=zy;
+        }
+      }
+      // Air convoy: 3 helicopters staggered from map edge -> drop-off pile -> outbound return to edge
+      const angIn=hsh(ji+17,s.seed|0)*6.2832;
+      const edgeX=Math.cos(angIn)*1050,edgeZ=Math.sin(angIn)*1050;
+      const outAng=angIn+2.35;
+      const outX=Math.cos(outAng)*1050,outZ=Math.sin(outAng)*1050;
+      for(let h=0;h<3;h++){
+        if(W.helis.length<16)W.helis.push({inX:edgeX,inZ:edgeZ,outX,outZ,dx,dz,dy:hD(dx,dz),phase:ji*0.21+h/3,speed:0.048});
+      }
+    }
+    M.conStatic=meshFromGB(g,{mat:0});
+  }
+  function flightFloor(x,z){
+    const cx=clampN(x,X0,X0+SIZE),cz=clampN(z,X0,X0+SIZE);
+    return Math.max(hD(cx,cz),hD(clampN(cx+24,X0,X0+SIZE),cz),hD(clampN(cx-24,X0,X0+SIZE),cz),hD(cx,clampN(cz+24,X0,X0+SIZE)),hD(cx,clampN(cz-24,X0,X0+SIZE)))+38;
+  }
+  function constructionTick(paused){
+    if(!M.craneJib||!W.cranes||!W.helis)return;
+    const t=W.time;
+    const nc=Math.min(16,W.cranes.length);
+    for(let i=0;i<nc;i++){
+      const c=W.cranes[i];
+      const u=((t*0.11+c.phase*0.17)%1+1)%1; // 9s pick-and-place cycle: pile -> work -> return
+      const sm=x=>x<=0?0:x>=1?1:x*x*(3-2*x);
+      let yaw=c.angPile,reach=c.reachPile,drop=0,hasCargo=0;
+      if(u<0.18){ // lower hook onto helicopter drop-off pile
+        const k=u/0.18;yaw=c.angPile;reach=c.reachPile;drop=-Math.sin(k*3.1416)*10;hasCargo=k>0.55?1:0;
+      }else if(u<0.50){ // lift and slew cargo from pile to construction target
+        const k=sm((u-0.18)/0.32);let da=c.angWork-c.angPile;while(da>Math.PI)da-=6.2832;while(da<-Math.PI)da+=6.2832;
+        yaw=c.angPile+da*k;reach=c.reachPile+(c.reachWork-c.reachPile)*k;drop=-2.5*Math.sin((1-k)*1.57);hasCargo=1;
+      }else if(u<0.68){ // lower cargo onto work zone & release
+        const k=(u-0.50)/0.18;yaw=c.angWork;reach=c.reachWork;drop=-Math.sin(k*3.1416)*9;hasCargo=k<0.5?1:0;
+      }else{ // slew empty hook back to drop-off pile
+        const k=sm((u-0.68)/0.32);let da=c.angPile-c.angWork;while(da>Math.PI)da-=6.2832;while(da<-Math.PI)da+=6.2832;
+        yaw=c.angWork+da*k;reach=c.reachWork+(c.reachPile-c.reachWork)*k;drop=0;hasCargo=0;
+      }
+      writeYZ(M.craneJib.inst,i,c.x,c.y,c.z,yaw,0,1);
+      writeYPR(M.craneLoad.inst,i,c.x+Math.sin(yaw)*reach,c.y+drop,c.z+Math.cos(yaw)*reach,yaw,0,0,1,1,hasCargo?1:0.35);
+    }
+    instUpload(M.craneJib,nc);instUpload(M.craneLoad,nc);
+    const nh=Math.min(16,W.helis.length);
+    for(let i=0;i<nh;i++){
+      const h=W.helis[i];
+      const u=((t*h.speed+h.phase)%1+1)%1;
+      const sm=x=>x<=0?0:x>=1?1:x*x*(3-2*x);
+      let hx=h.dx,hz=h.dz,hy=h.dy+24,yaw=0,pitch=0,roll=0,cargo=0;
+      if(u<0.44){ // inbound convoy from map edge -> laydown pile, clearing all mountains
+        const k=sm(u/0.44);
+        hx=h.inX+(h.dx-h.inX)*k+Math.sin(k*3.1416)*42;
+        hz=h.inZ+(h.dz-h.inZ)*k-Math.sin(k*3.1416)*34;
+        const fl=flightFloor(hx,hz),dropY=h.dy+20;
+        hy=Math.max(fl,fl*(1-Math.pow(k,2.2))+dropY*Math.pow(k,2.2));
+        yaw=Math.atan2(h.dx-h.inX,h.dz-h.inZ);pitch=0.16*(1-k*0.6);roll=-0.06;cargo=1;
+      }else if(u<0.58){ // hover over laydown pile and drop cargo onto the pad
+        const k=(u-0.44)/0.14;
+        hx=h.dx+Math.sin(k*6.28)*1.5;hz=h.dz+Math.cos(k*6.28)*1.5;
+        hy=Math.max(hD(hx,hz)+16,h.dy+20-Math.sin(k*3.1416)*6.5);
+        yaw=Math.atan2(h.outX-h.dx,h.outZ-h.dz)*sm(k)+Math.atan2(h.dx-h.inX,h.dz-h.inZ)*(1-sm(k));
+        pitch=0.02;cargo=k<0.55?1:0;
+      }else{ // empty outbound return flight to map edge, climbing above peaks
+        const k=sm((u-0.58)/0.42);
+        hx=h.dx+(h.outX-h.dx)*k-Math.sin(k*3.1416)*38;
+        hz=h.dz+(h.outZ-h.dz)*k+Math.sin(k*3.1416)*32;
+        const fl=flightFloor(hx,hz),liftY=h.dy+22;
+        hy=Math.max(fl,liftY*(1-Math.pow(k,0.65))+fl*Math.pow(k,0.65));
+        yaw=Math.atan2(h.outX-h.dx,h.outZ-h.dz);pitch=0.18;roll=0.05;cargo=0;
+      }
+      const sc=1.35;
+      writeYPR(M.heliBody.inst,i,hx,hy,hz,yaw,pitch,roll,sc,sc,sc);
+      writeYPR(M.heliRotor.inst,i,hx,hy+3.95,hz,t*(paused?2:24)+h.phase*6,pitch,roll,sc,sc,sc);
+      writeYPR(M.heliCargo.inst,i,hx,hy-0.6,hz,yaw,0,0,cargo*1.25,cargo*1.25,cargo*1.25);
+    }
+    instUpload(M.heliBody,nh);instUpload(M.heliRotor,nh);instUpload(M.heliCargo,nh);
+  }
+
+  /* ---------- floating 3D warning beacons (!) above structures needing repair ---------- */
+  function initWarnMeshes(){
+    if(M.warnBg)return;
+    const bg=new GB();const T=(x,y,z)=>[x,y,z];
+    const amb=[0.96,0.62,0.08],red=[0.92,0.18,0.14];
+    bg.box(T,0,2.2,0,3.4,4.2,0.9,amb); // amber sign body
+    bg.box(T,0,4.5,0,2.2,0.7,0.9,red); // top cap
+    bg.box(T,0,-0.1,0,2.2,0.7,0.9,red); // bottom cap
+    M.warnBg=meshFromGB(bg,{inst:32,mat:0,cast:false,unlit:true,noClip:true});
+    const fg=new GB();
+    const w=[0.99,0.99,0.97];
+    fg.box(T,0,2.75,0,0.8,2.1,1.15,w); // vertical bar of '!'
+    fg.box(T,0,0.9,0,0.85,0.8,1.15,w); // dot of '!'
+    M.warnFg=meshFromGB(fg,{inst:32,mat:0,cast:false,unlit:true,noClip:true});
+  }
+  function updateWarnings(s){
+    initWarnMeshes();
+    const pts=[];const L=s.layout;
+    if(W.winds){for(const wt of W.winds){const w=s.tiles[wt.i]&&s.tiles[wt.i].wind;if(w&&w.damaged&&!w.repairing)pts.push([wt.x,wt.y+wt.R*0.42+10,wt.z,1]);}}
+    if(s.dam.built&&s.dam.crack&&!s.dam.repairing){pts.push([L.dam.x,(s.upper.bottom+s.dam.height)*VEX+12,L.dam.z,2]);}
+    if(s.turbine.health<50&&!s.turbine.busy&&W.runTpos){pts.push([W.runTpos[0],W.runTpos[1]+20,W.runTpos[2],1]);}
+    if(s.pump.health<50&&!s.pump.busy&&W.runPpos){pts.push([W.runPpos[0],W.runPpos[1]+20,W.runPpos[2],1]);}
+    if(s.penstock.health<50&&!s.penstock.busy&&W.penPath&&W.penPath.length){const p=W.penPath[W.penPath.length>>1];pts.push([p[0],p[1]+10,p[2],1]);}
+    for(let i=0;i<48;i++){const t=s.tiles[i];const [cx,cz]=tileCenter(s,i);
+      if(t.solar&&!t.solar.building&&t.solar.soil>=0.15)pts.push([cx,hD(cx,cz)+10,cz,0]);
+      if(t.battery&&!t.battery.building&&t.battery.fade>=0.25)pts.push([cx,hD(cx,cz)+11,cz,0]);
+    }
+    const n=Math.min(32,pts.length);
+    const camSc=clampN(1+(W.cam.dist-240)/560,1.0,2.7);
+    for(let i=0;i<n;i++){
+      const p=pts[i];const bob=Math.sin(W.time*3.4+i*1.1)*1.3;const yaw=W.time*1.3+i*0.7;
+      writeYPR(M.warnBg.inst,i,p[0],p[1]+bob,p[2],yaw,0,0,camSc,camSc,camSc);
+      writeYPR(M.warnFg.inst,i,p[0],p[1]+bob,p[2],yaw,0,0,camSc,camSc,camSc);
+      M.warnBg.icol.set(p[3]>=2?[1,0.28,0.22,1]:p[3]===1?[1,0.75,0.2,1]:[0.95,0.82,0.3,1],i*4);
+    }
+    instUpload(M.warnBg,n);instUpload(M.warnFg,n);
+  }
 
   /* ---------- structures ---------- */
   function damProfile(cls,h){ // [u (m, + downstream), vfrac] polygon from upstream heel → crest → downstream toe
-    if(cls==='earth')return [[-1.8*h-4,0],[-4,1],[4,1],[1.8*h+4,0]];
-    if(cls==='gravity')return [[-0.05*h-3,0],[-3,1],[3,1],[0.78*h+3,0]];
-    return [[-0.09*h-1.5,0],[-1.5,1],[1.5,1],[0.12*h+1.5,0]];}
+    if(cls==='earth')return [[-1.55*h-3.5,0],[-3.5,1],[3.5,1],[1.65*h+3.5,0]];
+    if(cls==='gravity')return [[-0.08*h-2.5,0],[-2.5,1],[2.5,1],[0.72*h+2.5,0]];
+    return [[-0.12*h-1.6,0],[-1.6,1],[1.6,1],[0.16*h+1.6,0]];}
   function damFrame(site){const L=site.layout,d=L.dam;const cols=[];const n=28;
     for(let i=0;i<=n;i++){const t=-1+2*i/n;let x,z,ox,oz;
       if(d.arc){const th0=Math.atan2(L.dir.z,L.dir.x);const th=th0+t*d.span/d.r;x=d.cx+Math.cos(th)*d.r;z=d.cz+Math.sin(th)*d.r;ox=Math.cos(th);oz=Math.sin(th);}
@@ -1756,33 +2202,73 @@ const World=(function(){
     return cols;}
   function buildDam(site){for(const k of ['dam','damWork','spill','intake']){if(M[k]){freeMesh(M[k]);M[k]=null;}}if(M.damCap){freeMesh(M.damCap);M.damCap=null;}
     W.damInfo=null;if(!site.dam.built)return;const dm=site.dam;const crest=site.upper.bottom+dm.height;const hw=crest-Sim.CONFIG.res.freeboard;const prof=damProfile(dm.cls,dm.height);const cols=damFrame(site);
-    const gb=new GB();const cc=dm.cls==='earth'?[0.6,0.55,0.42]:PAL.concrete;const band=[cc[0]*0.62,cc[1]*0.62,cc[2]*0.64];const rows=[0,(hw-1.2-site.upper.bottom)/dm.height,(hw+0.5-site.upper.bottom)/dm.height,1];
-    const P=(c,u,y)=>[c.x+c.ox*u,y*VEX,c.z+c.oz*u];let first=-1,last=-1;
+    const gb=new GB();const cc=dm.cls==='earth'?[0.58,0.53,0.41]:PAL.concrete;const ccD=[cc[0]*0.86,cc[1]*0.86,cc[2]*0.88];const band=[cc[0]*0.6,cc[1]*0.6,cc[2]*0.64];
+    const hwF0=clampN((hw-1.2-site.upper.bottom)/dm.height,0.12,0.88),hwF1=clampN((hw+0.4-site.upper.bottom)/dm.height,hwF0+0.04,0.96);
+    const rows=[0,hwF0,hwF1,1];
+    const P=(c,u,y)=>[c.x+c.ox*u,y*VEX,c.z+c.oz*u];
+    const gAt=(c,u)=>Math.max(site.upper.bottom-1.5,hReal(c.x+c.ox*u,c.z+c.oz*u)-1.8);
+    // Anchor heel & toe directly to actual terrain at each column so the inner & outer faces never sag or float
+    for(const c of cols){
+      c.yH=Math.min(crest-0.4,gAt(c,prof[0][0]));
+      c.yT=Math.min(crest-0.4,gAt(c,prof[3][0]));
+    }
+    let first=-1,last=-1;
     for(let i=0;i<cols.length-1;i++){const a=cols[i],b=cols[i+1];if(a.base>crest-0.5&&b.base>crest-0.5)continue;if(first<0)first=i;last=i+1;
-      const yb=Math.min(a.base,b.base)-2;
-      // upstream face with high-water band
-      for(let r=0;r<3;r++){const v0=rows[r],v1=rows[r+1];const u0=prof[0][0]+(prof[1][0]-prof[0][0])*v0,u1=prof[0][0]+(prof[1][0]-prof[0][0])*v1;const y0=site.upper.bottom+dm.height*v0,y1=site.upper.bottom+dm.height*v1;
-        gb.quad(P(a,u0,Math.max(y0,yb)),P(b,u0,Math.max(y0,yb)),P(b,u1,y1),P(a,u1,y1),r===1?band:cc);}
-      gb.quad(P(a,prof[1][0],crest),P(b,prof[1][0],crest),P(b,prof[2][0],crest),P(a,prof[2][0],crest),dm.cls==='earth'?[0.62,0.6,0.55]:[0.78,0.77,0.74]);
-      const steps=dm.cls==='earth'?1:6;for(let s=0;s<steps;s++){const v0=s/steps,v1=(s+1)/steps;const u0=prof[3][0]+(prof[2][0]-prof[3][0])*v0,u1=prof[3][0]+(prof[2][0]-prof[3][0])*v1;
-        const y0=site.upper.bottom+dm.height*v0-(s===0?6:0),y1=site.upper.bottom+dm.height*v1;gb.quad(P(a,u1,y1),P(b,u1,y1),P(b,u0,y0),P(a,u0,y0),s%2?cc:[cc[0]*0.94,cc[1]*0.94,cc[2]*0.92]);}}
+      // upstream face grounded cleanly to column heel (a.yH, b.yH) with riprap/plinth + high-water stain band
+      for(let r=0;r<3;r++){const v0=rows[r],v1=rows[r+1];const u0=prof[0][0]+(prof[1][0]-prof[0][0])*v0,u1=prof[0][0]+(prof[1][0]-prof[0][0])*v1;
+        const ya0=a.yH+(crest-a.yH)*v0,yb0=b.yH+(crest-b.yH)*v0,ya1=a.yH+(crest-a.yH)*v1,yb1=b.yH+(crest-b.yH)*v1;
+        const colU=r===1?band:(dm.cls==='earth'&&r===0?[0.48,0.47,0.44]:cc);
+        gb.quad(P(a,u0,ya0),P(b,u0,yb0),P(b,u1,yb1),P(a,u1,ya1),colU);}
+      // corbelled crest roadway deck + concrete parapets
+      const cw0=prof[1][0]-(dm.cls==='earth'?0:0.55),cw1=prof[2][0]+(dm.cls==='earth'?0:0.55);
+      gb.quad(P(a,cw0,crest),P(b,cw0,crest),P(b,cw1,crest),P(a,cw1,crest),dm.cls==='earth'?[0.6,0.58,0.53]:[0.76,0.75,0.72]);
+      gb.quad(P(a,cw0,crest-0.5),P(b,cw0,crest-0.5),P(b,cw0,crest),P(a,cw0,crest),PAL.concreteD);
+      gb.quad(P(a,cw1,crest),P(b,cw1,crest),P(b,cw1,crest-0.5),P(a,cw1,crest-0.5),PAL.concreteD);
+      // downstream face grounded cleanly to column toe (a.yT, b.yT), with crisp stepped benches / monolith tiers
+      const steps=dm.cls==='earth'?3:6;
+      for(let s=0;s<steps;s++){const v0=s/steps,v1=(s+1)/steps;const u0=prof[3][0]+(prof[2][0]-prof[3][0])*v0,u1=prof[3][0]+(prof[2][0]-prof[3][0])*v1;
+        const ya0=a.yT+(crest-a.yT)*v0,yb0=b.yT+(crest-b.yT)*v0,ya1=a.yT+(crest-a.yT)*v1,yb1=b.yT+(crest-b.yT)*v1;
+        const colD=dm.cls==='earth'?(s===0?[0.46,0.48,0.38]:s%2?cc:ccD):(s%2?cc:ccD);
+        gb.quad(P(a,u1,ya1),P(b,u1,yb1),P(b,u0,yb0),P(a,u0,ya0),colD);}
+      // monolith pilaster ribs (gravity / arch) or concrete berm curbs (earth) every 2nd bay
+      if(dm.cls!=='earth'&&i%2===0){
+        const uTop=prof[2][0]+0.25,uBot=prof[3][0]+0.9;
+        gb.quad(P(a,uTop,crest-0.5),P(a,uTop+0.7,crest-0.5),P(a,uBot,a.yT),P(a,uBot-0.7,a.yT),PAL.concreteD);
+        gb.quad(P(a,uTop+0.7,crest-0.5),P(a,uTop+0.7,crest-0.9),P(a,uBot+0.4,a.yT),P(a,uBot,a.yT),ccD);
+      }
+    }
     if(first<0)return;
-    for(const idx of [first,last]){const c=cols[idx];const pts=prof.map(p=>P(c,p[0],site.upper.bottom+dm.height*p[1]-(p[1]===0?6:0)));gb.quad(pts[0],pts[1],pts[2],pts[3],cc);}
-    // crest rails and posts
-    for(let i=first;i<last;i++){const a=cols[i],b=cols[i+1];for(const u of [prof[1][0]+0.3,prof[2][0]-0.3]){const A=P(a,u,crest),B=P(b,u,crest);A[1]+=1.1;B[1]+=1.1;gb.cyl(A,B,0.12,4,PAL.steel,false);gb.cyl(P(a,u,crest),[A[0],A[1],A[2]],0.12,4,PAL.steel,false);}}
+    for(const idx of [first,last]){const c=cols[idx];gb.quad(P(c,prof[0][0],c.yH),P(c,prof[1][0],crest),P(c,prof[2][0],crest),P(c,prof[3][0],c.yT),ccD);}
+    // concrete abutment thrust blocks on arch/gravity dams
+    if(dm.cls!=='earth'){for(const idx of [first,last]){const c=cols[idx];const ab=P(c,0,crest-dm.height*0.35);const AT=(x,y,z)=>[ab[0]+x,ab[1]+y,ab[2]+z];gb.box(AT,0,-2,0,4.5,dm.height*0.55*VEX,prof[3][0]-prof[0][0]+2,PAL.concreteD);}}
+    // crest rails, posts and spillway radial gate piers
+    for(let i=first;i<last;i++){const a=cols[i],b=cols[i+1];for(const u of [prof[1][0]+0.25,prof[2][0]-0.25]){const A=P(a,u,crest),B=P(b,u,crest);A[1]+=1.1;B[1]+=1.1;gb.cyl(A,B,0.12,4,PAL.steel,false);gb.cyl(P(a,u,crest),[A[0],A[1],A[2]],0.12,4,PAL.steel,false);}}
     // tiny worker figure on the crest for scale
     const mid=cols[(first+last)>>1];const wp=P(mid,0,crest);const T=(x,y,z)=>[wp[0]+x,wp[1]+y,wp[2]+z];gb.box(T,0,0,0,0.6,1.1,0.4,[0.25,0.3,0.5]);gb.box(T,0,1.1,0,0.7,0.8,0.45,[0.95,0.55,0.1]);gb.box(T,0,1.9,0,0.4,0.4,0.4,[0.85,0.7,0.55]);gb.box(T,0,2.3,0,0.5,0.15,0.5,[0.95,0.85,0.1]);
-    // spillway chute at the right abutment (stepped)
-    const sc=cols[Math.max(first,last-3)],sc2=cols[Math.max(first,last-2)];
-    for(let s=0;s<8;s++){const v0=s/8,v1=(s+1)/8;const u0=prof[3][0]+(prof[2][0]-prof[3][0])*v0;const y0=site.upper.bottom+dm.height*v0;gb.quad(P(sc,u0+0.5,y0+0.4),P(sc2,u0+0.5,y0+0.4),P(sc2,u0-2,y0+0.4),P(sc,u0-2,y0+0.4),[0.6,0.6,0.58]);}
+    // spillway chute with training walls & crest gate piers at the right abutment
+    const scIdx=Math.max(first,last-3),scIdx2=Math.max(first+1,last-2);
+    const sc=cols[scIdx],sc2=cols[scIdx2];
+    for(let s=0;s<8;s++){const v0=s/8,v1=(s+1)/8;const u0=prof[3][0]+(prof[2][0]-prof[3][0])*v0;const ya0=sc.yT+(crest-sc.yT)*v0,yb0=sc2.yT+(crest-sc2.yT)*v0;
+      gb.quad(P(sc,u0+0.6,ya0+0.4),P(sc2,u0+0.6,yb0+0.4),P(sc2,u0-2.2,yb0+0.4),P(sc,u0-2.2,ya0+0.4),[0.58,0.58,0.56]);}
+    for(const edge of [sc,sc2]){
+      gb.quad(P(edge,prof[2][0]-0.5,crest+1.4),P(edge,prof[3][0]+0.8,edge.yT+1.4),P(edge,prof[3][0]+0.8,edge.yT),P(edge,prof[2][0]-0.5,crest),PAL.concreteD);
+      gb.box((x,y,z)=>{const p=P(edge,0,crest);return [p[0]+x,p[1]+y,p[2]+z];},0,0,0,1.6,2.4,3.4,PAL.concreteD);
+    }
     M.dam=meshFromGB(gb,{mat:0});
     const sw=new WB();const segs=10;let acc=0;for(let s=0;s<segs;s++){const v0=1-s/segs,v1=1-(s+1)/segs;const u0=prof[2][0]+(prof[3][0]-prof[2][0])*(1-v0),u1=prof[2][0]+(prof[3][0]-prof[2][0])*(1-v1);
-      const y0=site.upper.bottom+dm.height*v0+0.9,y1=site.upper.bottom+dm.height*v1+0.9;const A=P(sc,u0,y0),B=P(sc2,u0,y0),C=P(sc2,u1,y1),D=P(sc,u1,y1);const l=Math.hypot(C[0]-B[0],C[1]-B[1],C[2]-B[2]);
+      const ya0=sc.yT+(crest-sc.yT)*v0+0.8,yb0=sc2.yT+(crest-sc2.yT)*v0+0.8,ya1=sc.yT+(crest-sc.yT)*v1+0.8,yb1=sc2.yT+(crest-sc2.yT)*v1+0.8;
+      const A=P(sc,u0,ya0),B=P(sc2,u0,yb0),C=P(sc2,u1,yb1),D=P(sc,u1,ya1);const l=Math.hypot(C[0]-B[0],C[1]-B[1],C[2]-B[2]);
       sw.v(A[0],A[1],A[2],acc,1);sw.v(B[0],B[1],B[2],acc,-1);sw.v(C[0],C[1],C[2],acc+l,-1);sw.v(A[0],A[1],A[2],acc,1);sw.v(C[0],C[1],C[2],acc+l,-1);sw.v(D[0],D[1],D[2],acc+l,1);acc+=l;}
     M.spill=waterMesh(sw,{kind:1});
-    // intake tower at the dam's upstream face
-    const ig=new GB();const ic=cols[(first+last)>>1];const ip=P(ic,prof[0][0]*0.6-6,site.upper.bottom);const IT=(x,y,z)=>[ip[0]+x,ip[1]+y,ip[2]+z];
-    ig.box(IT,0,0,0,5,(crest-site.upper.bottom)*VEX+3,5,PAL.concreteD);ig.box(IT,0,(crest-site.upper.bottom)*VEX+3,0,6.5,2.4,6.5,PAL.roof);M.intake=meshFromGB(ig,{mat:0});
+    // intake tower at the dam's upstream face + steel truss access footbridge to the crest
+    const ig=new GB();const ic=cols[(first+last)>>1];const ip=P(ic,prof[0][0]*0.65-6,site.upper.bottom);const IT=(x,y,z)=>[ip[0]+x,ip[1]+y,ip[2]+z];
+    const towerH=(crest-site.upper.bottom)*VEX+3.2;
+    ig.box(IT,0,0,0,5.2,towerH,5.2,PAL.concreteD);ig.box(IT,0,towerH,0,6.6,2.2,6.6,PAL.roof);
+    for(let lv=4;lv<towerH-2;lv+=4)ig.box(IT,0,lv,0,5.4,0.6,5.4,PAL.steel); // trash-rack rings
+    const brEnd=P(ic,prof[1][0],crest);const brStart=[ip[0],crest*VEX+0.3,ip[2]];
+    ig.quad([brStart[0]-ic.oz*1.1,brStart[1],brStart[2]+ic.ox*1.1],[brStart[0]+ic.oz*1.1,brStart[1],brStart[2]-ic.ox*1.1],[brEnd[0]+ic.oz*1.1,brEnd[1],brEnd[2]-ic.ox*1.1],[brEnd[0]-ic.oz*1.1,brEnd[1],brEnd[2]+ic.ox*1.1],PAL.steel);
+    for(const sgn of [-1,1]){ig.cyl([brStart[0]+ic.oz*sgn*1.1,brStart[1]+1.1,brStart[2]-ic.ox*sgn*1.1],[brEnd[0]+ic.oz*sgn*1.1,brEnd[1]+1.1,brEnd[2]-ic.ox*sgn*1.1],0.12,4,PAL.steel,false);}
+    M.intake=meshFromGB(ig,{mat:0});
     W.damInfo={cols,first,last,crest,prof,intake:ip};
     // raise in progress: scaffolding + translucent growing cap
     if(dm.raising){const wg=new GB();const to=site.upper.bottom+dm.raising.to;for(let i=first;i<=last;i+=2){const c=cols[i];for(const u of [prof[1][0]-1.5,prof[2][0]+1.5]){const A=P(c,u,crest),B=P(c,u,to);wg.cyl(A,B,0.25,4,[0.85,0.6,0.15],false);}}
@@ -1914,7 +2400,7 @@ const World=(function(){
      chute that follows the waterline, recomputed only when the lake level has moved by more than SLH.thr) → slideTick
      (per-frame rider/splash animation, closed form in t).
      ===================================================================== */
-  const SLH={hw:3.1,rim:1.7,ds:2,Le:12,max:24,clr:0.9,slmax:0.75,NT:64,sT:0.4,QF:0.5,thr:0.8};
+  const SLH={hw:3.1,rim:1.7,ds:2,Le:12,max:24,clr:0.9,slmax:0.75,NT:64,sT:0.4,QF:1.0,thr:0.8};
 
   /* ---- RIDER FIGURE (placeholder; another agent replaces this one function with a hand-modelled mesh) ----------------
      CONTRACT: riderGB() returns {tint:GB, fixed:GB} (a single GB is also accepted and is treated as {tint:gb, fixed:null}).
@@ -1943,7 +2429,7 @@ const World=(function(){
      a fraction qf up the range), lvNow = level now, rQ = shore radius at lvQ. Above lvQ the end run is simply drowned (riders exit
      at the waterline); below it the end run is a straight chute that follows the water down the shore (slTail). */
   function slCtx(site,qf){const L=site.layout,lw=site.lower,C=Sim.CONFIG;const h0=site.kind==='classic'?C.classic.lower.h0:C.proc.lowerH0;const hQ=h0+qf*(lw.hMax-h0);
-    return {site,L,qf,ts:C.land.tileSize,lvLo:(lw.bottom+h0)*VEX,lvHi:(lw.bottom+lw.hMax)*VEX,lvQ:(lw.bottom+hQ)*VEX,lvNow:(lw.bottom+Sim.resLevel(lw,lw.V))*VEX,rQ:Sim.bowlR(lw,hQ),road:W.road,masks:W.masks};}
+    return {site,L,qf,ts:C.land.tileSize,lvLo:(lw.bottom+h0)*VEX,lvHi:(lw.bottom+lw.hMax)*VEX,lvQ:(lw.bottom+hQ)*VEX+1.4,lvNow:(lw.bottom+Sim.resLevel(lw,lw.V))*VEX,rQ:Sim.bowlR(lw,hQ),road:W.road,masks:W.masks};}
   /* blocked test is evaluated per 6 m cell and memoised on cx (the search calls it ~10^5 times) */
   function slBlocked(cx,x,z){const i=Math.floor((x+760)/6),j=Math.floor((z+760)/6);if(i<0||j<0||i>=256||j>=256)return true;const bk=cx.bk||(cx.bk=new Uint8Array(65536));const k=j*256+i;let v=bk[k];
     if(!v){v=slBlocked0(cx,-760+i*6+3,-760+j*6+3)?2:1;bk[k]=v;}return v===2;}
@@ -1966,7 +2452,8 @@ const World=(function(){
      meshes never depend on the lake level. Returns {m,len,ok,rise}: ok = the waterline was reached within SLH.NT stations. */
   function slTail(cx,Q,lv,smooth){const ds=SLH.ds,hw=SLH.hw,o=SLT;const lx=Q.dz*(hw+0.6),lz=-Q.dx*(hw+0.6);let y=Q.y,m=0,ok=false,rise=0;const wl=lv+1.2;
     for(let k=1;k<=SLH.NT;k++){const x=Q.x+Q.dx*ds*k,z=Q.z+Q.dz*ds*k;const gc=hD(x,z);const gm=Math.max(gc,hD(x+lx,z+lz),hD(x-lx,z-lz));let yn,end=false;
-      if(k<=2)yn=y-Q.s0*ds;else{yn=Math.max(gm+0.6,y-SLH.sT*ds);if(yn>y)rise+=yn-y;if(yn<=wl){yn=wl;end=true;}else if(gc<lv-0.5&&yn-lv<4)end=true;}
+      if(k<=2){yn=Math.max(wl,y-Q.s0*ds);if(yn<=wl+0.05)end=true;}
+      else{yn=Math.max(gm+0.6,y-SLH.sT*ds);if(yn>y)rise+=yn-y;if(yn<=wl){yn=wl;end=true;}else if(gc<lv-0.5&&yn-lv<4)end=true;}
       o.x[m]=x;o.z[m]=z;o.y[m]=yn;o.gm[m]=gm;m++;y=yn;if(end){ok=true;break;}}
     if(ok){for(let r=0;r<2;r++){const k=m+1;const x=Q.x+Q.dx*ds*k,z=Q.z+Q.dz*ds*k;y=Math.max(lv+1.0,y-0.06*ds);o.x[m]=x;o.z[m]=z;o.y[m]=y;o.gm[m]=hD(x,z);m++;}}
     if(smooth&&m>6){for(let p=0;p<3;p++)for(let i=2;i<m-3;i++){o.y[i]=Math.max((o.y[i-1]+2*o.y[i]+o.y[i+1])*0.25,o.gm[i]+0.45);}
@@ -2000,7 +2487,7 @@ const World=(function(){
     for(let i=0;i<n;i++){const a=Math.max(0,i-1),b=Math.min(n-1,i+1);let tx=xs[b]-xs[a],tz=zs[b]-zs[a];const l=Math.hypot(tx,tz)||1;const lx=tz/l*(hw+0.6),lz=-tx/l*(hw+0.6);
       const gc=hD(xs[i],zs[i]);g[i]=gc;gm[i]=Math.max(gc,hD(xs[i]+lx,zs[i]+lz),hD(xs[i]-lx,zs[i]-lz));
       if(i<n-3&&gc<cx.lvQ-12)return rj('lake');} // never run over the lake
-    y[n-1]=gm[n-1]+SLH.clr;for(let i=n-2;i>=0;i--){y[i]=Math.max(y[i+1]+q.sl*ds,gm[i]+SLH.clr);}
+    y[n-1]=Math.max(gm[n-1]+SLH.clr,cx.lvHi+1.2);for(let i=n-2;i>=0;i--){y[i]=Math.max(y[i+1]+q.sl*ds,gm[i]+SLH.clr);}
     for(let i=0;i<nF;i++)y[i]=y[nF];
     let sumH=0,maxH=0;
     for(let i=0;i<n;i++){const cl=y[i]-gm[i];if(i>=nF&&cl<SLH.clr-0.01)return rj('clr');if(i<nF&&cl<-1.2)return rj('deck');if(i<n-1&&i>=nF-1&&(y[i]-y[i+1])/ds>SLH.slmax)return rj('steep');const h=y[i]-g[i];sumH+=h;if(h>maxH)maxH=h;}
@@ -2020,7 +2507,7 @@ const World=(function(){
     if(!full)return {score,t1:T1.len,t0:T0.len,n,drop,maxH,sumH:sumH/n};
     return {score,n,xs:Float64Array.from(xs.subarray(0,n)),zs:Float64Array.from(zs.subarray(0,n)),y:Float64Array.from(y.subarray(0,n)),g:Float64Array.from(g.subarray(0,n)),gm:Float64Array.from(gm.subarray(0,n)),q,nF,lipOff:q.lipOff};}
   function slideFind(site){const tms=performance.now();SLS.rej={};const L=site.layout;const seed=site.seed|0;let tries=0;const c0=L.lo;
-    for(const qf of [SLH.QF,0.3,0.75]){const cx=slCtx(site,qf);let bs=-1e9,bq=null,idx=0;
+    for(const qf of [SLH.QF,0.9,0.75]){const cx=slCtx(site,qf);let bs=-1e9,bq=null,idx=0;
       for(let a=0;a<32;a++){const ang=a/32*6.28318+hsh(seed,77)*0.2;const ex=Math.cos(ang),ez=Math.sin(ang);
         for(const dd of [10,30,55]){const ax=c0.x+ex*(cx.rQ+dd),az=c0.z+ez*(cx.rQ+dd);if(hD(ax,az)<cx.lvQ-3||slBlocked(cx,ax,az)){idx+=1;continue;}
           for(const R of [17,22,27])for(const dir of [1,-1])for(const off of [0,0.5,-0.5])for(const Tn of [2,2.5,3])for(const Ld of [0,30,60]){
@@ -2252,17 +2739,17 @@ const World=(function(){
   const slFO={X:[0,0,0],Y:[0,0,0],Z:[0,0,0]};
 
   /* ---------- full build ---------- */
-  function build(site){W.site=site;sampleHeights(site);W.road=null;
+  function build(site){W.site=site;sampleHeights(site);W.road=null;W.jobSig=null;
     for(const k in M){if(M[k]&&M[k].vao){freeMesh(M[k]);}M[k]=null;}
     W.chunks=[];for(let j=0;j<4;j++)for(let i=0;i<4;i++)W.chunks.push(buildChunk(site,i,j));
     M.skirt=buildSkirt();const masks=lakeMasks(site);W.masks=masks;
-    buildDam(site);buildPowerhouse(site);buildRivers(site);
+    buildDam(site);buildPowerhouse(site);buildRivers(site);buildValve(site);
     M.lakeU=site.dam.built?buildLake(site,masks.U,masks.bU,site.upper.bottom+Math.max(site.dam.height,5)):null;M.lakeL=buildLake(site,masks.L,masks.bL,site.lower.bottom+site.lower.hMax+2);
     buildAssets(site);buildScatter(site,masks);buildPicks(site);
     W.sig={a1:site.lower.a1,dam:damSig(site),assets:assetSig(site)};W.cutPlane=null;}
   function rebuildRegion(site,bb){ // only chunks touched by bb (metres) + affected water/scatter
     sampleHeights(site);for(let j=0;j<4;j++)for(let i=0;i<4;i++){const x0=X0+i*SIZE/4,z0=X0+j*SIZE/4;if(bb[2]<x0||bb[0]>x0+SIZE/4||bb[3]<z0||bb[1]>z0+SIZE/4)continue;const k=j*4+i;freeMesh(W.chunks[k]);W.chunks[k]=buildChunk(site,i,j);}
-    const masks=lakeMasks(site);W.masks=masks;freeMesh(M.lakeL);M.lakeL=buildLake(site,masks.L,masks.bL,site.lower.bottom+site.lower.hMax+2);buildScatter(site,masks);}
+    const masks=lakeMasks(site);W.masks=masks;freeMesh(M.lakeL);M.lakeL=buildLake(site,masks.L,masks.bL,site.lower.bottom+site.lower.hMax+2);buildValve(site);buildScatter(site,masks);}
   function damSig(s){const d=s.dam;return d.built+'|'+d.height+'|'+d.cls+'|'+(d.raising?Math.round(d.raising.progress*50):'-')+'|'+s.penstock.D;}
   function assetSig(s){let k='';for(const t of s.tiles){k+=(t.solar?'s'+t.solar.tier+(t.solar.building?'b':''):'_')+(t.wind?'w'+t.wind.tier+(t.wind.building?'b':''):'_')+(t.battery?'b'+t.battery.tier:'_');}return k+s.parcels.join('');}
   function sync(site){ // called a few times per second
@@ -2284,6 +2771,7 @@ const World=(function(){
       if(t.solar)bx('solar',[[cx-ts*0.45,y-2,cz-ts*0.45],[cx+ts*0.45,y+6,cz+ts*0.45]],{tile:i,label:'Solar array'},2);}
     for(const w of (W.winds||[]))bx('wind',[[w.x-w.R,w.y-Sim.CONFIG.wind.tiers[site.tiles[w.i].wind.tier].hub,w.z-w.R],[w.x+w.R,w.y+w.R,w.z+w.R]],{tile:w.i,label:'Wind turbine'},4);
     for(const b of (W.batts||[]))bx('battery',[[b.x-8,hD(b.x,b.z)-1,b.z-7],[b.x+8,hD(b.x,b.z)+4,b.z+7]],{tile:b.i,label:'Battery'},3);
+    if(W.valveBox)pk.push({type:'valve',box:W.valveBox,pri:4,label:'Lower reservoir outlet valve',anchor:W.valvePos});
     slidePicks(site,pk);
     W.pickList=pk;}
   const ray={o:[0,0,0],d:[0,0,1]};
@@ -2300,7 +2788,7 @@ const World=(function(){
       const x=ray.o[0]+ray.d[0]*t,z=ray.o[2]+ray.d[2]*t;if(mask(x,z)&&hD(x,z)<lv&&(!th||t<th.t+1)&&(!best||t<best.t-2||best.pri<2)){if(!best||t<best.t)best={type:key,t,label:key==='upper'?'Upper reservoir':'Lower reservoir',anchor:[x,lv+4,z],pri:1};}}
     if(th&&(!best||th.t<best.t-5)){
       if(s.kind==='proc'){const cp=s.cp;const d=Math.abs(th.x-Sim.cX(cp,th.z));if(d<Sim.riverW(cp,th.z)/2+6&&!W.masks.U(th.x,th.z)&&!W.masks.L(th.x,th.z)){const up=th.z<s.layout.dam.z;return {type:up?'riverUp':'riverDown',label:up?'Upstream river':'Downstream river',anchor:[th.x,th.y+6,th.z]};}}
-      const ts=Sim.CONFIG.land.tileSize;for(let p=0;p<3;p++){const pc=s.layout.parcels[p];if(Math.abs(th.x-pc.x)<2*ts&&Math.abs(th.z-pc.z)<2*ts){const c=Math.min(3,Math.floor((th.x-pc.x+2*ts)/ts)),r=Math.min(3,Math.floor((th.z-pc.z+2*ts)/ts));if(W.buildMode||!s.parcels[p])return {type:'tile',tile:p*16+r*4+c,parcel:p,label:s.parcels[p]?'Parcel '+(p+1)+', tile '+(r*4+c+1):'Parcel '+(p+1)+' (not owned)',anchor:[th.x,th.y+4,th.z]};}}
+      const ts=Sim.CONFIG.land.tileSize;for(let p=0;p<3;p++){const pc=s.layout.parcels[p];if(Math.abs(th.x-pc.x)<2*ts&&Math.abs(th.z-pc.z)<2*ts){const c=Math.min(3,Math.floor((th.x-pc.x+2*ts)/ts)),r=Math.min(3,Math.floor((th.z-pc.z+2*ts)/ts));return {type:'tile',tile:p*16+r*4+c,parcel:p,label:s.parcels[p]?'Parcel '+(p+1)+', tile '+(r*4+c+1)+' — click to build':'Parcel '+(p+1)+' (not owned)',anchor:[th.x,th.y+4,th.z]};}}
       if(!best)return {type:'none'};}
     if(best&&!best.anchor){const b=best.box;best.anchor=[(b[0]+b[3])/2,b[4]+2,(b[2]+b[5])/2];}
     return best||{type:'none'};}
@@ -2368,6 +2856,9 @@ const World=(function(){
       // nacelles count = all turbines
       let k=0;for(const wt of W.winds){if(s.tiles[wt.i].wind){writeYZ(M.nacelles.inst,k,wt.x,wt.y,wt.z,yaw,0,1);k++;}}instUpload(M.nacelles,k);instUpload(M.rotors,nN);instUpload(M.rotorsF,nF);}
     const g=GL.gl;
+    if(M.valveWheel&&W.valveWheelBase){const tgt=(s.valve&&s.valve.open)?6.283:0;W.valveSpin=(W.valveSpin||0)+(tgt-(W.valveSpin||0))*Math.min(1,dtReal*4.5);
+      const lift=(W.valveSpin/6.283)*0.45;m4trsY(M.valveWheel.model,W.valveWheelBase[0],W.valveWheelBase[1]+lift,W.valveWheelBase[2],W.valveSpin,1);}
+    buildConstruction(snap,s);constructionTick(paused);updateWarnings(s);
     slideTick(snap,dtReal,s,paused);
     // shadow pass
     const sOn=shadowSize>0&&W.night<0.85;
@@ -2414,6 +2905,8 @@ const World=(function(){
     drawW(M.pipeT,2,0,q>0?qn:0,0,hyd);drawW(M.draft,2,0,q>0?qn:0,0,hyd);
     const pq=q<0?(-q/Pm.Qr):0;drawW(M.pumpIn,2,0,pq,0,hyd);drawW(M.pumpOut,2,0,pq,0,hyd);
     if(M.tailW){g.uniform1f(u.uKind,1);drawW(M.tailW,1,0,q>0?qn:(q<0?-pq*0.5:0),0,hyd);}
+    {const vActive=s.valve&&s.valve.open&&((s.valveQ||0)>0.005||(tel.hL||0)>(s.valve.elev||15)+0.02);
+      if(vActive){const vf=Math.min(2.6,(s.valveQ||0)/2.5+0.7);if(M.valveJet)drawW(M.valveJet,2,0,vf,0,hyd);if(M.valveW)drawW(M.valveW,1,0,vf,0,hyd);}}
     drawW(M.slideW,1,0,1.6,0,0);
     // overlays (blended)
     g.enable(g.BLEND);g.blendFunc(g.SRC_ALPHA,g.ONE_MINUS_SRC_ALPHA);g.depthMask(false);g.useProgram(P.ov.p);u=P.ov.u;g.uniformMatrix4fv(u.uVP,false,VP);
@@ -2434,7 +2927,7 @@ const World=(function(){
     if(W.frameMs>22&&W.quality>0){W.slowT+=dtReal;if(W.slowT>2){W.quality--;W.slowT=0;W.frameMs=16;W.qualityNote='Quality lowered automatically to '+['Low','Medium','High'][W.quality]+' to keep the frame rate up.';if(W.style===2&&W.quality===0)W.style=0;if(W.onQuality)W.onQuality();}}else W.slowT=0;}
   function eachLit(fn){if(W.chunks)for(const c of W.chunks)fn(c);
     for(const k of ['slide','slideRT','slideRF','slideDrops','slideRings','slideFlag','slideLamp']){const m=M[k];if(m&&m.visible&&(!m.isInst||m.instCount>0))fn(m);}
-    const order=['skirt','cut','dam','damWork','intake','ph','runT','runP','pen','road','solar','solarLegs','towers','nacelles','rotors','rotorsF','batt','trees0','trees1','rocks','grass','flw0','flw1','flw2','flw3','flw4','pins'];
+    const order=['skirt','cut','dam','damWork','intake','valve','valveWheel','ph','runT','runP','pen','road','solar','solarLegs','towers','nacelles','rotors','rotorsF','batt','conStatic','craneJib','craneLoad','heliBody','heliRotor','heliCargo','warnBg','warnFg','trees0','trees1','rocks','grass','flw0','flw1','flw2','flw3','flw4','pins'];
     for(const k of order){const m=M[k];if(k.charCodeAt(0)===102&&(W.quality<1||W.lens==='survey'||(W.surveyMode&&!W.shapeMode)))continue;if(m&&m.visible&&(!m.isInst||m.instCount>0))fn(m);}if(M.roof&&!W.roofHidden)fn(M.roof);}
   function drawM(m){const g=GL.gl;g.bindVertexArray(m.vao);if(m.isInst)g.drawArraysInstanced(g.TRIANGLES,0,m.count,m.instCount);else g.drawArrays(g.TRIANGLES,0,m.count);}
 
@@ -2464,8 +2957,27 @@ function J(o){return `data-j='${JSON.stringify(o).replace(/'/g,'&#39;')}'`;}
 function site(snap){return snap.sites[snap.active];}
 function curSiteIdx(){return Engine.state?Engine.state.active:0;}
 function beep(f){if(!UI.settings.sound)return;try{UI.ac=UI.ac||new (window.AudioContext||window.webkitAudioContext)();const o=UI.ac.createOscillator(),g=UI.ac.createGain();o.type='triangle';o.frequency.value=f||520;g.gain.value=0.04;o.connect(g);g.connect(UI.ac.destination);const t=UI.ac.currentTime;g.gain.exponentialRampToValueAtTime(0.0001,t+0.12);o.start(t);o.stop(t+0.13);}catch(e){}}
-function toast(msg,sev){const c=$('chips');const d=document.createElement('div');d.className='chip'+(sev==='warn'?' amber':sev==='crit'?' red':'');d.textContent=msg;d.dataset.toast='1';c.prepend(d);setTimeout(()=>d.remove(),3500);}
-function act(a){const r=Game.dispatch(a);if(!r.ok)toast(r.reason,'warn');else beep(a.type==='SET_MODE'?(a.mode==='gen'?660:a.mode==='pump'?440:330):560);refreshNow();return r;}
+function navForReason(r){if(!r)return null;const s=String(r).toLowerCase();
+  if(s.includes('permit')&&(s.includes('dam')||s.includes('gravity')||s.includes('arch')))return {panel:'build',tab:2,label:'Dam permits'};
+  if(s.includes('water-rights')||s.includes('water rights'))return {panel:'build',tab:3,label:'Land & sites'};
+  if(s.includes('parcel not owned'))return {panel:'build',tab:0,label:'Buy parcel'};
+  if(s.includes('not enough cash')||s.includes('credit limit'))return {panel:'finance',tab:0,label:'Finance & Loans'};
+  if(s.includes('no dam')||s.includes('place a dam'))return {panel:'build',tab:2,label:'Dam & basin'};
+  if(s.includes('reserve'))return {panel:'services',tab:0,label:'Reserve'};
+  if(s.includes('contract'))return {panel:'services',tab:1,label:'Contracts'};
+  if(s.includes('start the game'))return {action:'START',label:'Start clock'};
+  if(s.includes('penstock'))return {panel:'build',tab:1,label:'Penstock'};
+  if(s.includes('excavat'))return {panel:'build',tab:2,label:'Dam & basin'};
+  if(s.includes('repair'))return {panel:'operate',tab:0,label:'Operate'};
+  return null;}
+function toast(msg,sev,nav){const c=$('chips');const d=document.createElement('div');d.className='chip'+(sev==='warn'?' amber':sev==='crit'?' red':'');d.dataset.toast='1';
+  if(nav){d.dataset.nav='1';d.setAttribute('role','button');d.setAttribute('tabindex','0');d.title='Click to open '+nav.label;
+    d.innerHTML='';const sp=document.createElement('span');sp.textContent=msg+' ';const b=document.createElement('b');b.textContent='→ '+nav.label;d.appendChild(sp);d.appendChild(b);
+    const go=()=>{if(nav.action==='START')act({type:'START'});else if(nav.panel){UI.tab[nav.panel]=nav.tab||0;openPanel(nav.panel);if(nav.panel==='build')World.buildMode=true;}d.remove();};
+    d.onclick=go;d.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}};}
+  else d.textContent=msg;
+  c.prepend(d);setTimeout(()=>d.remove(),nav?6500:3500);}
+function act(a){const r=Game.dispatch(a);if(!r.ok)toast(r.reason,'warn',navForReason(r.reason));else beep(a.type==='SET_MODE'?(a.mode==='gen'?660:a.mode==='pump'?440:330):560);refreshNow();return r;}
 function refreshNow(){UI.lastCard=0;UI.lastPanel=0;UI.lastDrawer=0;}
 
 /* ---------- top bar ---------- */
@@ -2477,8 +2989,8 @@ function updateTop(snap){const st=snap;const s=site(snap);
   const se=seasonOf(st.doy);setT($('tSeason'),'season',st.doy,se[1]+' '+se[0]+' · Y'+st.year);
   const mm=Math.floor(st.secInHour/60);setT($('tClock'),'clock',st.day*1440+st.hour*60+mm,'D'+(st.day+1)+' '+String(st.hour).padStart(2,'0')+':'+String(mm).padStart(2,'0'));
   const pb=$('bPause');const lbl=!st.started?'Start':st.paused?'Play':'Pause';if(pb.dataset.l!==lbl){pb.dataset.l=lbl;pb.innerHTML='<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">'+(lbl==='Pause'?'<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>':'<path d="M7 4.500v15l12-7.500z"/>')+'</svg><span class="tx">'+lbl+'</span>';pb.setAttribute('aria-label',!st.started?'Start the clock':st.paused?'Resume (Space)':'Pause (Space)');}
-  document.querySelectorAll('[data-speed]').forEach(b=>{const on=!st.turnMode&&+b.dataset.speed===st.speed;if((b.getAttribute('aria-pressed')==='true')!==on)b.setAttribute('aria-pressed',on);b.title=Sim.CONFIG.time.labels[+b.dataset.speed]+' ('+(+b.dataset.speed+1)+')';});
-  {const L=Sim.CONFIG.time.labels,sl=$('speedLbl'),tx=st.turnMode?'Turn':L[st.speed];if(sl.textContent!==tx){sl.textContent=tx;$('speedBox').title='Simulation speed: '+(st.turnMode?'turn-based':L[st.speed])+' (keys 1\u20136)';}$('bSlower').disabled=!st.turnMode&&st.speed<=0;$('bFaster').disabled=!st.turnMode&&st.speed>=5;}$('bTurn').setAttribute('aria-pressed',st.turnMode);$('bStep').hidden=!st.turnMode;$('behind').hidden=!Engine.behind;
+  document.querySelectorAll('[data-speed]').forEach(b=>{const on=!st.turnMode&&+b.dataset.speed===st.speed;if((b.getAttribute('aria-pressed')==='true')!==on)b.setAttribute('aria-pressed',on);b.title=Sim.CONFIG.time.labels[+b.dataset.speed];});
+  {const L=Sim.CONFIG.time.labels,sl=$('speedLbl'),tx=st.turnMode?'Turn':L[st.speed];if(sl.textContent!==tx){sl.textContent=tx;$('speedBox').title='Simulation speed: '+(st.turnMode?'turn-based':L[st.speed])+' (- / = keys or click dots)';}$('bSlower').disabled=!st.turnMode&&st.speed<=0;$('bFaster').disabled=!st.turnMode&&st.speed>=6;}$('bTurn').setAttribute('aria-pressed',st.turnMode);$('bStep').hidden=!st.turnMode;$('behind').hidden=!Engine.behind;
   const unread=st.alerts.filter(a=>a.id>(UI.alertSeen||0)).length;setT($('bellN'),'bell',unread,unread?String(unread):'');}
 
 /* ---------- instrument strip (analog gauges in Brass & Slate; bars elsewhere) ---------- */
@@ -2503,18 +3015,18 @@ function updateGauges(snap){const s=site(snap);const t=s.tel;const P=(t.pGen-t.p
 
 /* ---------- chips ---------- */
 function updateChips(snap){if(performance.now()-(UI.lastChips||0)<400)return;UI.lastChips=performance.now();const s=site(snap);const items=[];
-  if(s.kind==='proc'&&!s.dam.built)items.push(['chip amber','⛰ Place your dam to begin — Build → Dam & basin (no upper lake yet, the plant cannot run)']);
-  if(!snap.started)items.push(['chip amber','Clock stopped — press ▶ Start when ready']);
+  if(s.kind==='proc'&&!s.dam.built)items.push(['chip amber','⛰ Place your dam to begin — Build → Dam & basin (no upper lake yet, the plant cannot run)','build:2']);
+  if(!snap.started)items.push(['chip amber','Clock stopped — press ▶ Start when ready','start']);
   if(snap.demo)items.push(['chip','∞ Demo mode — unlimited funds, instant earthworks']);
-  const cavT=s.q>0?s.tel.cavT:9,cavP=s.q<0?s.tel.cavP:9;const cm=Math.min(cavT,cavP);if(cm<Sim.CONFIG.cav.warn)items.push([cm<1?'chip red':'chip amber',(cm<1?'⚠ Cavitation! ':'◔ Cavitation margin ')+cm.toFixed(2)+' — '+(s.q>0?'lower lake is low or flow too high':'pump suction is short of head')]);
-  for(const x of snap.sites){if(x.dam.crack)items.push(['chip red','⚠ '+x.name+': dam crack — keep water below '+f1(x.dam.crack.elev)+' m (damage '+f1(x.dam.crack.damage,1)+')']);}
+  const cavT=s.q>0?s.tel.cavT:9,cavP=s.q<0?s.tel.cavP:9;const cm=Math.min(cavT,cavP);if(cm<Sim.CONFIG.cav.warn)items.push([cm<1?'chip red':'chip amber',(cm<1?'⚠ Cavitation! ':'◔ Cavitation margin ')+cm.toFixed(2)+' — '+(s.q>0?'lower lake is low or flow too high':'pump suction is short of head'),'operate:0']);
+  for(const x of snap.sites){if(x.dam.crack)items.push(['chip red','⚠ '+x.name+': dam crack — keep water below '+f1(x.dam.crack.elev)+' m (damage '+f1(x.dam.crack.damage,1)+')','operate:0']);}
   if(s.dam.raising)items.push(['chip','⛏ Dam raise '+Math.round(s.dam.raising.progress*100)+'% → '+s.dam.raising.to+' m']);
   for(const j of snap.jobs){if(j.site===snap.active&&j.kind!=='raise')items.push(['chip','⚙ '+jobName(j)+' — '+Math.max(0,j.rem/3600).toFixed(1)+' h left']);}
-  if(s.call)items.push(['chip amber','⚡ Reserve call: +'+s.call.mw.toFixed(2)+' MW, '+Math.round(s.call.el)+' s']);
-  if(snap.market.emergency&&snap.market.emergency.day===snap.day&&snap.hour>=snap.market.emergency.start&&snap.hour<snap.market.emergency.start+snap.market.emergency.dur)items.push(['chip red','⚠ Grid emergency until '+(snap.market.emergency.start+snap.market.emergency.dur)+':00']);
-  items.push(['chip',(s.auto.enabled?'● Automation ON':'○ Automation off')+(snap.god.enabled?' · God mode ON':'')]);
+  if(s.call)items.push(['chip amber','⚡ Reserve call: +'+s.call.mw.toFixed(2)+' MW, '+Math.round(s.call.el)+' s','services:0']);
+  if(snap.market.emergency&&snap.market.emergency.day===snap.day&&snap.hour>=snap.market.emergency.start&&snap.hour<snap.market.emergency.start+snap.market.emergency.dur)items.push(['chip red','⚠ Grid emergency until '+(snap.market.emergency.start+snap.market.emergency.dur)+':00 — guide / Reserve','emerg']);
+  items.push(['chip',(s.auto.enabled?'● Automation ON':'○ Automation off')+(snap.god.enabled?' · God mode ON':''),'automation:0']);
   const A=window.__HYDRO_AUDIT__;items.push([A.status==='failed'?'chip red':'chip','Self-test: '+A.status+(A.status==='complete'?(A.allPassed?' ✓ all '+A.testResults.length+' passed':' — some failed'):'')]);
-  const c=$('chips');const html=items.map(i=>`<div class="${i[0]}">${i[1]}</div>`).join('');if(c.dataset.h!==html){c.querySelectorAll(':not([data-toast])').forEach(n=>n.remove());c.insertAdjacentHTML('beforeend',html);c.dataset.h=html;}}
+  const c=$('chips');const html=items.map(i=>`<div class="${i[0]}"${i[2]?` data-nav="${i[2]}" style="cursor:pointer"`:''}>${i[1]}</div>`).join('');if(c.dataset.h!==html){c.querySelectorAll(':not([data-toast])').forEach(n=>n.remove());c.insertAdjacentHTML('beforeend',html);c.dataset.h=html;}}
 function jobName(j){return {raise:'Dam raise',excavate:'Excavation',machine:'Machine install',repair:'Repair ('+(j.p.target||'')+')',penstock:'Penstock replacement',build:'Construction ('+(j.p.kind||'')+')'}[j.kind]||j.kind;}
 
 /* ---------- context cards ---------- */
@@ -2538,17 +3050,25 @@ function cardHTML(snap,sel){const s=site(snap);const C=Sim.CONFIG;const t=s.tel;
       return `<h3>Dam ${x}</h3>${d.built?kv('Class',cls.name)+kv('Height',d.height+' m (crest '+f1(s.upper.bottom+d.height,1)+' m a.s.l.)')+kv('Water depth at dam',f1(hU,1)+' m')+kv('Safe water level','≤ '+f1(safe,1)+' m deep')+kv('Wall value',money(d.value)):'<p>No dam yet. Open Build → Dam &amp; basin to choose its height and place it at the reserved choke point.</p><button data-fid="goDam" data-godam>Open Build → Dam &amp; basin</button>'}
         ${d.crack?`<div class="section"><b class="alarm">⚠ Crack in the upper wall</b><br>Drain below ${f1(d.crack.elev,1)} m to stop it growing. Damage ${f1(d.crack.damage,1)} / 100. Repair: ${money(d.value*C.dam.repairFrac)}, 24 h.<br><button data-fid="drep" ${J({type:'REPAIR',target:'dam'})} ${d.repairing?'disabled':''}>${d.repairing?'Repair under way':'Order repair'}</button></div>`:''}
         ${d.raising?`<p>Raise in progress: ${Math.round(d.raising.progress*100)}% → ${d.raising.to} m</p>`:d.built?`<div class="row"><button data-fid="r1" ${J({type:'RAISE_DAM',meters:1})}>Raise +1 m (${money(nextCost)})</button><button data-fid="r5" ${J({type:'RAISE_DAM',meters:5})}>+5 m</button></div><p class="muted" style="font-size:12px">Limits: class ${cls.max} m, site rim ${s.maxDam} m. Permits unlock taller classes.</p>`:''}`;}
-    case 'pipe':{const p=s.penstock;const mat=C.penstock.materials[p.mat];return `<h3>Penstock ${x}</h3>${kv('Diameter',f1(p.D,2)+' m')}${kv('Material',mat.name)}${kv('Length',f1(p.L,0)+' m')}${kv('Health',f1(p.health,0))}
+    case 'pipe':{const p=s.penstock;const mat=C.penstock.materials[p.mat];const diams=[1.0,1.2,1.4,1.6,1.8,2.0,2.4];const defD=diams.find(D=>Math.abs(D-p.D)>=1e-6)||diams[0];
+      return `<h3>Penstock ${x}</h3>${kv('Diameter',f1(p.D,2)+' m')}${kv('Material',mat.name)}${kv('Length',f1(p.L,0)+' m')}${kv('Health',f1(p.health,0))}
         ${kv('Flow',f1(s.q,2)+' m³/s '+(s.q>0?'(down to turbine)':s.q<0?'(up from pump)':'(still)'))}${kv('Velocity',f1(t.v,2)+' m/s')}${kv('Reynolds',t.Re?t.Re.toExponential(2):'—')}${kv('Friction factor',f1(t.f,4))}${kv('Head loss',f1(t.hf,2)+' m')}
-        <div class="section"><div class="lbl">Replace penstock</div><div class="row"><select id="penD" aria-label="Diameter">${[1.0,1.2,1.4,1.6,1.8,2.0,2.4].map(D=>`<option ${D===p.D?'selected':''}>${D}</option>`).join('')}</select><select id="penM" aria-label="Material">${Object.keys(C.penstock.materials).map(k=>`<option value="${k}" ${k===p.mat?'selected':''}>${C.penstock.materials[k].name}</option>`).join('')}</select>
-        <button data-fid="pen" data-pen>Replace (72 h)</button></div><div class="muted" id="penCost" style="font-size:12px"></div></div><button data-preset-btn="penstock">Show cross-section</button>`;}
+        ${p.health<99.9?`<div class="section"><button data-fid="prep" ${J({type:'REPAIR',target:'penstock'})} ${p.busy?'disabled':''}>Repair existing penstock (${money(Sim.penstockCost?Sim.penstockCost(s,p.D,p.mat)*0.25:(C.penstock.materials[p.mat].cost*p.L*p.D+C.penstock.mobilisation)*0.25)}, 24 h)</button></div>`:''}
+        <div class="section"><div class="lbl">Replace penstock</div><div class="row"><select id="penD" aria-label="Diameter">${diams.map(D=>{const cur=Math.abs(D-p.D)<1e-6;return `<option value="${D}" ${cur?'disabled':D===defD?'selected':''}>${D} m${cur?' (current)':''}</option>`;}).join('')}</select><select id="penM" aria-label="Material">${Object.keys(C.penstock.materials).map(k=>`<option value="${k}" ${k===p.mat?'selected':''}>${C.penstock.materials[k].name}</option>`).join('')}</select>
+        <button data-fid="pen" data-pen ${p.busy?'disabled':''}>Replace (72 h)</button></div><div class="muted" id="penCost" style="font-size:12px"></div></div><button data-preset-btn="penstock">Show cross-section</button>`;}
     case 'upper':case 'lower':{const r=sel.type==='upper'?s.upper:s.lower;const h=Sim.resLevel(r,r.V);const cap=sel.type==='upper'?Sim.capU(s):Sim.capL(s);const A=Sim.resArea(r,h);
-      const inflow=sel.type==='upper'?(s.riverIn||0):(s.spillU||0)+(s.q>0?s.q:0);const outflow=sel.type==='upper'?(s.spillU||0)+(s.q>0?s.q:0):(s.envDel||0)+(s.spillL||0)+(s.q<0?-s.q:0);
+      const inflow=sel.type==='upper'?(s.riverIn||0):(s.spillU||0)+(s.q>0?s.q:0);const outflow=sel.type==='upper'?(s.spillU||0)+(s.q>0?s.q:0):(s.envDel||0)+(s.spillL||0)+(s.valveQ||0)+(s.q<0?-s.q:0);
+      const vOpen=!!(s.valve&&s.valve.open),vElev=(s.valve&&s.valve.elev!==undefined)?s.valve.elev:15;
       return `<h3>${sel.type==='upper'?'Upper':'Lower'} reservoir ${x}</h3>${kv('Volume',f1(r.V/1e3,1)+' thousand m³')}${kv('Depth',f1(h,2)+' m')}${kv('Full',pct(100*r.V/Math.max(1,cap)))}${kv('Surface area',f1(A/1e4,2)+' ha')}
         ${kv('Evaporation (site)',f1((t.evap||0)*3600,1)+' m³/h')}${kv('Inflow',f1(inflow,2)+' m³/s')}${kv('Outflow',f1(outflow,2)+' m³/s')}${sel.type==='lower'?kv('Environmental release',f1(s.envDel||0,3)+' / '+f1(s.envQ,3)+' m³/s'):''}
         ${s.ice>0.5?'<p>❄ The surface is frozen; evaporation has stopped.</p>':''}
+        ${sel.type==='lower'?`<div class="section"><b>Outlet drain valve (${vElev} m sill)</b>${kv('Valve',vOpen?'OPEN':'Closed',vOpen?'warn':'')}${kv('Stream flow',f1(s.valveQ||0,2)+' m³/s')}<button data-fid="vlv" class="${vOpen?'on':''}" ${J({type:'SET_VALVE',open:!vOpen})}>${vOpen?'Close outlet valve':'Open outlet valve (drain to '+vElev+' m)'}</button><p class="muted" style="font-size:12px;margin:4px 0 0">Drains excess lower-reservoir water down the carved creek whenever depth exceeds ${vElev} m.</p></div>`:''}
         ${sel.type==='lower'?`<div class="section">Excavation: stage ${s.lower.excav} / ${C.res.excavStages}<br><button data-fid="exc" ${J({type:'EXCAVATE'})} ${s.lower.excav>=C.res.excavStages?'disabled':''}>Excavate next stage (${money(C.res.excavCost*(1+0.5*s.lower.excav))}, ${snap.demo?'instant':'48 h'})</button></div>`:''}
         <button data-preset-btn="${sel.type}">Show section</button>`;}
+    case 'valve':{const h=Sim.resLevel(s.lower,s.lower.V),vOpen=!!(s.valve&&s.valve.open),vElev=(s.valve&&s.valve.elev!==undefined)?s.valve.elev:15;
+      return `<h3>Lower reservoir outlet valve ${x}</h3>${kv('Status',vOpen?'OPEN':'Closed',vOpen?'warn':'')}${kv('Outlet sill',vElev+' m above bottom')}${kv('Lower lake depth',f1(h,2)+' m')}${kv('Above sill',f1(Math.max(0,h-vElev),2)+' m')}${kv('Stream discharge',f1(s.valveQ||0,2)+' m³/s')}
+        <div class="section"><div class="row"><button data-fid="vlv2" class="${vOpen?'on':''}" ${J({type:'SET_VALVE',open:!vOpen})}>${vOpen?'Close outlet valve':'Open outlet valve'}</button><button data-fid="zvlv" data-zoomvalve>Zoom in</button></div>
+        <p class="muted" style="font-size:12px;margin:6px 0 0">A pipe runs through the ridge at ${vElev} m above the lower-lake bottom. Opening the handwheel releases an outflow stream down the outlet valley until the lake settles to ${vElev} m.</p></div>`;}
     case 'riverUp':case 'riverDown':{const up=sel.type==='riverUp';return `<h3>${up?'Upstream':'Downstream'} river ${x}</h3>
         ${up?kv('Inflow to upper lake',f1(s.riverIn||0,2)+' m³/s')+kv('Snowpack (this site)',f1(s.snowpack,1)+' mm'):kv('Outflow below lower lake',f1(s.riverOut||0,2)+' m³/s')+kv('of which environmental release',f1(s.envDel||0,3)+' m³/s')+kv('of which spill',f1(s.spillL||0,2)+' m³/s')+kv('Spillway flow from upper',f1(s.spillU||0,2)+' m³/s')}
         <p class="muted" style="font-size:12px">Latest simulated values. Environmental release and spill count as outflow.</p>`;}
@@ -2558,10 +3078,10 @@ function cardHTML(snap,sel){const s=site(snap);const C=Sim.CONFIG;const t=s.tel;
         <label class="lbl" for="solCur">Site solar curtailment: ${pct((s.curtailSolar||0)*100)}</label><input id="solCur" data-fid="sc" type="range" min="0" max="1" step="0.05" value="${s.curtailSolar||0}" data-slider="solcurt">`;}
     case 'wind':{const w=s.tiles[sel.tile].wind;if(!w)return `<h3>Wind ${x}</h3><p>Removed.</p>`;const tr=C.wind.tiers[w.tier];const rc=tr.kW*tr.costKW*C.wind.repairFrac;const ok=snap.cash-rc>=snap.settings.cashReserve;
       return `<h3>Wind turbine — tile ${sel.tile%16+1} ${x}</h3>${kv('Tier',tr.name+' · '+tr.kW+' kW, R '+tr.R+' m, hub '+tr.hub+' m')}${kv('Hub wind',f1(w.v||0,1)+' m/s')}${kv('Rotor speed',f1(w.rpm||0,1)+' rpm'+(w.feathered?' (feathered — cut out)':''))}
-        ${kv('Delivered / available',f1((w.p||0)/1000,0)+' / '+f1((w.avail||0)/1000,0)+' kW')}${kv('Status',w.building?'under construction':w.damaged?(w.repairing?'damaged — repair under way':'damaged — offline'):'running')}
+        ${kv('Delivered / available',f1((w.p||0)/1000,0)+' / '+f1((w.avail||0)/1000,0)+' kW')}${kv('Status',w.building?'under construction':w.damaged?(w.repairing?'damaged — repair under way':'DAMAGED — NEEDS REPAIR'):'running',w.damaged&&!w.repairing?'alarm':'')}
         <label class="lbl" for="wCur">Curtailment: ${pct(w.curtail*100)}</label><input id="wCur" data-fid="wc" type="range" min="0" max="1" step="0.05" value="${w.curtail}" data-slider="windcurt" data-tile="${sel.tile}">
         <p style="font-size:12px">Repair reserve: automatic repair needs cash after paying ≥ ${money(snap.settings.cashReserve)}. ${ok?'✓ Reserve OK':'✗ Reserve too low — repairs wait'}</p>
-        ${w.damaged&&!w.repairing?`<button data-fid="wr" ${J({type:'REPAIR',target:'wind',tile:sel.tile})}>Repair now (${money(rc)})</button>`:''}`;}
+        ${w.damaged&&!w.repairing?`<button data-fid="wr" class="on" ${J({type:'REPAIR',target:'wind',tile:sel.tile})}>Repair now (${money(rc)})</button>`:''}`;}
     case 'battery':{const b=s.tiles[sel.tile].battery;if(!b)return `<h3>Battery ${x}</h3><p>Removed.</p>`;const tr=C.battery.tiers[b.tier];
       return `<h3>Battery — tile ${sel.tile%16+1} ${x}</h3>${kv('Tier',tr.name+' · '+tr.MWh+' MWh / '+tr.MW+' MW')}${kv('State of charge',pct(b.soc*100)+' (window 10–95 %)')}${kv('Activity',b.act||'idle')}${kv('Capacity fade',f1(b.fade*100,2)+' %')}
         <div class="seg" role="group" aria-label="Battery mode">${['auto','charge','discharge','idle'].map(m=>`<button data-fid="b${m}" ${J({type:'SET_BATTERY',tile:sel.tile,mode:m})} aria-pressed="${b.mode===m}">${m}</button>`).join('')}</div>
@@ -2584,7 +3104,8 @@ function renderCard(force){const c=$('card');if(!UI.card||c.hidden)return;const 
   if(!force&&c.contains(ae)&&(ae.tagName==='INPUT'||ae.tagName==='SELECT'))return;if(!force&&UI.pointerDown&&c.matches(':hover'))return;
   const fid=ae&&c.contains(ae)?ae.dataset.fid:null;const html=cardHTML(snap,UI.card);if(c.dataset.h!==html){c.innerHTML=html;c.dataset.h=html;if(fid){const e=c.querySelector('[data-fid="'+fid+'"]');if(e)e.focus();}}
   if(UI.card.type==='pipe')updPenCost();}
-function updPenCost(){const d=$('penD'),m=$('penM'),o=$('penCost');if(!d||!o)return;const s=site(Game.getSnapshot());const C=Sim.CONFIG;o.textContent='Cost '+money(C.penstock.materials[m.value].cost*s.penstock.L*(+d.value)+C.penstock.mobilisation)+' — plant offline 72 h.';}
+function updPenCost(){const d=$('penD'),m=$('penM'),o=$('penCost'),b=document.querySelector('[data-pen]');if(!d||!o)return;const s=site(Game.getSnapshot());const C=Sim.CONFIG;const same=Math.abs(+d.value-s.penstock.D)<1e-6;if(b)b.disabled=same||s.penstock.busy;
+  o.textContent=same?'Current diameter ('+f1(s.penstock.D,1)+' m) — choose a different diameter to replace.':'Cost '+money(C.penstock.materials[m.value].cost*s.penstock.L*(+d.value)+C.penstock.mobilisation)+' — plant offline 72 h.';}
 const projOut={x:0,y:0,vis:false};
 function positionCard(){const c=$('card');if(!UI.card||c.hidden)return;const a=UI.card.anchor||(UI.card.box?[(UI.card.box[0]+UI.card.box[3])/2,UI.card.box[4],(UI.card.box[2]+UI.card.box[5])/2]:null);
   let x=window.innerWidth-340,y=80,arrow='none';if(a&&World.ready){World.project(a,projOut);if(projOut.vis){x=projOut.x+18;y=projOut.y-30;arrow='block';}}
@@ -2592,10 +3113,40 @@ function positionCard(){const c=$('card');if(!UI.card||c.hidden)return;const a=U
   c.style.left=x+'px';c.style.top=y+'px';c.style.setProperty('--arrow',arrow);}
 
 /* ---------- panels ---------- */
-const PANELS={operate:{title:'Operations',tabs:null},build:{title:'Build',tabs:['Tiles','Plant','Dam & basin','Land & sites']},automation:{title:'Automation',tabs:['Rules','God mode']},services:{title:'Services',tabs:['Reserve','Contracts','Maintenance']},
-  finance:{title:'Finance',tabs:['Overview','Loans']},quests:{title:'Quests',tabs:null},settings:{title:'Settings',tabs:['Display','Controls','About']},save:{title:'Save / Load',tabs:null}};
-function openPanel(name){if(UI.panel===name){closePanel();return;}UI.panel=name;document.body.classList.add('panel-open');{const al=document.getElementById('alerts');if(al)al.hidden=true;}const p=PANELS[name];$('panel').hidden=false;$('pTitle').textContent=p.title;UI.tab[name]=UI.tab[name]||0;
-  $('pTabs').innerHTML=p.tabs?p.tabs.map((t,i)=>`<button data-tab="${i}" aria-pressed="${UI.tab[name]===i}">${t}</button>`).join(''):'';document.querySelectorAll('[data-tool]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tool===name));renderPanel(true);}
+const NB_TABS=[
+  ['operate','1 · Operate','#1d6e68'],
+  ['build','2 · Build','#4f6b3a'],
+  ['automation','3 · Automation','#2f6f86'],
+  ['services','4 · Services','#a3472c'],
+  ['finance','5 · Finance & Quests','#8a5f10'],
+  ['world','6 · World & Settings','#1d3557']
+];
+const PANELS={
+  operate:{title:'Field Log — Operate',tabs:null,cls:'compact'},
+  build:{title:'Site Plans — Build',tabs:['Tiles','Plant','Dam & basin','Land & sites']},
+  automation:{title:'Dispatch Rules — Automation',tabs:['Rules','God mode'],cls:'notebook'},
+  services:{title:'Grid & Upkeep — Services',tabs:['Reserve','Contracts','Maintenance']},
+  finance:{title:'Ledger & Milestones — Finance & Quests',tabs:null,cls:'split'},
+  world:{title:'Station & View — World & Settings',tabs:['World','Settings'],cls:'compact'},
+  save:{title:'Archive — Save / Load',tabs:null,cls:'compact'}
+};
+function openPanel(name){
+  if(name==='quests')name='finance';
+  if(name==='settings'){name='world';UI.tab.world=1;}
+  if(name==='lens')name='world';
+  if(UI.panel===name){closePanel();return;}
+  UI.panel=name;document.body.classList.add('panel-open');
+  {const al=document.getElementById('alerts');if(al)al.hidden=true;}
+  const p=PANELS[name];const pan=$('panel');pan.hidden=false;
+  pan.classList.toggle('split',p.cls==='split');
+  pan.classList.toggle('compact',p.cls==='compact');
+  pan.classList.toggle('notebook',p.cls==='notebook');
+  const nb=$('nbNav');if(nb)nb.innerHTML=NB_TABS.map(x=>`<button type="button" data-nbjump="${x[0]}" style="--nb-c:${x[2]}" aria-pressed="${name===x[0]}">${x[1]}</button>`).join('');
+  $('pTitle').textContent=p.title;UI.tab[name]=UI.tab[name]||0;
+  $('pTabs').innerHTML=p.tabs?p.tabs.map((t,i)=>`<button data-tab="${i}" aria-pressed="${UI.tab[name]===i}">${t}</button>`).join(''):'';
+  document.querySelectorAll('[data-tool]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tool===name));
+  renderPanel(true);
+}
 (function(){const b=document.getElementById('pBody');if(!b)return;b.addEventListener('pointerdown',()=>{UI.pdown=true;},true);const up=()=>{setTimeout(()=>{UI.pdown=false;},60);};addEventListener('pointerup',up,true);addEventListener('pointercancel',up,true);})();
 
 /* number steppers, keyboard on tile map, chart hover tooltips */
@@ -2614,7 +3165,7 @@ function enhanceInputs(root){root.querySelectorAll('input[type=number]').forEach
       if(h)show(h,e.clientX,e.clientY-4);else hide();});
     dr.addEventListener('mouseout',e=>{const c=e.target;if(c.classList&&c.classList.contains('chart')){c.style.backgroundImage='';hide();}});}
 })();
-function closePanel(){UI.panel=null;document.body.classList.remove('panel-open');$('panel').hidden=true;document.querySelectorAll('[data-tool]').forEach(b=>b.setAttribute('aria-pressed','false'));}
+function closePanel(){UI.panel=null;document.body.classList.remove('panel-open');const pan=$('panel');pan.hidden=true;pan.classList.remove('split','compact','notebook');document.querySelectorAll('[data-tool]').forEach(b=>b.setAttribute('aria-pressed','false'));}
 function renderPanel(force){if(!UI.panel||(!force&&UI.pdown))return;const b=$('pBody');const ae=document.activeElement;if(!force&&b.contains(ae)&&(ae.tagName==='INPUT'||ae.tagName==='SELECT'||ae.tagName==='TEXTAREA'))return;
   const snap=Game.getSnapshot();const fid=ae&&b.contains(ae)?ae.dataset.fid:null;const html=panelHTML(snap,UI.panel,UI.tab[UI.panel]||0);if(b.dataset.h!==html){const sc=b.scrollTop;b.innerHTML=html;b.dataset.h=html;enhanceInputs(b);b.scrollTop=sc;if(fid){const e=b.querySelector('[data-fid="'+fid+'"]');if(e)e.focus();}}}
 function tileMapHTML(snap,s){const C=Sim.CONFIG,cw=13,ch=7.5;const busy=new Set(snap.jobs.filter(j=>j.kind==='build'&&j.site===s.id).map(j=>j.p.tile));let o='';
@@ -2656,12 +3207,32 @@ function placeWorld(snap){ // marks the reserved choke point in 3D and previews 
   const z=sig[0]==='p'&&UI.place.site===s.id?UI.place.station:s.station;const one=[{x:Sim.cX(s.cp,z),z,w:Sim.cW(s.cp,z)}];
   World.buildSurvey(s,one,sig[0]==='p'&&z===s.station?UI.place.h:null);}
 function panelHTML(snap,name,tab){const s=site(snap);const C=Sim.CONFIG;const t=s.tel;
-  if(name==='operate'){const fc=snap.market.forecast;const nd=s.kind==='proc'&&!s.dam.built;return `${nd?noDamHTML():''}<div class="section"><b>${s.name}</b> — ${s.kind==='classic'?'two-lake classic':'procedural canyon'}${kv('Plant',(s.actual||'idle')+' · '+f1(Math.abs(s.q),2)+' m³/s')}${kv('Upper / lower',pct(Sim.upPct(s))+' / '+pct(Sim.loPct(s)))}${kv('Generation / pumping',f1(t.pGen/1e6,2)+' / '+f1(t.pPump/1e6,2)+' MW')}${kv('Renewables',f1(t.pRen/1e6,2)+' MW')}${kv('Batteries (net)',f1((t.pBatt||0)/1e6,2)+' MW')}${kv('Spot price','$'+f1(snap.market.price,1)+'/MWh')}</div>
-      <div class="seg">${['gen','pump','idle'].map(m=>`<button data-fid="o${m}" ${J({type:'SET_MODE',mode:m})} ${nd&&m!=='idle'?'disabled title="Place a dam first"':''} aria-pressed="${!s.auto.enabled&&s.reqMode===m}">${{gen:'Generate',pump:'Pump',idle:'Idle'}[m]}</button>`).join('')}</div>
-      <p class="muted" style="font-size:12px">Manual dispatch switches automation off (currently <b>${s.auto.enabled?'on':'off'}</b>).</p>
-      <div class="section"><div class="lbl">Next 24 h price forecast ($/MWh)</div><div class="row" style="gap:2px;align-items:flex-end;height:60px">${fc.map((p,i)=>`<div title="+${i} h: $${p.toFixed(0)}" style="flex:1;height:${Math.max(3,Math.min(60,(p+40)/3))}px;background:${p<0?'var(--gen)':p>=snap.market.peak?'var(--pump)':'var(--border)'}"></div>`).join('')}</div><div class="muted" style="font-size:11px">Teal = negative price, clay = peak hours.</div></div>
-      <button data-drawer>Open SCADA drawer (F1)</button>`;}
-  if(name==='build'){if(tab===0){let h=`<p class="muted">Click a tile in the 3D world while Build is open, or use this grid. Parcels ${s.parcels.map((o,i)=>o?(i+1):'').filter(Boolean).join(', ')} owned.</p>`;
+  if(name==='operate'){const fc=snap.market.forecast;const nd=s.kind==='proc'&&!s.dam.built;const vOpen=!!(s.valve&&s.valve.open),vElev=(s.valve&&s.valve.elev!==undefined)?s.valve.elev:15;
+    const T=C.turbine[s.turbine.tier],P=C.pump[s.pump.tier],qMax=s.reqMode==='pump'?P.Qr:T.Qr;
+    return `${nd?noDamHTML():''}
+      <div class="section" style="padding:8px">
+        <div class="row" style="justify-content:space-between;margin-bottom:6px"><b>${s.name}</b><span class="num" style="font-size:12px">Spot <b>$${f1(snap.market.price,1)}</b>/MWh</span></div>
+        <div class="seg">${['gen','pump','idle'].map(m=>`<button data-fid="o${m}" ${J({type:'SET_MODE',mode:m})} ${nd&&m!=='idle'?'disabled title="Place a dam first"':''} aria-pressed="${!s.auto.enabled&&s.reqMode===m}">${{gen:'Generate',pump:'Pump',idle:'Idle'}[m]}</button>`).join('')}</div>
+        <label class="lbl" style="display:flex;justify-content:space-between;margin-top:8px">Flow setpoint <span class="num">${f1(s.reqFlow,2)} m³/s</span></label>
+        <input type="range" min="0" max="${qMax}" step="0.05" value="${Math.min(qMax,s.reqFlow)}" data-slider="flow" style="width:100%" ${nd?'disabled':''}>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-top:4px;font-size:12px">
+          ${kv('State',(s.actual||'idle')+' · '+f1(Math.abs(s.q),1)+' m³/s')}
+          ${kv('Lakes',pct(Sim.upPct(s))+' / '+pct(Sim.loPct(s)))}
+          ${kv('Gen / Pump',f1(t.pGen/1e6,2)+' / '+f1(t.pPump/1e6,2)+' MW')}
+          ${kv('Ren / Batt',f1(t.pRen/1e6,2)+' / '+f1((t.pBatt||0)/1e6,2)+' MW')}
+        </div>
+        <div class="muted" style="font-size:11px;margin-top:4px">Manual dispatch turns off automation (${s.auto.enabled?'currently ON':'currently off'}).</div>
+      </div>
+      <div class="section" style="padding:8px">
+        <div class="lbl" style="margin-bottom:4px">Upcoming 24 h prices ($/MWh)</div>
+        <div class="row" style="gap:2px;align-items:flex-end;height:48px">${fc.map((p,i)=>`<div data-bar="+${i} h: $${p.toFixed(1)}/MWh" style="flex:1;height:${Math.max(3,Math.min(48,(p+40)/3.4))}px;border-radius:2px 2px 0 0;background:${p<0?'var(--gen)':p>=snap.market.peak?'var(--pump)':'var(--border)'}"></div>`).join('')}</div>
+        <div class="muted" style="font-size:11px;margin-top:3px">Teal = negative (paid to pump) · Clay = peak</div>
+      </div>
+      <div class="section" style="padding:8px">
+        <div class="row" style="justify-content:space-between"><b>Lower outlet valve</b><span class="num ${vOpen?'warn':''}" style="font-size:12px">${vOpen?'OPEN · '+f1(s.valveQ||0,2)+' m³/s':'Closed'}</span></div>
+        <div class="row" style="margin-top:6px"><button data-fid="ovlv" class="${vOpen?'on':''}" ${J({type:'SET_VALVE',open:!vOpen})}>${vOpen?'Close valve':'Open (sill '+vElev+' m)'}</button><button data-fid="ozvlv" data-zoomvalve>Zoom</button><button data-drawer>SCADA (F1)</button></div>
+      </div>`;}
+  if(name==='build'){if(tab===0){let h=`<p class="muted">Walk around and click any owned tile in the 3D field — or pick from the map below — to place Solar, Wind, or Batteries and watch construction. Parcels ${s.parcels.map((o,i)=>o?(i+1):'').filter(Boolean).join(', ')} owned.</p>`;
       h+=tileMapHTML(snap,s);
       if(UI.gridTile!==undefined){const q=`<div class="section">${tileHTML(snap,s,UI.gridTile,'')}</div>`;h+=q;}
       h+=`<div class="buyrow">${[0,1,2].filter(p=>!s.parcels[p]).map(p=>`<button data-fid="bpar${p}" ${J({type:'BUY_PERMIT',kind:'parcel',parcel:p})}>Buy parcel ${p+1} · ${money(C.land.parcelCost[p])}</button>`).join('')}</div>`;return h;}
@@ -2679,47 +3250,70 @@ function panelHTML(snap,name,tab){const s=site(snap);const C=Sim.CONFIG;const t=
       h+=`<div class="section"><b>Lower basin</b>${kv('Excavation stage',s.lower.excav+' / '+C.res.excavStages)}<button data-fid="exc2" ${J({type:'EXCAVATE'})}>Excavate (${money(C.res.excavCost*(1+0.5*s.lower.excav))})</button></div>`;
       h+=`<div class="section"><b>Dam permits</b>${['gravity','arch'].map(k=>kv(C.dam.classes[k].name+' (≤ '+C.dam.classes[k].max+' m)',snap.permits[k]?'✓ held':`<button data-fid="pm${k}" ${J({type:'BUY_PERMIT',kind:'dam',cls:k})}>${money(C.dam.classes[k].permit)}</button>`)).join('')}</div>`;return h;}
     let h='<div class="section"><b>Sites for sale</b>';C.shop.forEach((x,i)=>{const sh=snap.shop[i];h+=`<div class="kv"><span>${x.name}</span><span>${sh.bought?'✓ owned':`${sh.permit?'':`<button data-fid="wp${i}" ${J({type:'BUY_PERMIT',kind:'water',id:i})}>Water permit ${money(x.permit)}</button>`}<button data-fid="bs${i}" ${J({type:'BUY_SITE',id:i})} ${sh.permit||snap.demo?'':'disabled'}>Buy ${money(x.cost)}</button>`}</span></div>`;});return h+'</div>';}
-  if(name==='automation'){if(tab===0)return rulesHTML(s)+`<div class="section"><div class="frow"><label class="fl" for="cres">Repair cash reserve<small>dollars</small></label><input id="cres" data-fid="cres" type="number" step="5000" value="${snap.settings.cashReserve}" data-opt="cashReserve"></div><p class="muted" style="font-size:12px;margin:4px 0 0">Automatic wind repairs only start if cash after paying stays above this.</p></div>`;
-    const g=snap.god;return `<div class="section"><label class="row"><span><b>God mode</b><br><span class="muted" style="font-size:12px">Dispatches and buys on your behalf</span></span><input type="checkbox" data-god="enabled" ${g.enabled?'checked':''}></label>
-      <p class="muted" style="font-size:12px">Follows your rules first, then a forecast fallback. Manages batteries, repairs, cleaning, Tier-2 upgrades, penstock and positive-NPV renewables. Never borrows; honours the reserve. No promise of optimal profit.</p></div>
+  if(name==='automation'){if(tab===0)return `<div class="nb-head"><b>DISPATCH RULES · ${s.name.toUpperCase()}</b><span style="font-size:11px;opacity:.75">Day ${snap.day+1}</span></div>${rulesHTML(s)}<div class="section"><div class="frow"><label class="fl" for="cres">Repair cash reserve<small>dollars held back</small></label><input id="cres" data-fid="cres" type="number" step="5000" value="${snap.settings.cashReserve}" data-opt="cashReserve"></div><p class="muted" style="font-size:11px;margin:4px 0 0">Auto wind repairs only start if cash stays above this reserve.</p></div>`;
+    const g=snap.god;return `<div class="nb-head"><b>SUPERVISOR LOG · GOD MODE</b><span style="font-size:11px;opacity:.75">Auto-operator</span></div><div class="section"><label class="row"><span><b>God mode</b><br><span class="muted" style="font-size:12px">Dispatches and buys on your behalf</span></span><input type="checkbox" data-god="enabled" ${g.enabled?'checked':''}></label>
+      <p class="muted" style="font-size:12px;margin:6px 0 0">Follows your rules first, then a forecast fallback. Manages batteries, repairs, cleaning, Tier-2 upgrades, penstock and positive-NPV renewables. Never borrows; honours the reserve.</p></div>
       <div class="section"><label class="row"><span>Dispatch the plant</span><input type="checkbox" data-god="dispatch" ${g.dispatch?'checked':''}></label>
       <label class="row"><span>Curtail renewables at negative prices <span class="muted" style="font-size:11px">(when no firm contract)</span></span><input type="checkbox" data-god="curtailNeg" ${g.curtailNeg?'checked':''}></label>
-      <label class="row"><span>Profit protection <span class="muted" style="font-size:11px">(≥ $1 per settled hour, recorded as subsidy)</span></span><input type="checkbox" data-god="protect" ${g.protect?'checked':''}></label></div>
+      <label class="row"><span>Profit protection <span class="muted" style="font-size:11px">(≥ $1/h settled, recorded as subsidy)</span></span><input type="checkbox" data-god="protect" ${g.protect?'checked':''}></label></div>
       <div class="section"><div class="frow"><label class="fl" for="gft">Flow target<small>fraction of rated</small></label><input id="gft" type="number" data-fid="gft" data-godn="flowTarget" step="0.05" min="0.2" max="1.1" value="${g.flowTarget}"></div>
       <div class="frow"><label class="fl" for="gcr">Cash reserve<small>dollars kept back</small></label><input id="gcr" type="number" data-fid="gcr" data-godn="cashReserve" step="5000" value="${g.cashReserve}"></div>
-      <div class="frow"><label class="fl" for="gch">Cheap hours<small>pump when price is lowest</small></label><input id="gch" type="number" data-fid="gch" data-godn="cheapHours" min="1" max="12" value="${g.cheapHours}"></div>
-      <div class="frow"><label class="fl" for="gph">Peak hours<small>generate when price is highest</small></label><input id="gph" type="number" data-fid="gph" data-godn="peakHours" min="1" max="12" value="${g.peakHours}"></div></div>
+      <div class="frow"><label class="fl" for="gch">Cheap hours<small>pump at lowest prices</small></label><input id="gch" type="number" data-fid="gch" data-godn="cheapHours" min="1" max="12" value="${g.cheapHours}"></div>
+      <div class="frow"><label class="fl" for="gph">Peak hours<small>generate at highest prices</small></label><input id="gph" type="number" data-fid="gph" data-godn="peakHours" min="1" max="12" value="${g.peakHours}"></div></div>
       ${kv('Subsidy recorded so far',money(snap.fin.subsidy))}`;}
-  if(name==='services'){if(tab===0){const cap=Sim.reserveCap(s)/1e6;return `<div class="section"><b>Reserve market</b>${kv('Deliverable within '+C.reserve.window+' s',f1(cap,2)+' MW')}${kv('Current offer',f1(s.reserveOffer,2)+' MW')}${kv('Availability pay','$'+C.reserve.availPay+'/MW·h (×2 in emergencies)')}
+  if(name==='services'){const note=`<div class="svc-note"><b>Services overview</b> — <i>Reserve</i> pays you to keep fast MW ready for grid emergencies; <i>Contracts</i> lock in fixed-hour supply premiums; <i>Maintenance</i> tracks repairs &amp; cleaning. <span class="muted">(Planned for a cleaner workflow rework later.)</span></div>`;
+    if(tab===0){const cap=Sim.reserveCap(s)/1e6;return note+`<div class="section"><b>Reserve market</b>${kv('Deliverable within '+C.reserve.window+' s',f1(cap,2)+' MW')}${kv('Current offer',f1(s.reserveOffer,2)+' MW')}${kv('Availability pay','$'+C.reserve.availPay+'/MW·h (×2 in emergencies)')}
       ${kv('Reliability score S',f1(snap.reserve.score*100,0)+' / 100')}${kv('Calls answered',snap.reserve.ok+' of '+snap.reserve.calls)}${kv('Revenue / fines',money(snap.reserve.revenue)+' / '+money(snap.reserve.fines))}
       <div class="frow"><label class="fl" for="resMW">Offer<small>MW</small></label><input id="resMW" data-fid="resmw" type="number" step="0.05" min="0" value="${s.reserveOffer}"></div><div class="row"><button data-fid="resb" data-resoffer>Set offer</button><button data-fid="res0" ${J({type:'SET_RESERVE_OFFER',mw:0})}>Withdraw</button></div>
       ${s.call?`<p class="warn">Active call: +${s.call.mw.toFixed(2)} MW, ${Math.round(s.call.el)} s elapsed, delivering ${f1(s.call.last/1e6,2)} MW.</p>`:'<p class="muted">No active call.</p>'}
       ${snap.market.emergency?`<p>${snap.market.emergency.day<snap.day?'Last grid emergency was':'Grid emergency scheduled'} day ${snap.market.emergency.day+1}, ${snap.market.emergency.start}:00 for ${snap.market.emergency.dur} h.</p>`:''}</div>`;}
-    if(tab===1){const c=snap.contracts;return `<div class="section"><b>Offers</b>${c.offers.length?c.offers.map(o=>`<div class="kv"><span>${o.name}: ${o.mw.toFixed(1)} MW, ${o.h0}–${o.h1} h, ${o.days} d, +$${o.premium}/MWh, penalty $${o.penalty}/MWh short</span><button data-fid="${o.id}" ${J({type:'SIGN_CONTRACT',id:o.id})}>Sign</button></div>`).join(''):'<div class="empty">No offers right now. New offers arrive every 15 days.</div>'}</div>
+    if(tab===1){const c=snap.contracts;return note+`<div class="section"><b>Offers</b>${c.offers.length?c.offers.map(o=>`<div class="kv"><span>${o.name}: ${o.mw.toFixed(1)} MW, ${o.h0}–${o.h1} h, ${o.days} d, +$${o.premium}/MWh, penalty $${o.penalty}/MWh short</span><button data-fid="${o.id}" ${J({type:'SIGN_CONTRACT',id:o.id})}>Sign</button></div>`).join(''):'<div class="empty">No offers right now. New offers arrive every 15 days.</div>'}</div>
       <div class="section"><b>Active</b>${c.active.length?c.active.map(o=>kv(o.name,o.mw.toFixed(1)+' MW '+o.h0+'–'+o.h1+' h, ends day '+(o.end+1))).join(''):'<div class="empty">No active contracts.</div>'}${kv('Hours delivered in full',c.fulfilledHours)}</div>`;}
-    let h='<div class="section"><b>Maintenance</b>';h+=kv('Turbine health',f1(s.turbine.health,0))+kv('Pump health',f1(s.pump.health,0))+kv('Penstock health',f1(s.penstock.health,0));
-    h+=`<div class="row"><button data-fid="mt" ${J({type:'REPAIR',target:'turbine'})}>Repair turbine</button><button data-fid="mp" ${J({type:'REPAIR',target:'pump'})}>Repair pump</button></div></div><div class="section"><b>Solar cleaning</b>`;
+    let h=note+'<div class="section"><b>Maintenance</b>';h+=kv('Turbine health',f1(s.turbine.health,0))+kv('Pump health',f1(s.pump.health,0))+kv('Penstock health',f1(s.penstock.health,0));
+    h+=`<div class="row"><button data-fid="mt" ${J({type:'REPAIR',target:'turbine'})}>Repair turbine</button><button data-fid="mp" ${J({type:'REPAIR',target:'pump'})}>Repair pump</button><button data-fid="mpen" ${J({type:'REPAIR',target:'penstock'})} ${s.penstock.busy||s.penstock.health>=99.9?'disabled':''}>Repair penstock</button></div></div><div class="section"><b>Wind turbines</b>`;
+    let anyW=false;s.tiles.forEach((x,i)=>{if(x.wind){anyW=true;const tr=C.wind.tiers[x.wind.tier],rc=tr.kW*tr.costKW*C.wind.repairFrac;h+=kv('Tile '+(i%16+1)+' (parcel '+(Math.floor(i/16)+1)+') · '+tr.name,x.wind.damaged?(x.wind.repairing?'repairing…':`<span class="alarm">damaged</span> <button data-fid="wrp${i}" ${J({type:'REPAIR',target:'wind',tile:i})}>Repair (${money(rc)})</button>`):'running');}});if(!anyW)h+='<div class="empty">No wind turbines.</div>';
+    h+='</div><div class="section"><b>Solar cleaning</b>';
     let any=false;s.tiles.forEach((x,i)=>{if(x.solar){any=true;h+=kv('Tile '+(i%16+1)+' (parcel '+(Math.floor(i/16)+1)+')',f1(x.solar.soil*100,1)+'% soiled <button data-fid="cln'+i+'" '+J({type:'CLEAN_ARRAY',tile:i})+'>Clean</button>');}});if(!any)h+='<div class="empty">No solar arrays.</div>';
     h+='</div><div class="section"><b>Jobs</b>'+(snap.jobs.length?snap.jobs.map(j=>kv(snap.sites[j.site].name+': '+jobName(j),(j.rem/3600).toFixed(1)+' h')).join(''):'<div class="empty">No construction or repair jobs.</div>')+'</div>';return h;}
-  if(name==='finance'){if(tab===0){const om=Sim.omPerHour(s);const dh=snap.fin.dayHist;const mean=dh.length?dh.reduce((a,b)=>a+b,0)/dh.length:0;
-      return `<div class="section">${kv('Cash',money(snap.cash))}${kv('Loans',money(snap.loans))}${kv('Net worth',money(Sim.netWorth(snap)))}${kv('Today / yesterday',money(snap.fin.profitToday)+' / '+money(snap.fin.profitYesterday))}${kv('Mean daily profit',money(mean))}${kv('Lifetime net',money(snap.fin.lifetime))}${kv('O&M this site',money(om)+'/h')}${kv('Last hour settled',money(snap.fin.lastHour))}${kv('Effective price last hour','$'+f1(snap.market.eff||snap.market.price,1)+'/MWh')}</div>
-      <div class="section"><b>Disclosure</b>${kv('God-mode profit-protection subsidy',money(snap.fin.subsidy))}<p class="muted" style="font-size:12px">The subsidy guarantees at least $1 per settled operating hour while god mode and protection are on. It is kept separate from earned profit. Turn it off in Automation → God mode.</p>${kv('Year-end renewable bonus',money(snap.fin.yearBonus))}</div>
-      <div class="section"><div class="lbl">Daily profit (last ${dh.length} days)</div>${dh.length?`<div class="fchart">${dh.map((v,k)=>`<div class="fcol" data-bar="Day ${snap.day-dh.length+k+1}: ${money(v)}"><i style="height:${Math.min(60,3+Math.abs(v)/Math.max(1,Math.max(...dh.map(Math.abs)))*57)}px;background:${v>=0?'var(--gen)':'var(--pump)'}"></i></div>`).join('')}</div>`:'<div class="empty">No full days yet.</div>'}</div>
-      ${snap.bankrupt?'<p class="alarm">Bankrupt — see the dialog.</p>':''}${snap.sandbox?'<p>Sandbox continuation active.</p>':''}`;}
-    return `<div class="section">${kv('Outstanding',money(snap.loans))}${kv('Rate',(C.fin.loanRate*100).toFixed(0)+' % / yr, charged hourly')}${kv('Credit limit',money(C.fin.maxLoan))}
-      <div class="frow"><label class="fl" for="loanAmt">Amount<small>dollars</small></label><input id="loanAmt" data-fid="la" type="number" step="10000" value="50000"></div><div class="row"><button data-fid="lt" data-loan="take">Borrow</button><button data-fid="lr" data-loan="repay">Repay</button></div><p class="muted" style="font-size:12px">Automation never borrows.</p></div>`;}
-  if(name==='quests'){let c=0;const rows=Sim.QUESTS.map(q=>{const r=snap.quests[q.id];if(r.claimed)c++;return `<div class="quest"><div><b>${q.title}</b><br><span class="muted" style="font-size:12px">${q.desc}${q.id==='q1'&&s.kind==='proc'&&!s.dam.built?' (needs a dam first)':''} Reward ${money(q.reward)}</span></div><div>${r.claimed?'<span class="stamp done">Claimed</span>':r.done?`<button data-fid="${q.id}" ${J({type:'CLAIM_QUEST',id:q.id})}>Claim</button>`:'<span class="stamp">Open</span>'}</div></div>`;}).join('');
-    const nd=s.kind==='proc'&&!s.dam.built;const first=`<div class="quest"><div><b>Place your dam</b><br><span class="muted" style="font-size:12px">${nd?'Start here: no dam stands yet, so the plant cannot run. Build → Dam &amp; basin.':'The canyon dam stands; the lake can fill.'}</span></div><div><span class="stamp ${nd?'':'done'}">${nd?'Open':'Done'}</span></div></div>`;
-    return `${s.kind==='proc'?first:''}<p>${c} / ${Sim.QUESTS.length} claimed. Win: claim ${C.win.quests} and reach ${money(C.win.netWorth)} net worth (now ${money(Sim.netWorth(snap))}).${snap.won?' <span class="stamp done">Won</span>':''}</p>${rows}`;}
-  if(name==='settings'){const S=UI.settings;if(tab===0)return `<div class="section"><div class="lbl">Theme</div><div class="seg">${[['field','Field Notes'],['brass','Brass & Slate']].map(t=>`<button data-fid="th${t[0]}" data-theme-btn="${t[0]}" aria-pressed="${S.theme===t[0]}">${t[1]}</button>`).join('')}</div></div>
-      <div class="section"><div class="lbl">Art style</div><div class="seg">${[['0','Faceted low-poly'],['1','Soft stylized'],['2','Naturalistic']].map(t=>`<button data-fid="st${t[0]}" data-style-btn="${t[0]}" aria-pressed="${S.style===+t[0]}" ${t[0]==='2'&&S.quality===0?'disabled title="Not available at Low quality"':''}>${t[1]}</button>`).join('')}</div></div>
-      <div class="section"><div class="lbl">Quality</div><div class="seg">${['Low','Medium','High'].map((t,i)=>`<button data-fid="q${i}" data-q-btn="${i}" aria-pressed="${S.quality===i}">${t}</button>`).join('')}</div><p class="muted" style="font-size:12px">${World.qualityNote||'Shadow map, particle cap and pixel ratio scale with quality.'}</p></div>
-      <div class="section"><label class="row"><input type="checkbox" data-set="reduced" ${S.reduced?'checked':''}> Reduced motion (no easing, particles, shimmer or animated gauges)</label><label class="row"><input type="checkbox" data-set="sound" ${S.sound?'checked':''}> Sound (synthesized clicks)</label></div>`;
-    if(tab===1)return `<div class="section"><label class="row"><input type="checkbox" data-set="invert" ${S.invert?'checked':''}> Reverse gesture directions (orbit, pan, zoom)</label>
-      <p style="font-size:12px">Left drag: orbit · Right drag / two-finger scroll / WASD / arrows: pan · Wheel, pinch or Ctrl-scroll: zoom · Q/E: rotate · Double-click: fly to object<br>Space pause · 1–6 speeds · T turn mode · C lens · F focus · F1 SCADA · F2 debug · Esc closes</p></div>
-      <div class="section"><button data-newgame>New game…</button></div>`;
-    return `<div class="section"><h3>Hydropower Tycoon</h3><p>A pumped-storage field station in a box. Physics: Darcy–Weisbach losses with Swamee–Jain friction, Thoma cavitation and NPSH, exact reservoir mass balance, duck-curve market.</p><p class="muted">Made with care for people who like tending small machines. Credits: design &amp; code — the Hydropower Tycoon field crew. All art is generated in code; the 3D view uses a compact built-in WebGL2 renderer.</p></div>
-      <div class="section"><b>Contact</b><p class="muted" style="font-size:12px">Questions, bugs or ideas? Say hello on Discord.</p><button class="discord" data-fid="discord" data-discord title="Copies @Jeremjh${DISCORD_USER_ID?' and opens the Discord profile':''}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.300 5.300A17 17 0 0 0 15.100 4l-.5 1a15.500 15.500 0 0 0-5.200 0L8.900 4a17 17 0 0 0-4.200 1.300C2 9.300 1.300 13.200 1.600 17a17 17 0 0 0 5.200 2.600l1.100-1.800c-.6-.2-1.200-.5-1.700-.8l.4-.3a12 12 0 0 0 10.200 0l.4.3c-.5.300-1.100.6-1.700.8l1.100 1.800A17 17 0 0 0 22.400 17c.4-4.500-.7-8.400-3.100-11.700zM8.700 14.700c-1 0-1.800-.9-1.800-2s.8-2 1.800-2 1.800.9 1.800 2-.8 2-1.800 2zm6.600 0c-1 0-1.800-.9-1.800-2s.8-2 1.800-2 1.800.9 1.800 2-.8 2-1.800 2z"/></svg>Discord: @Jeremjh</button></div>`;}
+  if(name==='finance'){const om=Sim.omPerHour(s),dh=snap.fin.dayHist,mean=dh.length?dh.reduce((a,b)=>a+b,0)/dh.length:0;
+    const renMW=(t.pRen||0)/1e6,avgFc=snap.market.forecast.reduce((a,b)=>a+b,0)/Math.max(1,snap.market.forecast.length);
+    const est24=(renMW*Math.max(0,avgFc)-om)*24;
+    let qc=0;const qrows=Sim.QUESTS.map(q=>{const r=snap.quests[q.id];if(r.claimed)qc++;return `<div class="quest"><div><b>${q.title}</b><br><span class="muted" style="font-size:12px">${q.desc}${q.id==='q1'&&s.kind==='proc'&&!s.dam.built?' (needs a dam first)':''} · <b>+${money(q.reward)}</b></span></div><div>${r.claimed?'<span class="stamp done">Claimed</span>':r.done?`<button data-fid="${q.id}" ${J({type:'CLAIM_QUEST',id:q.id})}>Claim</button>`:'<span class="stamp">Open</span>'}</div></div>`;}).join('');
+    const nd=s.kind==='proc'&&!s.dam.built;
+    const firstQ=s.kind==='proc'?`<div class="quest"><div><b>Place your dam</b><br><span class="muted" style="font-size:12px">${nd?'No dam stands yet. Build → Dam &amp; basin.':'Canyon dam stands.'}</span></div><div><span class="stamp ${nd?'':'done'}">${nd?'Open':'Done'}</span></div></div>`:'';
+    return `<div class="split-grid">
+      <div>
+        <div class="section"><b>Books &amp; 24 h forecast</b>
+          ${kv('Cash',money(snap.cash))}${kv('Loans',money(snap.loans))}${kv('Net worth',money(Sim.netWorth(snap)))}${kv('Today / yesterday',money(snap.fin.profitToday)+' / '+money(snap.fin.profitYesterday))}${kv('Mean daily profit',money(mean))}${kv('24 h baseline forecast',money(est24))}${kv('O&amp;M this site',money(om)+'/h')}${kv('Lifetime net',money(snap.fin.lifetime))}
+          ${dh.length?`<div class="lbl" style="margin-top:8px">Daily profit (${dh.length} d)</div><div class="fchart">${dh.map((v,k)=>`<div class="fcol" data-bar="Day ${snap.day-dh.length+k+1}: ${money(v)}"><i style="height:${Math.min(54,3+Math.abs(v)/Math.max(1,Math.max(...dh.map(Math.abs)))*51)}px;background:${v>=0?'var(--gen)':'var(--pump)'}"></i></div>`).join('')}</div>`:''}
+        </div>
+        <div class="section"><b>Credit line (${(C.fin.loanRate*100).toFixed(0)}%/yr)</b>
+          ${kv('Limit',money(C.fin.maxLoan))}${snap.fin.subsidy>0?kv('God subsidy',money(snap.fin.subsidy)):''}
+          <div class="frow"><label class="fl" for="loanAmt">Amount<small>dollars</small></label><input id="loanAmt" data-fid="la" type="number" step="10000" value="50000"></div>
+          <div class="row"><button data-fid="lt" data-loan="take">Borrow</button><button data-fid="lr" data-loan="repay">Repay</button></div>
+        </div>
+        ${snap.bankrupt?'<p class="alarm">Bankrupt — see dialog.</p>':''}${snap.sandbox?'<p class="muted" style="font-size:12px">Sandbox continuation active.</p>':''}
+      </div>
+      <div>
+        <div class="section"><b>Quests (${qc}/${Sim.QUESTS.length})</b>
+          <p class="muted" style="font-size:12px;margin:4px 0 8px">Win goal: ${C.win.quests} quests + ${money(C.win.netWorth)} net worth.${snap.won?' <span class="stamp done">Won</span>':''}</p>
+          ${firstQ}${qrows}
+        </div>
+      </div>
+    </div>`;}
+  if(name==='world'){const S=UI.settings;
+    if(tab===0)return `<div class="section" style="padding:8px"><div class="lbl" style="margin-bottom:6px">Camera view</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${[['overview','Overview'],['dam','Dam'],['ph','Powerhouse'],['penstock','Penstock'],['upper','Upper lake'],['lower','Lower lake']].map(a=>`<button data-preset-btn="${a[0]}">${a[1]}</button>`).join('')}</div></div>
+      <div class="section" style="padding:8px"><div class="lbl" style="margin-bottom:6px">Visual lens (C key)</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${LENSES.map((l,i)=>`<button data-lens-btn="${i}" aria-pressed="${UI.lensIdx===i}">${LENS_NAMES[l]}</button>`).join('')}</div></div>
+      <div class="section" style="padding:8px"><div class="lbl" style="margin-bottom:6px">Art style</div><div class="seg">${[['0','Faceted'],['1','Soft'],['2','Natural']].map(t=>`<button data-fid="st${t[0]}" data-style-btn="${t[0]}" aria-pressed="${S.style===+t[0]}" ${t[0]==='2'&&S.quality===0?'disabled title="Not available at Low quality"':''}>${t[1]}</button>`).join('')}</div></div>`;
+    return `<div class="section" style="padding:8px"><div class="lbl" style="margin-bottom:4px">Theme &amp; Quality</div>
+        <div class="seg" style="margin-bottom:6px">${[['field','Field Notes'],['brass','Brass & Slate']].map(t=>`<button data-fid="th${t[0]}" data-theme-btn="${t[0]}" aria-pressed="${S.theme===t[0]}">${t[1]}</button>`).join('')}</div>
+        <div class="seg">${['Low','Medium','High'].map((t,i)=>`<button data-fid="q${i}" data-q-btn="${i}" aria-pressed="${S.quality===i}">${t}</button>`).join('')}</div>
+        ${World.qualityNote?`<p class="muted" style="font-size:11px;margin:4px 0 0">${World.qualityNote}</p>`:''}
+      </div>
+      <div class="section" style="padding:8px"><label class="row"><input type="checkbox" data-set="reduced" ${S.reduced?'checked':''}> Reduced motion</label><label class="row"><input type="checkbox" data-set="sound" ${S.sound?'checked':''}> Sound clicks</label><label class="row"><input type="checkbox" data-set="invert" ${S.invert?'checked':''}> Reverse camera controls</label></div>
+      <div class="section" style="padding:8px"><div class="lbl">Shortcuts</div><p style="font-size:11px;margin:4px 0 8px"><b>1–6</b> menus · <b>− / =</b> speed · <b>Space</b> pause · <b>WASD</b> pan · <b>Q/E</b> rotate · <b>C</b> lens · <b>F1</b> SCADA · <b>Esc</b> close</p>
+        <div class="row"><button data-opensave>Save / Load…</button><button data-newgame>New game…</button><button class="discord" style="min-height:36px;padding:0 12px;font-size:12px" data-fid="discord" data-discord title="Copy @Jeremjh">Discord</button></div>
+      </div>`;}
   if(name==='save'){let h='';const slots=['slot1','slot2','slot3','auto'];for(const k of slots){const meta=Store.meta(k);h+=`<div class="section"><b>${k==='auto'?'Autosave':'Slot '+k.slice(-1)}</b> <span class="muted">${meta||'empty'}</span><div class="row">${k!=='auto'?`<button data-fid="sv${k}" data-save="${k}">Save</button>`:''}<button data-fid="ld${k}" data-load="${k}" ${meta?'':'disabled'}>Load</button>${meta?`<button data-fid="dl${k}" data-del="${k}">Delete</button>`:''}</div></div>`;}
     return h+`<div class="section"><div class="row"><button data-export>Export file</button><label class="badge" style="padding:10px;cursor:pointer">Import file <input type="file" id="importF" accept=".json,application/json" style="display:none"></label><button data-replay>Verify replay</button></div><p class="muted" style="font-size:12px" id="saveMsg">${Store.fallback?'Browser storage unavailable — using in-memory slots for this session.':'Saves are versioned JSON and keep the seed, terrain bias and dam station.'}</p></div>`;}
   return '';}
@@ -2783,9 +3377,9 @@ function renderAlerts(){const a=$('alerts');if(a.hidden)return;const snap=Game.g
 function showStart(){const m=$('modal');m.hidden=false;const seed=Math.floor(Date.now()%100000);
   m.innerHTML=`<div class="pane" role="dialog" aria-labelledby="stT"><h1 id="stT" style="font-size:24px">Welcome to the field station</h1>
   <p>You look after a little hydropower station: two lakes, a dam, a pipe and a powerhouse. When power is cheap, pump water uphill. When it is dear, let it run back down through the turbine. Add some sun and wind, keep the machines healthy, and grow from there.</p>
-  <div class="section"><div class="lbl">Where would you like to start?</div><div class="seg"><button id="kClassic" aria-pressed="true">Two lakes (Classic)</button><button id="kProc" aria-pressed="false">A winding canyon (survey first)</button><p id="kHint" class="muted" style="font-size:12px;margin:6px 0 0" hidden>Survey the river, pick a choke point, then build and pay for your own dam (no dam stands at the start).</p></div>
+  <div class="section"><div class="lbl" style="margin-bottom:6px">Where would you like to start?</div><div class="seg"><button id="kClassic" aria-pressed="true">Two lakes (Classic)</button><button id="kProc" aria-pressed="false">A winding canyon (survey first)</button></div><p id="kHint" class="muted" style="font-size:12px;margin:8px 0 2px" hidden>Survey the river, pick a choke point, then build and pay for your own dam (no dam stands at the start).</p>
   <div class="grid2"><div><label class="lbl" for="nSeed">Map seed</label><input id="nSeed" type="number" value="${seed}"></div><div><label class="lbl" for="nBias">Terrain</label><select id="nBias"><option value="gentle">Gentle foothills</option><option value="balanced" selected>Balanced</option><option value="rugged">Rugged highlands</option></select></div>
-  <div><label class="lbl" for="nRiver">River size</label><select id="nRiver"><option value="small">Small</option><option value="medium" selected>Medium</option><option value="large">Large</option></select></div><div><label class="row" style="margin-top:20px"><input type="checkbox" id="nDemo"> Demo mode (∞ funds)</label></div></div>
+  <div><label class="lbl" for="nRiver">River size</label><select id="nRiver"><option value="small">Small</option><option value="medium" selected>Medium</option><option value="large">Large</option></select></div><div><label class="row" style="min-height:44px;margin:0"><input type="checkbox" id="nDemo"> Demo mode (∞ funds)</label></div></div>
   <div class="row" style="margin-top:12px;justify-content:flex-end">${Engine.state?'<button id="nCancel">Cancel</button>':''}<button id="nGo" class="on">Begin</button></div></div>`;
   let kind='classic';$('kClassic').onclick=()=>{kind='classic';$('kClassic').setAttribute('aria-pressed','true');$('kProc').setAttribute('aria-pressed','false');$('kHint').hidden=true;};$('kProc').onclick=()=>{kind='proc';$('kProc').setAttribute('aria-pressed','true');$('kClassic').setAttribute('aria-pressed','false');$('kHint').hidden=false;};
   if($('nCancel'))$('nCancel').onclick=()=>{m.hidden=true;};
@@ -2798,6 +3392,36 @@ function renderSurveyBar(){const b=$('surveyBar');const S=UI.survey;if(!S){b.hid
   <div class="row" style="justify-content:flex-end"><button id="svCancel">Cancel</button><button id="svOk" class="on" ${S.station===null?'disabled':''}>Confirm and start</button></div>`;
   $('svCancel').onclick=()=>{UI.survey=null;b.hidden=true;World.surveyMode=false;if(Engine.state){World.build(Engine.state.sites[Engine.state.active]);World.buildSurvey(Engine.state.sites[Engine.state.active],null,null);World.preset('overview');}else showStart();};
   $('svOk').onclick=()=>{const o=Object.assign({},S.o,{station:S.station});UI.survey=null;b.hidden=true;World.surveyMode=false;Game.newGame(o);};}
+function showEmergencyGuide(snap){
+  UI.emergGuideDone=true;try{Store.set('emerg_guide','1');}catch(_){}
+  const wasPaused=snap.paused;if(!wasPaused)Game.dispatch({type:'PAUSE',paused:true});
+  const s=site(snap);const em=snap.market.emergency;const m=$('modal');m.hidden=false;
+  m.innerHTML=`<div class="pane" role="dialog" aria-labelledby="emHdr">
+    <div class="row" style="justify-content:space-between;align-items:center"><h2 id="emHdr" class="alarm" style="margin:0">⚡ Grid Emergency Incident</h2><button id="emSkipTop" title="Skip tutorial">Skip</button></div>
+    <p>A regional grid shortfall has triggered an emergency window until <b>${String((em.start+em.dur)%24).padStart(2,'0')}:00</b>:</p>
+    <ul style="margin:6px 0 10px 18px;font-size:13px;line-height:1.45">
+      <li><b>Spot price ×${Sim.CONFIG.market.emergMult}:</b> currently <b>$${snap.market.price.toFixed(0)}/MWh</b> — generate hydro &amp; discharge batteries now.</li>
+      <li><b>System reserve ${Sim.CONFIG.reserve.reqEmerg.toFixed(1)} MW:</b> availability pay is <b>×2</b> while the emergency lasts.</li>
+      <li><b>Rapid call risk:</b> if dispatched, ramp up within ${Sim.CONFIG.reserve.window}s or pay a fine.</li>
+    </ul>
+    <div class="row" style="flex-wrap:wrap;gap:6px;margin:10px 0">
+      ${s.dam.built?`<button id="emGen" class="on">1. Generate full flow</button>`:''}
+      <button id="emRes">2. Open Reserve &amp; Services</button>
+      <button id="emScada">3. Watch SCADA</button>
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:8px">
+      <button id="emSkip">Skip guide</button>
+      <button id="emGo" class="on">${wasPaused?'Got it':'Resume &amp; handle it'}</button>
+    </div>
+  </div>`;
+  const close=(resume)=>{m.hidden=true;if(resume&&!wasPaused)Game.dispatch({type:'PAUSE',paused:false});};
+  $('emSkipTop').onclick=()=>close(true);
+  $('emSkip').onclick=()=>close(true);
+  $('emGo').onclick=()=>close(true);
+  if($('emGen'))$('emGen').onclick=()=>{const T=Sim.CONFIG.turbine[s.turbine.tier];act({type:'SET_MODE',mode:'gen',q:T.Qr});toast('Turbine set to '+T.Qr+' m³/s for emergency peak!','');};
+  $('emRes').onclick=()=>{close(true);UI.tab.services=0;openPanel('services');};
+  $('emScada').onclick=()=>{close(true);openDrawer(true);};
+}
 function showDialog(kind){const m=$('modal');m.hidden=false;
   if(kind==='bankrupt')m.innerHTML=`<div class="pane" role="alertdialog"><h2 class="alarm">The station is bankrupt</h2><p>Cash fell below the overdraft limit. You can take a one-time emergency credit (added to your loans), or continue in sandbox mode with bankruptcy and winning switched off.</p><div class="row"><button id="dEm" ${Engine.state.emergencyUsed?'disabled':''}>Emergency credit (${money(Sim.CONFIG.fin.emergencyCredit)}, once)</button><button id="dSb">Continue in sandbox</button><button id="dNew">New game</button></div></div>`;
   if(kind==='won')m.innerHTML=`<div class="pane"><h2>The valley hums along</h2><p>You claimed enough quests and grew the station's worth past the goal. Keep playing as long as you like.</p><button id="dOk">Keep tending</button></div>`;
@@ -2809,6 +3433,10 @@ function uiTick(){const snap=Game.getSnapshot();if(!snap)return;updateTop(snap);
   if(now-UI.lastCard>350){UI.lastCard=now;renderCard(false);}if(now-UI.lastPanel>600){UI.lastPanel=now;renderPanel(false);}if(now-UI.lastDrawer>500){UI.lastDrawer=now;renderDrawer(false);renderDebug();renderAlerts();}
   positionCard();placeWorld(snap);
   if(snap.bankrupt&&!UI.bkShown){UI.bkShown=true;showDialog('bankrupt');}if(!snap.bankrupt)UI.bkShown=false;if(snap.won&&!UI.wonShown){UI.wonShown=true;showDialog('won');}
+  if(!UI.emergGuideDone&&snap.started&&!snap.demo&&!snap.bankrupt&&$('modal').hidden&&Sim.emergActive(snap.market.emergency,snap.day,snap.hour)){
+    if(Store.get('emerg_guide')==='1')UI.emergGuideDone=true;else showEmergencyGuide(snap);
+  }
+  const sg=$('siteGrp');if(sg)sg.hidden=snap.sites.length<=1;
   const sel=$('siteSel');const opts=snap.sites.map((x,i)=>x.name).join('|');if(sel.dataset.o!==opts){sel.innerHTML=snap.sites.map((x,i)=>`<option value="${i}">${x.name}</option>`).join('');sel.dataset.o=opts;}if(+sel.value!==snap.active)sel.value=String(snap.active);}
 function applySettings(){const S=UI.settings;document.body.dataset.theme=S.theme;document.body.classList.toggle('rm',S.reduced);if(World.ready){World.reduced=S.reduced;World.invert=S.invert;World.setQuality(S.quality);if(S.style===2&&S.quality===0)S.style=0;World.setStyle(S.style);}
   UI.gauge={};try{localStorage.setItem('hydro_settings',JSON.stringify(S));}catch(e){}}
@@ -2840,7 +3468,7 @@ function runAudit(Sim){
     const nn=countNaN(st);nan+=nn;add('3-day sweep: no NaN',nn===0,nn+' NaN values; reserve calls '+st.reserve.calls+', battery SOC '+(s.tiles[1].battery.soc*100).toFixed(1)+'%');
     add('3-day sweep: volumes within bounds',bad===0,bad+' violations');add('3-day sweep: health within 0–100',hb===0,hb+' violations');
     const L=s.ledger;const d=k=>L[k]-L0[k];const resU=(s.upper.V-u0)-(-d('transfer')+d('riverIn')+d('rainU')+d('runoffU')-d('evapU')-d('spillU'));
-    const resL=(s.lower.V-l0)-(d('transfer')+d('spillU')+d('rainL')+d('runoffL')-d('evapL')-d('env')-d('spillL'));
+    const resL=(s.lower.V-l0)-(d('transfer')+d('spillU')+d('rainL')+d('runoffL')-d('evapL')-d('env')-d('spillL')-(d('valve')||0));
     add('3-day sweep: reservoir ledger closes',Math.abs(resU)<1e-3&&Math.abs(resL)<1e-3,'residual upper '+resU.toExponential(2)+' m³, lower '+resL.toExponential(2)+' m³');}
   // 9–15 reserve market
   {const st=fresh();st.isolate=true;const s=st.sites[0];Sim.applyAction(st,{type:'SET_SPEED',speed:0});
@@ -2977,8 +3605,15 @@ window.__HYDRO_AUDIT__={status:'pending',testResults:[],allPassed:null,ticksRun:
 function onSiteChange(){const snap=Game.getSnapshot();if(!snap)return;closeCard();UI.placeSig=null;UI.place.site=-1;if(World.ready){World.surveyMode=false;World.build(snap.sites[snap.active]);World.buildSurvey(snap.sites[snap.active],null,null);if(UI.settings&&LENSES[UI.lensIdx]==='survey')applyLens();World.preset('overview');}}
 function autosave(){try{Store.set('save_auto',JSON.stringify(Game.makeSave()));}catch(e){}}
 function fatal(e){console.error(e);Engine.error=e;if(Engine.state){try{Sim.applyAction(Engine.state,{type:'PAUSE',paused:true});}catch(_){}}
-  const p=$('err');p.hidden=false;const msg=String(e&&e.stack||e);p.innerHTML=`<h3 class="alarm">Something went wrong — the game is paused</h3><p>The last good snapshot is kept on screen. You can copy the details, then resume or save.</p><pre>${msg.replace(/</g,'&lt;')}</pre><div class="row"><button id="errCopy">Copy details</button><button id="errResume">Dismiss and stay paused</button></div>`;
-  $('errCopy').onclick=()=>{try{navigator.clipboard.writeText(msg);toast('Copied.');}catch(_){}};$('errResume').onclick=()=>{p.hidden=true;Engine.error=null;Engine.dirty=true;Engine.force=true;};}
+  const p=$('err');p.hidden=false;
+  const hdr=e&&e.message?(e.name?e.name+': '+e.message:e.message):String(e);
+  const stk=e&&e.stack?String(e.stack):'';
+  const msg=stk?(stk.includes(hdr)?stk:hdr+'\n'+stk):hdr;
+  p.innerHTML=`<h3 class="alarm">Something went wrong — the game is paused</h3><p>The last good snapshot is kept on screen. You can copy the details, then resume or save.</p><pre>${msg.replace(/</g,'&lt;')}</pre><div class="row"><button id="errCopy">Copy details</button><button id="errResume">Dismiss and stay paused</button></div>`;
+  $('errCopy').onclick=()=>{const btn=$('errCopy');const done=()=>{btn.textContent='Copied!';toast('Error details copied.');setTimeout(()=>{btn.textContent='Copy details';},1800);};
+    const fallback=()=>{try{const ta=document.createElement('textarea');ta.value=msg;ta.style.cssText='position:fixed;left:-9999px;top:0';document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();if(ok)done();else toast('Copy blocked by browser','warn');}catch(_){toast('Copy blocked by browser','warn');}};
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(msg).then(done,fallback);}else fallback();};
+  $('errResume').onclick=()=>{p.hidden=true;Engine.error=null;Engine.dirty=true;Engine.force=true;};}
 
 /* ---------- loop (rAF guarded for headless/Node use) ---------- */
 const raf=typeof requestAnimationFrame==='function'?requestAnimationFrame:(f=>setTimeout(()=>f(Date.now()),16));
@@ -3203,14 +3838,14 @@ function startAudit(){const A=window.__HYDRO_AUDIT__;try{if(typeof Worker==='und
   w.onerror=e=>{A.status='unavailable';A.error=String(e.message||e);};w.postMessage(1);}catch(e){A.status='unavailable';A.error=String(e);}}
 
 /* ---------- lens ---------- */
-function applyLens(){UI.placeSig=null;const name=LENSES[UI.lensIdx];$('bLens').querySelector('.tl').textContent=LENS_NAMES[name];$('bLens').title='Lens: '+LENS_NAMES[name]+' (click to cycle)';if(!World.ready||!Engine.state)return;World.lens=name;const snap=Game.getSnapshot();const s=snap.sites[snap.active];
+function applyLens(){UI.placeSig=null;const name=LENSES[UI.lensIdx];const bl=$('bLens');if(bl){bl.querySelector('.tl').textContent=LENS_NAMES[name];bl.title='Lens: '+LENS_NAMES[name]+' (click to cycle)';}if(UI.panel==='world')renderPanel(true);if(!World.ready||!Engine.state)return;World.lens=name;const snap=Game.getSnapshot();const s=snap.sites[snap.active];
   if(name==='survey'){const pt=Sim.planDam(snap,snap.active,{target:UI.plan.target});World.buildSurvey(s,s.kind==='proc'?Sim.chokePoints(s.cp):null,s.dam.built?Math.max(pt.height,s.dam.height+1):Sim.CONFIG.proc.damH0);}else World.buildSurvey(s,null,null);}
 
 /* ---------- input ---------- */
 function tipText(p,snap){const s=site(snap);switch(p.type){case 'powerhouse':return 'Powerhouse · '+(s.actual||'idle')+' '+f1(Math.abs(s.q),2)+' m³/s';case 'turbine':return 'Turbine bay · '+f1(s.tel.pGen/1e6,2)+' MW';case 'pump':return 'Pump bay · '+f1(s.tel.pPump/1e6,2)+' MW';
   case 'dam':return 'Dam · '+s.dam.height+' m'+(s.dam.crack?' · CRACK':'');case 'pipe':return 'Penstock · '+f1(s.penstock.D,1)+' m, '+f1(s.tel.v,2)+' m/s';case 'upper':return 'Upper reservoir · '+pct(Sim.upPct(s))+' full';case 'lower':return 'Lower reservoir · '+pct(Sim.loPct(s))+' full';
   case 'riverUp':return 'Upstream river · '+f1(s.riverIn,2)+' m³/s in';case 'riverDown':return 'Downstream river · '+f1(s.riverOut,2)+' m³/s out';case 'solar':{const so=s.tiles[p.tile].solar;return so?'Solar · '+f1((so.p||0)/1000,0)+' kW':'Solar';}
-  case 'wind':{const w=s.tiles[p.tile].wind;return w?'Wind · '+f1(w.rpm||0,1)+' rpm, '+f1((w.p||0)/1000,0)+' kW':'Wind';}case 'battery':{const b=s.tiles[p.tile].battery;return b?'Battery · '+pct(b.soc*100):'Battery';}case 'tile':return p.label;case 'choke':return 'Choke point — click to preview a dam';}return p.label||'';}
+  case 'wind':{const w=s.tiles[p.tile].wind;return w?'Wind · '+f1(w.rpm||0,1)+' rpm, '+f1((w.p||0)/1000,0)+' kW':'Wind';}case 'battery':{const b=s.tiles[p.tile].battery;return b?'Battery · '+pct(b.soc*100):'Battery';}case 'valve':return 'Lower outlet valve · '+(s.valve&&s.valve.open?'OPEN ('+f1(s.valveQ||0,2)+' m³/s)':'closed')+' · sill '+(s.valve?s.valve.elev:15)+' m';case 'tile':return p.label;case 'choke':return 'Choke point — click to preview a dam';}return p.label||'';}
 function setupInput(){const cv=$('gl');const ptrs=new Map();let drag=null,lastHover=0,pinch=null;
   cv.addEventListener('contextmenu',e=>e.preventDefault());
   cv.addEventListener('pointerdown',e=>{cv.focus();cv.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});UI.pointerDown=true;
@@ -3226,22 +3861,23 @@ function setupInput(){const cv=$('gl');const ptrs=new Map();let drag=null,lastHo
       if(p&&p.type!=='none'){World.setHover(p);tip.hidden=false;tip.textContent=tipText(p,Game.getSnapshot());tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY+12)+'px';cv.style.cursor='pointer';}else{World.setHover(null);tip.hidden=true;cv.style.cursor='grab';}}});
   const up=e=>{ptrs.delete(e.pointerId);UI.pointerDown=false;if(ptrs.size<2)pinch=null;if(drag&&!drag.moved&&e.type==='pointerup'&&drag.btn===0)worldClick(e.clientX,e.clientY);if(ptrs.size===0)drag=null;};
   cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);cv.addEventListener('pointerleave',()=>{$('tip').hidden=true;});
-  cv.addEventListener('dblclick',e=>{if(!World.ready)return;const p=World.pick(e.clientX,e.clientY);if(p&&p.type!=='none'){const a=p.anchor||(p.box?[(p.box[0]+p.box[3])/2,(p.box[1]+p.box[4])/2,(p.box[2]+p.box[5])/2]:null);if(a)World.flyTo({tx:a[0],ty:a[1],tz:a[2],dist:p.type==='upper'||p.type==='lower'?500:p.type==='turbine'||p.type==='pump'?45:140,pitch:0.5},1.0);}});
+  cv.addEventListener('dblclick',e=>{if(!World.ready)return;const p=World.pick(e.clientX,e.clientY);if(p&&p.type!=='none'){const a=p.anchor||(p.box?[(p.box[0]+p.box[3])/2,(p.box[1]+p.box[4])/2,(p.box[2]+p.box[5])/2]:null);if(a)World.flyTo({tx:a[0],ty:a[1],tz:a[2],dist:p.type==='upper'||p.type==='lower'?500:p.type==='valve'?24:p.type==='turbine'||p.type==='pump'?45:140,pitch:p.type==='valve'?0.35:0.5},1.0);}});
   cv.addEventListener('wheel',e=>{e.preventDefault();const inv=UI.settings.invert?-1:1;const c=World.cam;c.fly=null;
     if(e.ctrlKey){c.dist*=Math.exp(e.deltaY*0.01*inv);return;}
     const trackpad=e.deltaMode===0&&(Math.abs(e.deltaX)>Math.abs(e.deltaY)*0.5||Math.abs(e.deltaY)<30);
     if(trackpad)panBy(-e.deltaX,-e.deltaY);else c.dist*=Math.exp((e.deltaMode===1?e.deltaY*33:e.deltaY)*0.0012*inv);},{passive:false});
   function panBy(dx,dy){const c=World.cam;const inv=UI.settings.invert?-1:1;const s=c.dist*0.0016*inv;const rx=Math.cos(c.yaw),rz=-Math.sin(c.yaw),fx=-Math.sin(c.yaw),fz=-Math.cos(c.yaw);c.tx-=rx*dx*s;c.tz-=rz*dx*s;c.tx+=fx*dy*s;c.tz+=fz*dy*s;c.ty+=((World.hD(c.tx,c.tz)+20)-c.ty)*0.2;}}
 function worldClick(x,y){if(!World.ready)return;if(UI.survey){const p=World.pick(x,y);if(p&&p.type==='choke')surveyPick(p.choke);return;}if(!Engine.state)return;
-  const p=World.pick(x,y);if(p&&p.type==='slide'){World.slideSend();return;}if(!p||p.type==='none'){closeCard();return;}if(p.type==='tile'&&!World.buildMode&&site(Game.getSnapshot()).parcels[p.parcel]){closeCard();return;}openCard(p);}
+  const p=World.pick(x,y);if(p&&p.type==='slide'){World.slideSend();return;}if(!p||p.type==='none'){closeCard();return;}openCard(p);}
 
 /* ---------- DOM wiring ---------- */
 function onAnyClick(e){const t=e.target.closest('button,[data-tab],[data-tilebtn]');if(!t)return;const d=t.dataset;
   if(d.discord!==undefined){const H='@Jeremjh';const done=()=>toast('Copied '+H+' to the clipboard');try{navigator.clipboard.writeText(H).then(done,()=>{window.prompt('Copy the Discord handle:',H);});}catch(_){window.prompt('Copy the Discord handle:',H);}if(DISCORD_USER_ID){window.open('https://discord.com/users/'+encodeURIComponent(DISCORD_USER_ID),'_blank','noopener,noreferrer');}return;}
   if(d.godam!==undefined){closeCard();UI.tab.build=2;UI.panel=null;openPanel('build');return;}
+  if(d.zoomvalve!==undefined&&World.ready&&World.valvePos){const vp=World.valvePos,vi=World.valveInfo;World.flyTo({tx:vp[0],ty:vp[1],tz:vp[2],yaw:(vi?vi.yaw:0)+0.45,pitch:0.35,dist:24},0.9);return;}
   if(d.j){act(JSON.parse(d.j));return;}if(d.close!==undefined){closeCard();return;}if(d.tab!==undefined&&UI.panel){UI.tab[UI.panel]=+d.tab;const n=UI.panel;UI.panel=null;openPanel(n);return;}
   if(d.tilebtn!==undefined){UI.gridTile=+d.tilebtn;renderPanel(true);return;}if(d.tier){const [k,i]=d.tier.split(':');UI.tier[k]=+i;renderCard(true);renderPanel(true);return;}
-  if(d.presetBtn){World.preset(d.presetBtn);return;}if(d.drawer!==undefined){openDrawer(true);return;}
+  if(d.presetBtn){World.preset(d.presetBtn);return;}if(d.nbjump){UI.panel=null;openPanel(d.nbjump);World.buildMode=UI.panel==='build';return;}if(d.lensBtn!==undefined){UI.lensIdx=+d.lensBtn;applyLens();return;}if(d.opensave!==undefined){UI.panel=null;openPanel('save');return;}if(d.drawer!==undefined){closePanel();World.buildMode=false;openDrawer(true);return;}
   if(d.pen!==undefined){act({type:'REPLACE_PENSTOCK',D:+$('penD').value,mat:$('penM').value});return;}
   if(d.resoffer!==undefined){act({type:'SET_RESERVE_OFFER',mw:+$('resMW').value});return;}
   if(d.loan){act({type:d.loan==='take'?'TAKE_LOAN':'REPAY_LOAN',amount:+$('loanAmt').value});return;}
@@ -3268,7 +3904,12 @@ function wire(){for(const id of ['card','panel','drawer','nogl']){const el=$(id)
   $('bPause').onclick=()=>{if(!Engine.state)return;act(Engine.state.started?{type:'PAUSE'}:{type:'START'});};
   document.querySelectorAll('[data-speed]').forEach(b=>b.onclick=()=>act({type:'SET_SPEED',speed:+b.dataset.speed}));
   $('bSlower').onclick=()=>{const st=Engine.state;if(st)act({type:'SET_SPEED',speed:st.turnMode?2:Math.max(0,st.speed-1)});};
-  $('bFaster').onclick=()=>{const st=Engine.state;if(st)act({type:'SET_SPEED',speed:st.turnMode?2:Math.min(5,st.speed+1)});};
+  $('bFaster').onclick=()=>{const st=Engine.state;if(st)act({type:'SET_SPEED',speed:st.turnMode?2:Math.min(6,st.speed+1)});};
+  for(const id of ['statCash','statProfit']){const el=$(id);if(el){const go=()=>{if(!Engine.state)return;UI.tab.finance=0;openPanel('finance');World.buildMode=false;};el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}};}}
+  $('chips').addEventListener('click',e=>{const el=e.target.closest('[data-nav]');if(!el||el.dataset.toast)return;const nv=el.dataset.nav;
+    if(nv==='start'){act({type:'START'});return;}
+    if(nv==='emerg'){const snap=Game.getSnapshot();if(snap&&Sim.emergActive(snap.market.emergency,snap.day,snap.hour))showEmergencyGuide(snap);else{UI.tab.services=0;openPanel('services');}return;}
+    const [p,tb]=nv.split(':');if(p){UI.tab[p]=+(tb||0);openPanel(p);World.buildMode=p==='build';}});
   {const pr=$('presets'),cb=$('camBtn');const setOpen=o=>{pr.classList.toggle('open',o);cb.setAttribute('aria-expanded',o);};
   cb.onclick=e=>{e.stopPropagation();setOpen(!pr.classList.contains('open'));};
   document.addEventListener('pointerdown',e=>{if(!pr.contains(e.target))setOpen(false);});
@@ -3285,7 +3926,12 @@ function wire(){for(const id of ['card','panel','drawer','nogl']){const el=$(id)
     if(e.key==='F1'){e.preventDefault();if(Engine.state)openDrawer();return;}if(e.key==='F2'){e.preventDefault();$('debug').hidden=!$('debug').hidden;renderDebug();return;}
     if(inForm||!$('modal').hidden||!Engine.state)return;const k=e.key.toLowerCase();
     if(k===' '){if(tag==='BUTTON'){if(e.target.id==='bPause'||!e.target.closest('.timectl'))return;e.target.blur();}e.preventDefault();act(Engine.state.started?{type:'PAUSE'}:{type:'START'});return;}
-    if(k>='1'&&k<='6'){act({type:'SET_SPEED',speed:+k-1});return;}if(k==='t'){act({type:'SET_TURN',on:!Engine.state.turnMode});return;}
+    const MENUS=['operate','build','automation','services','finance','world'];
+    if(k>='1'&&k<='6'&&!e.ctrlKey&&!e.metaKey&&!e.altKey){const p=MENUS[+k-1];openPanel(p);World.buildMode=UI.panel==='build';return;}
+    if(k==='-'||k==='_'){act({type:'SET_SPEED',speed:Engine.state.turnMode?2:Math.max(0,Engine.state.speed-1)});return;}
+    if(k==='='||k==='+'){act({type:'SET_SPEED',speed:Engine.state.turnMode?2:Math.min(6,Engine.state.speed+1)});return;}
+    if(k==='0'){act(Engine.state.started?{type:'PAUSE'}:{type:'START'});return;}
+    if(k==='t'){act({type:'SET_TURN',on:!Engine.state.turnMode});return;}
     if(k==='c'){UI.lensIdx=(UI.lensIdx+1)%LENSES.length;applyLens();return;}
     if(k==='f'){const s=UI.card;if(s&&World.ready){const a=s.anchor||(s.box?[(s.box[0]+s.box[3])/2,(s.box[1]+s.box[4])/2,(s.box[2]+s.box[5])/2]:null);if(a)World.flyTo({tx:a[0],ty:a[1],tz:a[2],dist:150,pitch:0.5},1);}return;}
     if(['w','a','s','d','q','e','arrowup','arrowdown','arrowleft','arrowright'].indexOf(k)>=0){if(k.startsWith('arrow')&&tag==='BUTTON')return;Engine.keys.add(k);if(k.startsWith('arrow'))e.preventDefault();}});

@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node --test game/tests/",
+    "test": "node --test game/tests/*.test.mjs",
     "check": "node build/bundle.mjs --check",
     "build": "node build/bundle.mjs",
     "legacy": "python3 -m http.server 8080 -d game/legacy"

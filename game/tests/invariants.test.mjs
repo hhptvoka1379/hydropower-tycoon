@@ -55,7 +55,7 @@ test('resLevel(resVol(h)) == h to 1e-6 on every reservoir', () => {
 const SCRIPT = {
   0: [{type: 'TAKE_LOAN', amount: 800000}, {type: 'BUILD', kind: 'solar', tile: 5, tier: 0}, {type: 'BUILD', kind: 'wind', tile: 2, tier: 0}, {type: 'BUILD', kind: 'battery', tile: 9, tier: 0}, {type: 'SET_RESERVE_OFFER', mw: 0.1}, {type: 'SET_CURTAIL', frac: 0.1}],
   2: [{type: 'SIGN_CONTRACT', id: 'c1'}, {type: 'SET_GOD', enabled: true, planner: true}],
-  4: [{type: 'RAISE_DAM', meters: 2}, {type: 'EXCAVATE'}],
+  1: [{type: 'RAISE_DAM', meters: 2}, {type: 'EXCAVATE'}], // before the god planner starts buying renewables with the spare cash
   6: [{type: 'SET_GOD', enabled: false}, {type: 'SET_MODE', mode: 'gen', q: 3}],
   9: [{type: 'SET_RULES', enabled: true}, {type: 'SET_BATTERY', tile: 9, mode: 'charge'}],
   12: [{type: 'SET_MODE', mode: 'pump', q: 2}, {type: 'SET_SPEED', speed: 3}]

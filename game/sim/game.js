@@ -8,12 +8,15 @@ import {clone, hashState, makeSave, validateSave} from './saveload.js';
 function deepFreeze(o){Object.freeze(o);for(const k in o){const v=o[k];if(v&&typeof v==='object'&&!Object.isFrozen(v))deepFreeze(v);}return o;}
 
 export function createGame(){
-  const Engine={state:null,log:[],snap:null,dirty:true,error:null};
+  const Engine={state:null,log:[],snap:null,snapTick:-1,dirty:true,error:null};
   const Game={
-    getSnapshot(){if(!Engine.state)return null;if(!Engine.snap||Engine.dirty){Engine.snap=deepFreeze(clone(Engine.state));Engine.dirty=false;}return Engine.snap;},
-    dispatch(a){if(!Engine.state)return {ok:false,reason:'No game loaded'};let r;try{r=applyAction(Engine.state,a);}catch(e){Engine.error=e;return {ok:false,reason:'Internal error'};}
+    /* The snapshot is rebuilt only when something changed: an accepted action, a changed refusal reason, a different tick (the state was stepped from outside), or an explicit markDirty().
+       Otherwise the same frozen object is returned, so polling it every frame is free. */
+    getSnapshot(){if(!Engine.state)return null;if(!Engine.snap||Engine.dirty||Engine.snapTick!==Engine.state.tick){Engine.snap=deepFreeze(clone(Engine.state));Engine.snapTick=Engine.state.tick;Engine.dirty=false;}return Engine.snap;},
+    markDirty(){Engine.dirty=true;},
+    dispatch(a){if(!Engine.state)return {ok:false,reason:'No game loaded'};const rej0=Engine.state.lastReject;let r;try{r=applyAction(Engine.state,a);}catch(e){Engine.error=e;Engine.dirty=true;return {ok:false,reason:'Internal error'};}
       if(r.ok){Engine.log.push({tick:Engine.state.tick,a:JSON.parse(JSON.stringify(a))});}
-      Engine.dirty=true;return r;},
+      if(r.ok||Engine.state.lastReject!==rej0)Engine.dirty=true;return r;},
     newGame(o){Engine.state=simNewGame(o);Engine.log=[];Engine.error=null;Engine.dirty=true;this.dispatch({type:'SET_RULES',enabled:true});
       return Engine.state.init;},
     makeSave(){return makeSave(Engine.state,Engine.log);},

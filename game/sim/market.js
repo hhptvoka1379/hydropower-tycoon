@@ -26,4 +26,4 @@ function genContracts(st){const c=st.contracts;c.offers=[];
   const a=0.4+iint(rnd(st,'contracts')*10)/10;c.offers.push({id:'c'+c.nextId++,name:'Evening peak block',mw:a,h0:18,h1:21,days:20,premium:25,penalty:120,firm:true});
   const b=0.3+iint(rnd(st,'contracts')*8)/10;c.offers.push({id:'c'+c.nextId++,name:'Morning ramp support',mw:b,h0:6,h1:9,days:15,premium:18,penalty:100,firm:true});}
 
-export {climateHour, emergActive, genContracts};
+export {climateHour, emergActive, genContracts, priceAt};

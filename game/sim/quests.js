@@ -1,7 +1,7 @@
 /* Quest list, quest completion checks and the win condition. Extracted verbatim from legacy/v2.index.html createSimModule. */
 import {addAlert} from './state.js';
 import {CONFIG} from './config.js';
-import {netWorth} from './economy.js';
+import {netWorth, realCash} from './economy.js';
 
 const QUESTS=[
  {id:'q1',title:'First light',desc:'Generate 1 MWh of hydro energy.',reward:5000,ok:st=>st.stats.genMWh>=1},
@@ -22,7 +22,7 @@ const QUESTS=[
  {id:'q16',title:'New valley',desc:'Buy a second site.',reward:40000,ok:st=>st.stats.sitesBought>=1},
  {id:'q17',title:'Paperwork',desc:'Buy a permit.',reward:5000,ok:st=>st.stats.permits>=1},
  {id:'q18',title:'Green day',desc:'Deliver 10 MWh of renewables in one day.',reward:15000,ok:st=>st.stats.renDayMax>=10||st.stats.renDayMWh>=10},
- {id:'q19',title:'Nest egg',desc:'Hold $750 000 in cash.',reward:20000,ok:st=>st.cash>=750000&&!st.demo},
+ {id:'q19',title:'Nest egg',desc:'Hold $750 000 in cash.',reward:20000,ok:st=>realCash(st)>=750000&&!st.demo},
  {id:'q20',title:'Full year',desc:'Keep the station running for 360 days.',reward:50000,ok:st=>st.day>=360}];
 function checkQuests(st){for(const q of QUESTS){const r=st.quests[q.id];if(!r.done&&q.ok(st)){r.done=true;addAlert(st,'info','Quest complete: '+q.title+' — claim your reward.');}}
   if(!st.won&&!st.sandbox&&!st.demo){let c=0;for(const q of QUESTS)if(st.quests[q.id].claimed)c++;if(c>=CONFIG.win.quests&&netWorth(st)>=CONFIG.win.netWorth){st.won=true;addAlert(st,'info','You won! The valley runs itself now. Keep playing as long as you like.');}}}

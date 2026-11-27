@@ -113,7 +113,7 @@ function classicLayout(s){
   const C=CONFIG.classic;let up={x:C.upper.x,z:C.upper.z},lo={x:C.lower.x,z:C.lower.z};
   if(s.sculpt){const T=SC.xf(s.sculpt.gen);up=T(up,true);lo=T(lo,true);}
   let dx=lo.x-up.x,dz=lo.z-up.z;const dl=Math.sqrt(dx*dx+dz*dz);dx/=dl;dz/=dl;
-  const rD=bowlR(s.upper,28)+15;const dam={x:up.x+dx*rD,z:up.z+dz*rD,dx:-dz,dz:dx,span:62,arc:true,cx:up.x,cz:up.z,r:rD};
+  /* ring follows the current wall (A14a) */const dH=s.dam&&s.dam.height>0?s.dam.height:C.damH;const rD=bowlR(s.upper,dH-CONFIG.res.freeboard)+15;const dam={x:up.x+dx*rD,z:up.z+dz*rD,dx:-dz,dz:dx,span:62,arc:true,cx:up.x,cz:up.z,r:rD};
   const rP=bowlR(s.lower,C.lower.hMax)+30;const ph={x:lo.x-dx*rP,z:lo.z-dz*rP,yaw:0};
   const rT=bowlR(s.lower,C.lower.h0)-10;const tail={x:lo.x-dx*rT,z:lo.z-dz*rT};
   const padY=s.lower.bottom+CONFIG.cav.setT-2;

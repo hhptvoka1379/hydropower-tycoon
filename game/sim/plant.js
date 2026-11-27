@@ -16,13 +16,13 @@ function stepRenewables(st,s,dt){ // §5.2–5.3 solar and wind with wake/shade,
     if(t.solar&&!t.solar.building){const tier=S.tiers[t.solar.tier];let sh=1;if(t.wind)sh*=S.shadeSame;
       if(rc.r<3){const n=s.tiles[i+4];if(n&&n.wind)sh*=S.shadeNorth;}
       const p=tier.kWp*1000*(s.tel.G/1000)*Math.max(0,1+S.gamma*(s.tel.Tc-25))*(1-t.solar.soil)*sh;
-      const cur=Math.max(gcur,s.curtailSolar);t.solar.p=p*(1-cur);t.solar.avail=p;pRen+=t.solar.p;pAvail+=p;}
+      const cur=1-(1-gcur)*(1-s.curtailSolar);t.solar.p=p*(1-cur);t.solar.avail=p;pRen+=t.solar.p;pAvail+=p;}
     if(t.wind&&!t.wind.building){const tier=W.tiers[t.wind.tier];let up=0;for(let c=0;c<rc.c;c++){const o=s.tiles[rc.p*16+rc.r*4+c];if(o.wind)up++;}
       const v=cl.wind*s.tel.windMul*Math.pow(tier.hub/10,W.shear)*Math.pow(W.wake,up);t.wind.v=v;
       let p=0;if(!t.wind.damaged&&v>=W.cutIn&&v<W.cutOut){p=v>=W.rated?tier.kW*1000:tier.kW*1000*(v*v*v-W.cutIn*W.cutIn*W.cutIn)/(W.rated*W.rated*W.rated-W.cutIn*W.cutIn*W.cutIn);}
       t.wind.rpm=(!t.wind.damaged&&v>=W.cutIn&&v<W.cutOut)?60*W.lambda*v/(TAU*tier.R):0; // §5.3 rpm = 60·λ·v/(2πR)
       t.wind.feathered=!t.wind.damaged&&v>=W.cutOut;
-      const cur=Math.max(gcur,t.wind.curtail);t.wind.avail=p;t.wind.p=p*(1-cur);pRen+=t.wind.p;pAvail+=p;}
+      const cur=1-(1-gcur)*(1-t.wind.curtail);t.wind.avail=p;t.wind.p=p*(1-cur);pRen+=t.wind.p;pAvail+=p;}
   }
   s.tel.pRen=pRen;s.tel.pRenAvail=pAvail;s.tel.windHub=cl.wind*s.tel.windMul;
 }
