@@ -6,8 +6,8 @@
 
 export const PLAYER = {
   height: 1.74, // m (D1)
-  walk: 5, // m/s (D1)
-  run: 11, // m/s (D1, Shift)
+  walk: 11, // m/s (former run speed, now default walk)
+  run: 44, // m/s (4x walk speed when holding Shift)
   stairFactor: 0.8, // x speed while on a stair flight or deck
   slopeDeg: 35, // displayed slope limit (D1)
   routeSlopeFactor: 0.88, // planner margin: a route leg is accepted up to 0.88 x tan(limit) (demo: 0.92) so a triangle kink between two samples cannot exceed the walker limit
@@ -17,7 +17,7 @@ export const PLAYER = {
   stepMax: 0.45, // m: largest step (up or down) allowed on or onto a stair flight; one riser is 0.18
   slideBack: 0.25, // fraction of the attempted step that is undone when the slope is too steep
   subStep: 0.12, // m: walkerStep substeps so no single move is longer than this (a stair tread is 0.27 m)
-  maxSubSteps: 24,
+  maxSubSteps: 40,
   worldHalf: 800, // m (D1: 1600 m world), the walker stops 3 m inside
   edgeInset: 3,
   glideTol: 0.25, // m: waypoint reached

@@ -476,10 +476,11 @@ export function createStructures(world) {
           addPick('hut', hx - HW / 2, gmin - 0.8, hz - HD / 2, hx + HW / 2, gmax + 4.2, hz + HD / 2);
           blockers.push({ x0: hx - HW / 2 - 0.2, z0: hz - HD / 2 - 0.2, x1: hx + HW / 2 + 0.2, z1: hz + HD / 2 + 0.2 });
         }
-        // slide platform placeholder: a deck on four posts a few metres from the slide station
+        // slide platform & water slide chute down into the lower lake
         {
           const ss = station('slide'), sx = ss ? ss.x : ph.x - 40, sz = ss ? ss.z : ph.z - 40;
           let ax = L.lo.x - sx, az = L.lo.z - sz; const al = Math.hypot(ax, az) || 1; ax /= al; az /= al;
+          const pxp = -az, pzp = ax;
           const cx = sx + ax * 4.5, cz = sz + az * 4.5, S = 3.4, hgt = 2.4;
           const gs = [sy(cx - S / 2, cz - S / 2), sy(cx + S / 2, cz - S / 2), sy(cx - S / 2, cz + S / 2), sy(cx + S / 2, cz + S / 2)];
           const gmax = Math.max(...gs), deck = gmax + hgt;
@@ -488,6 +489,65 @@ export function createStructures(world) {
           for (const [rx, rz, w, dd] of [[0, -1, S, 0.06], [0, 1, S, 0.06], [-1, 0, 0.06, S], [1, 0, 0.06, S]]) main.box(cx + rx * (S / 2 - 0.05), deck + 0.2, cz + rz * (S / 2 - 0.05), w, 1.0, dd, C('woodD'), 0, { bottom: false });
           addPick('slide', cx - S / 2, gmax - 0.5, cz - S / 2, cx + S / 2, deck + 1.3, cz + S / 2);
           blockers.push({ x0: cx - S / 2 - 0.2, z0: cz - S / 2 - 0.2, x1: cx + S / 2 + 0.2, z1: cz + S / 2 + 0.2 });
+
+          // trace chute toward the lower lake shoreline (or max 85 m)
+          const loSurf = surface.toDisplayY(site.lower.bottom + 5);
+          let len = 42;
+          for (let d = 12; d <= 110; d += 3) {
+            const x = cx + ax * d, z = cz + az * d;
+            if (sy(x, z) <= loSurf - 0.3) { len = d + 3; break; }
+            len = d;
+          }
+          const N = Math.max(8, Math.round(len / 4));
+          const chute = [];
+          const startY = deck + 0.22;
+          const endY = Math.max(loSurf + 0.9, sy(cx + ax * len, cz + az * len) + 1.1);
+          for (let i = 0; i <= N; i++) {
+            const u = i / N;
+            const d = 1.6 + u * len;
+            const sway = Math.sin(u * Math.PI * 2) * 3.2 * Math.sin(u * Math.PI);
+            const x = cx + ax * d + pxp * sway, z = cz + az * d + pzp * sway;
+            const linY = startY + (endY - startY) * Math.pow(u, 0.85);
+            const minGround = sy(x, z) + (u > 0.85 ? 0.55 : 0.75);
+            const y = Math.max(linY, minGround);
+            chute.push({ x, y, z });
+          }
+          // keep chute monotonically descending until exit ski-jump flare
+          for (let i = 1; i < chute.length - 1; i++) {
+            if (chute[i].y > chute[i - 1].y - 0.12) chute[i].y = Math.max(sy(chute[i].x, chute[i].z) + 0.45, chute[i - 1].y - 0.12);
+          }
+          const slideBlue = lin(0x287ea6), slideRim = lin(0x1b5c7d);
+          let arc = 0;
+          const hw = 0.65, wallH = 0.42;
+          for (let i = 0; i < chute.length - 1; i++) {
+            const A = chute[i], B = chute[i + 1];
+            const dx = B.x - A.x, dy = B.y - A.y, dz = B.z - A.z, segL = Math.hypot(dx, dy, dz) || 1;
+            const hlen = Math.hypot(dx, dz) || 1, lx = -dz / hlen, lz = dx / hlen;
+            // water ribbon inside trough
+            const wA0 = [A.x - lx * (hw - 0.08), A.y + 0.09, A.z - lz * (hw - 0.08)], wA1 = [A.x + lx * (hw - 0.08), A.y + 0.09, A.z + lz * (hw - 0.08)];
+            const wB0 = [B.x - lx * (hw - 0.08), B.y + 0.09, B.z - lz * (hw - 0.08)], wB1 = [B.x + lx * (hw - 0.08), B.y + 0.09, B.z + lz * (hw - 0.08)];
+            tailQuads.push([wA0, wA1, wB1, wB0, arc, arc + segL]);
+            arc += segL;
+            // sloped trough floor & underside
+            const fA0 = [A.x - lx * hw, A.y, A.z - lz * hw], fA1 = [A.x + lx * hw, A.y, A.z + lz * hw];
+            const fB0 = [B.x - lx * hw, B.y, B.z - lz * hw], fB1 = [B.x + lx * hw, B.y, B.z + lz * hw];
+            main.quad(fA0, fA1, fB1, fB0, slideBlue, [0, 1, 0]);
+            const uA0 = [fA0[0], fA0[1] - 0.14, fA0[2]], uA1 = [fA1[0], fA1[1] - 0.14, fA1[2]];
+            const uB0 = [fB0[0], fB0[1] - 0.14, fB0[2]], uB1 = [fB1[0], fB1[1] - 0.14, fB1[2]];
+            main.quad(uA0, uB0, uB1, uA1, shade(slideRim, 0.8), [0, -1, 0]);
+            // left & right sloped trough walls
+            const lA = [fA0[0], fA0[1] + wallH, fA0[2]], lB = [fB0[0], fB0[1] + wallH, fB0[2]];
+            const rA = [fA1[0], fA1[1] + wallH, fA1[2]], rB = [fB1[0], fB1[1] + wallH, fB1[2]];
+            main.quad(uA0, lA, lB, uB0, slideRim, [-lx, 0.2, -lz]);
+            main.quad(fA0, lA, lB, fB0, shade(slideBlue, 0.9), [lx, 0.2, lz]);
+            main.quad(uA1, rA, rB, uB1, slideRim, [lx, 0.2, lz]);
+            main.quad(fA1, rA, rB, fB1, shade(slideBlue, 0.9), [-lx, 0.2, -lz]);
+            if (i > 0 && i % 2 === 0) {
+              const gy = sy(A.x, A.z);
+              if (A.y - gy > 0.35) main.box(A.x, gy - 0.2, A.z, 0.24, A.y - gy + 0.1, 0.24, C('steelD'));
+            }
+          }
+          world.slide = { platform: { x: cx, y: deck, z: cz }, chute, lip: chute[chute.length - 1], loLevel: loSurf };
         }
         count('props', b0);
       }

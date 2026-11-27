@@ -17,7 +17,7 @@ export function createPlayer(ctx) {
   const { Sim, game, bus, world } = ctx;
   const canvas = world.canvas;
   let surface = null, walker = null, stations = [], paths = null, tracker = null, flightFns = [];
-  let st = null, glide = null, marker = null, label = null;
+  let st = null, glide = null, marker = null, label = null, slideRide = null, pendingSlide = false;
   let frozen = null, night = 0, torchOn = false, tt = 0, phase = 0, move = 0, climb = 0, speedEst = 0, yaw = 0, amp = 1, facing = null, sig = '', sigT = 0, pendingFresh = true;
   const keys = {};
   const reached = new Set();
@@ -72,6 +72,8 @@ export function createPlayer(ctx) {
     world.stations = stations; world.paths = paths; // the features builder's stations-link.js reads these (owned: the player registers the flight floors)
     bus.emit('player:paths', { stations, paths });
     walker.onMode((e) => bus.emit('player:mode', { mode: e.to, from: e.from }));
+    walker.setModeHandler('slide', () => (world.slide && world.slide.chute && world.slide.chute.length >= 2 ? { ok: true } : { ok: false, reason: 'No water slide built here' }));
+    slideRide = null; pendingSlide = false;
     if (keep) { st = walker.spawn(keep.x, keep.z); ensureDry(true); } else spawnAt('powerhouse');
     sig = signature();
   }
@@ -201,8 +203,30 @@ export function createPlayer(ctx) {
     pv.set(t.x, y + 0.5, t.z).project(world.camera);
     if (pv.z > 1 || pv.z < -1) { label.style.display = 'none'; return; }
     const r = canvas.getBoundingClientRect(), d = remaining();
+    const sp = (keys.ShiftLeft || keys.ShiftRight) ? PLAYER.run : PLAYER.walk;
     label.style.display = 'block'; label.style.left = r.left + (pv.x * 0.5 + 0.5) * r.width + 'px'; label.style.top = r.top + (-pv.y * 0.5 + 0.5) * r.height + 'px';
-    label.textContent = (glide.id ? glide.id + ' ' : '') + Math.round(d) + ' m, ' + Math.max(1, Math.round(d / PLAYER.walk)) + ' s';
+    label.textContent = (glide.id ? glide.id + ' ' : '') + Math.round(d) + ' m, ' + Math.max(1, Math.round(d / sp)) + ' s';
+  }
+
+  function startSlide() {
+    if (!walker || !st) return { ok: false, reason: 'Not ready' };
+    const sl = world.slide;
+    if (!sl || !sl.chute || sl.chute.length < 2) { toast('Water slide is not built here.'); return { ok: false, reason: 'No slide' }; }
+    const ss = stationById('slide');
+    if (ss && Math.hypot(st.x - ss.x, st.z - ss.z) > ss.range + 4) {
+      const r = goTo('slide');
+      if (r.ok) { pendingSlide = true; toast('Walking to the water slide…'); }
+      return r;
+    }
+    pendingSlide = false;
+    const req = walker.requestMode(st, 'slide');
+    if (!req.ok) { toast(req.reason || 'Cannot start slide.'); return req; }
+    const pts = sl.chute;
+    const cum = [0];
+    for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y, pts[i].z - pts[i - 1].z));
+    glide = null;
+    slideRide = { pts, cum, len: cum[cum.length - 1], s: 0, v: 6, airT: -1 };
+    return { ok: true };
   }
 
   /* ---- per frame ---- */
@@ -218,15 +242,56 @@ export function createPlayer(ctx) {
       updateMarker(); return;
     }
     const fast = keys.ShiftLeft || keys.ShiftRight, iz = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0), ix = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0);
+    if (slideRide) {
+      if (ix || iz) { slideRide = null; walker.leaveReserved(st); ensureDry(true); }
+      else {
+        const sr = slideRide;
+        if (sr.airT < 0) {
+          sr.v = Math.min(24, sr.v + 14 * dt);
+          sr.s += sr.v * dt;
+          if (sr.s >= sr.len) {
+            const A = sr.pts[sr.pts.length - 2], B = sr.pts[sr.pts.length - 1];
+            const hl = Math.hypot(B.x - A.x, B.z - A.z) || 1;
+            sr.airT = 0; sr.lp = { x: B.x, y: B.y, z: B.z }; sr.dx = (B.x - A.x) / hl; sr.dz = (B.z - A.z) / hl;
+          } else {
+            let i = 0; while (i < sr.cum.length - 2 && sr.cum[i + 1] < sr.s) i++;
+            const u = (sr.s - sr.cum[i]) / Math.max(1e-4, sr.cum[i + 1] - sr.cum[i]);
+            const A = sr.pts[i], B = sr.pts[i + 1];
+            st.x = A.x + (B.x - A.x) * u; st.y = A.y + (B.y - A.y) * u; st.z = A.z + (B.z - A.z) * u;
+            yaw = Math.atan2(B.x - A.x, B.z - A.z);
+          }
+        }
+        if (sr.airT >= 0) {
+          sr.airT += dt;
+          const u = Math.min(1, sr.airT / 0.85);
+          st.x = sr.lp.x + sr.dx * 10 * u; st.z = sr.lp.z + sr.dz * 10 * u;
+          st.y = sr.lp.y + 1.2 * Math.sin(u * Math.PI) - 2.2 * u * u;
+          if (sr.airT >= 0.85) {
+            slideRide = null;
+            walker.leaveReserved(st);
+            const lo = stationById('lower');
+            if (lo) { st.x = lo.x; st.z = lo.z; st.y = surface.floorY(lo.x, lo.z); st.on = walker.onStructure(lo.x, lo.z); }
+            else ensureDry(true);
+            toast('Splashdown at the lower shore!');
+          }
+        }
+        avatar.updatePreset({ x: st.x, y: st.y + 0.35, z: st.z, yaw }, 1);
+        camera.autoFollow(dt, yaw, 3.0);
+        const pose = camera.update(dt, { x: st.x, y: st.y, z: st.z });
+        world.setCameraPose(pose);
+        updateMarker();
+        return;
+      }
+    }
     const ox = st.x, oz = st.z, speed = fast ? PLAYER.run : PLAYER.walk;
     let dx = 0, dz = 0, have = false, res = 0;
     if (ix || iz) {
       const f = camera.forward(), r = camera.right();
-      dx = f[0] * iz + r[0] * ix; dz = f[1] * iz + r[1] * ix; have = true; glide = null;
+      dx = f[0] * iz + r[0] * ix; dz = f[1] * iz + r[1] * ix; have = true; glide = null; pendingSlide = false;
       res = walker.walkerStep(st, dx, dz, speed, dt);
     } else if (glide) {
       const f = walker.followStep(st, glide, speed, dt);
-      if (f.done) { const sid = glide.id; glide = null; if (sid) { const stt = stationById(sid); facing = stt ? faceOf(stt) : null; } }
+      if (f.done) { const sid = glide.id; glide = null; if (sid === 'slide' && pendingSlide) { startSlide(); return; } if (sid) { const stt = stationById(sid); facing = stt ? faceOf(stt) : null; } }
       else {
         have = true; res = f.code;
         const w = glide.wps[glide.i]; dx = w.x - st.x; dz = w.z - st.z;
@@ -303,7 +368,7 @@ export function createPlayer(ctx) {
     get mode() { return st ? st.mode : 'walk'; }, get station() { return tracker && tracker.current ? tracker.current : null; }, get glide() { return glide; },
     get torch() { return torchOn; }, get night() { return night; }, get yaw() { return yaw; },
     avatar, camera, tracker: null, keys, reached,
-    goTo, stop, teleport, spawnAt, rebuild, frame, stationById, freeze, pose,
+    goTo, stop, teleport, spawnAt, rebuild, frame, stationById, freeze, pose, startSlide,
     requestMode(m) { return walker.requestMode(st, m); },
     audit() { return { nanFree: audit.nanFree, minClearance: audit.minClearance === Infinity ? 0 : audit.minClearance, stationsReached: [...reached], frames: audit.frames }; },
     dispose() { for (const o of offs) o(); world.scene.remove(avatar.group, marker); avatar.dispose(); if (label.parentNode) label.parentNode.removeChild(label); }

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Sim, createGame } from '../sim/index.js';
 import { createClock } from '../player/timemode.js';
+import { PLAYER } from '../player/walker.js';
 import { pickTile } from '../world/features/tiles.js';
 
 test('timemode: 6-speed index maps cleanly to 1 min/s .. 1 day/s and keeps cycleDebug', () => {
@@ -24,6 +25,11 @@ test('timemode: 6-speed index maps cleanly to 1 min/s .. 1 day/s and keeps cycle
   assert.equal(clock.speedIndex, 0);
 
   assert.equal(clock.cycleDebug(), 600);
+});
+
+test('walker: walk is 11 m/s and run is 44 m/s (4x walk)', () => {
+  assert.equal(PLAYER.walk, 11);
+  assert.equal(PLAYER.run, 44);
 });
 
 test('ui/index.js exports createUI and uses only valid Sim actions', async () => {

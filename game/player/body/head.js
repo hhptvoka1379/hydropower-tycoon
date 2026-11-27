@@ -11,14 +11,17 @@ export function buildHead(X) {
     [-0.026, 0.071, 0.084, 0.082, 0.004], [-0.06, 0.063, 0.076, 0.07, 0.008], [-0.092, 0.048, 0.064, 0.052, 0.014], [-0.116, 0.032, 0.05, 0.038, 0.02]];
   const base = HR.map(([y, rx, rf, rb, zo]) => ring([0, y, zo], [1, 0, 0], [0, 0, 1], rx, rf, rb, NH));
   const kk = (k) => Math.min(k, NH - k);   // 0 front .. 8 back
-  const jc = [2, 2, 3, 3, 3, 4, 5, 6, 6], jh = [2, 2, 3, 4, 4, 5, 6, 7, 7];   // last ring (index) covered by cap / by hair, per column distance from the front
-  const puff = (j, k) => (cap && j <= jc[kk(k)] ? 1.05 : (cap || hairStyle !== 'none') && j <= jh[kk(k)] ? 1.035 : 1);
+  const jc = Bd.suit === 'field' ? [2, 2, 2, 3, 3, 4, 4, 4, 4] : [2, 2, 3, 3, 3, 4, 5, 6, 6], jh = [2, 2, 3, 4, 4, 5, 6, 7, 7];   // last ring (index) covered by cap / by hair, per column distance from the front
+  const puff = (j, k) => (cap && j <= jc[kk(k)] ? (Bd.suit === 'field' ? 1.09 : 1.05) : (cap || hairStyle !== 'none') && j <= jh[kk(k)] ? 1.035 : 1);
   const rings = base.map((r, j) => r.map((p, k) => { const s = puff(j, k), zo = HR[j][4]; return [p[0] * s, p[1], zo + (p[2] - zo) * s]; }));
   const m = new Mesh();
   const hairC = col.hair, capC = col.cap;
   const regionCol = (j, k) => {     // quad between rings j,j+1 and columns k,k+1
     const k1 = (k + 1) % NH, lo = j + 1;
-    if (cap && lo <= Math.min(jc[kk(k)], jc[kk(k1)])) return capC;
+    if (cap && lo <= Math.min(jc[kk(k)], jc[kk(k1)])) {
+      if (Bd.suit === 'field' && lo === Math.min(jc[kk(k)], jc[kk(k1)])) return col.trim; // helmet band
+      return capC;
+    }
     if (lo <= Math.min(jh[kk(k)], jh[kk(k1)])) return hairC;
     return null;
   };
@@ -37,8 +40,19 @@ export function buildHead(X) {
     col: (j, k, Pc) => { const c = regionCol(j, k), P = sub(Pc, piv); void P; return c || X.skinAt(Pc, k === 0 ? null : null); },
     vm: (j, k, Pa, N) => vm(j, k, sub(mul(sub(Pa, piv), 1 / hsz), HC), N)
   });
-  fan(m, pos[0], ph([0, 0.137, -0.01]), Hc(0), () => (cap ? capC : hairC), (P) => X.shade(P, [0, 1, 0]));
+  fan(m, pos[0], ph([0, 0.142, -0.01]), Hc(0), () => (cap ? capC : hairC), (P) => X.shade(P, [0, 1, 0]));
   fan(m, pos[pos.length - 1], ph([0, -0.124, 0.028]), Hc(8), (P) => X.skinAt(P), (P) => X.shade(P, [0, -1, 0]) * 0.85);
+  // safety helmet / field cap brim in front when wearing a field helmet
+  if (cap && Bd.suit === 'field') {
+    const refB = ph([0, 0.06, 0.04]);
+    const bL = ph([-0.062, 0.068, 0.068]), bR = ph([0.062, 0.068, 0.068]);
+    const fL = ph([-0.046, 0.058, 0.128]), fR = ph([0.046, 0.058, 0.128]);
+    const shB = (f) => [capC[0] * f, capC[1] * f, capC[2] * f];
+    m.tri(bL, bR, fR, shB(0.96), shB(0.96), shB(0.92), refB);
+    m.tri(bL, fR, fL, shB(0.96), shB(0.92), shB(0.92), refB);
+    m.tri(bL, fR, bR, shB(0.75), shB(0.72), shB(0.75), refB);
+    m.tri(bL, fL, fR, shB(0.75), shB(0.72), shB(0.72), refB);
+  }
 
   /* ---- facial features, placed on the unpuffed skull surface (head-local coords) ---- */
   const surf = (y, a) => {

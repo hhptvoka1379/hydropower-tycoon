@@ -1,7 +1,7 @@
 /* Body descriptor, palette and baked-shading helpers. Colours are sRGB triplets (the avatar linearises them). */
 import { lerp, clamp } from './geom.js';
 
-export const ATHLETE_F = { name: 'athlete_f', height: 1.74, build: 0.35, shoulders: 1.12, bust: 0.6, waist: 0.92, hips: 1.02, legs: 1.05, arms: 1.04, head: 0.98, neck: 1.0, hair: 'ponytail', suit: 'twopiece', cap: true };
+export const ATHLETE_F = { name: 'athlete_f', height: 1.74, build: 0.40, shoulders: 1.14, bust: 0.52, waist: 0.94, hips: 1.02, legs: 1.05, arms: 1.04, head: 0.98, neck: 1.0, hair: 'ponytail', suit: 'field', cap: true };
 
 const hex = (c) => (typeof c === 'string' ? [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16) / 255) : c);
 
@@ -23,10 +23,16 @@ export function makeContext(opts = {}) {
     nr: (0.85 + 0.15 * bw) * (1 + 1.2 * Math.max(0, shW - 1)),
     hx: 0.07 * lerp(1, hipR, 0.6), hipZ: -0.006, S: [0.155 * shR, 0.455, -0.005],
     col: {
-      suit: hex(opts.suitColor || [0.13, 0.17, 0.4]), trim: hex(opts.trimColor || [0.94, 0.94, 0.96]), cap: hex(opts.capColor || [0.97, 0.97, 0.98]),
-      skin: hex(opts.skin || [0.87, 0.7, 0.52]), hair: hex(opts.hairColor || [0.24, 0.16, 0.1])
+      suit: hex(opts.suitColor || [0.16, 0.28, 0.40]),
+      trim: hex(opts.trimColor || [0.85, 0.58, 0.18]),
+      cap: hex(opts.capColor || [0.94, 0.92, 0.86]),
+      skin: hex(opts.skin || [0.87, 0.7, 0.52]),
+      hair: hex(opts.hairColor || [0.24, 0.16, 0.1]),
+      boot: hex(opts.bootColor || [0.28, 0.19, 0.13]),
+      sole: [0.11, 0.10, 0.09]
     }
   };
+  X.col.pants = opts.pantsColor ? hex(opts.pantsColor) : [X.col.suit[0] * 0.52 + 0.06, X.col.suit[1] * 0.52 + 0.06, X.col.suit[2] * 0.52 + 0.07];
   X.K = [X.hx - 0.012 * legL, -0.4 * legL, X.hipZ + 0.008 * legL];   // knee pivot (matches the rig pivot)
   const ua = norm3([1, -0.08, 0]), fa = norm3([1, -0.06, 0]);
   X.ua = ua; X.fa = fa;

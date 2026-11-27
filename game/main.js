@@ -39,6 +39,7 @@ function fastForward(h, d) {
 if (params.has('hour') || params.has('doy')) fastForward(params.has('hour') ? parseFloat(params.get('hour')) : undefined, params.has('doy') ? parseFloat(params.get('doy')) : undefined);
 
 const clock = createClock(Sim);
+clock.onChange((ev) => bus.emit('time:mode', ev));
 const ctx = { Sim, game, bus, act, clock, world: null, surface: null, player: null, ui: null };
 const world = createWorld(ctx);
 ctx.world = world;

@@ -4,9 +4,9 @@ import { Mesh, loft, fan, lerp, mul, add, sub, clamp } from './geom.js';
 export function buildTorso(X) {
   const { bdp, belly, chestW, hipR, waR, shR, bw, bust, col } = X, NS = 20, suit = X.Bd.suit;
   const KEY = [[-0.025, 0.085 * hipR, 0.062 * bdp, 0], [0, 0.168 * Math.pow(hipR, 0.9), 0.105 * bdp, -0.012], [0.07, 0.162 * hipR, 0.098 * bdp, -0.006],
-    [0.13, 0.124 * lerp(hipR, waR, 0.45), 0.08 * bdp + belly * 0.6, belly * 0.4], [0.2, 0.104 * waR, 0.072 * bdp + belly, belly * 0.8],
-    [0.27, 0.122 * lerp(waR, chestW, 0.5), 0.084 * bdp + belly * 0.5, 0.006 + belly * 0.4], [0.33, 0.134 * chestW, 0.096 * bdp, 0.004], [0.38, 0.138 * chestW, 0.098 * bdp, 0.008],
-    [0.42, 0.142 * chestW, 0.088 * bdp, 0.008], [0.445, 0.168 * shR, 0.076 * bdp, 0], [0.47, 0.132 * (0.85 + 0.15 * bw), 0.068 * bdp, 0], [0.49, 0.092, 0.058, 0], [0.505, 0.062, 0.052, 0]];
+    [0.13, 0.124 * lerp(hipR, waR, 0.45), 0.08 * bdp + belly * 0.6, belly * 0.4], [0.2, 0.106 * waR, 0.074 * bdp + belly, belly * 0.8],
+    [0.27, 0.124 * lerp(waR, chestW, 0.5), 0.086 * bdp + belly * 0.5, 0.006 + belly * 0.4], [0.33, 0.136 * chestW, 0.097 * bdp, 0.004], [0.38, 0.140 * chestW, 0.099 * bdp, 0.008],
+    [0.42, 0.146 * chestW, 0.090 * bdp, 0.008], [0.445, 0.172 * shR, 0.080 * bdp, 0], [0.47, 0.138 * (0.85 + 0.15 * bw), 0.072 * bdp, 0], [0.49, 0.095, 0.060, 0], [0.505, 0.062, 0.052, 0]];
   const prof = (y) => {   // smooth (Hermite) interpolation of the key rows
     let i = 0; while (i + 2 < KEY.length && y > KEY[i + 1][0]) i++;
     const A = KEY[i], B = KEY[i + 1], t = clamp((y - A[0]) / (B[0] - A[0]), -0.2, 1.2), h = B[0] - A[0], out = [];
@@ -40,8 +40,20 @@ export function buildTorso(X) {
   const m = new Mesh();
   const trimBand = (y) => (suit === 'striped' ? Math.floor((y - 0.085) / 0.043) % 2 === 1 : false);
   const paint = (P) => {
-    const y = P[1], ax = Math.abs(P[0]);
+    const y = P[1], ax = Math.abs(P[0]), z = P[2];
     const skin = () => X.skinAt(P);
+    if (suit === 'field') {
+      if (y < 0.085) return col.pants;
+      if (y < 0.115) return (ax < 0.032 && z > 0.04) ? col.trim : col.boot; // utility belt & buckle
+      if (y < 0.145) return col.trim; // jacket hem band
+      if (y < 0.478) {
+        if (ax < 0.015 && z > 0.04) return col.trim; // front zipper placket
+        if (y > 0.35 && y < 0.388 && z > -0.08) return col.trim; // chest safety stripe
+        return col.suit; // full field jacket covering torso & shoulders
+      }
+      if (y < 0.495) return col.trim; // jacket collar
+      return skin();
+    }
     if (suit === 'trunks') return y < 0.085 ? col.suit : y < 0.11 ? col.trim : skin();
     if (y >= 0.436) return ax > 0.05 && ax < 0.115 ? col.suit : skin();
     if (suit === 'plain') return y > 0.41 || y < 0.11 && y > 0.085 ? col.trim : col.suit;
@@ -55,12 +67,12 @@ export function buildTorso(X) {
   };
   const vm = (i, k, P, N) => {
     let s = X.shade(P, N);
-    if (k === 0 && P[1] > 0.12 && P[1] < 0.26) s *= 0.95;          // linea alba
+    if (suit !== 'field' && k === 0 && P[1] > 0.12 && P[1] < 0.26) s *= 0.95; // linea alba
     if (k === NS / 2 && P[1] > 0.1 && P[1] < 0.44) s *= 0.96;      // spine
     return s;
   };
   loft(m, rings, { ref: cen, col: (i, k, P) => paint(P), vm });
-  fan(m, rings[0], [0, 0.0, -0.005], [0, 0.03, 0], () => col.suit, (P) => X.shade(P, [0, -1, 0]));
+  fan(m, rings[0], [0, 0.0, -0.005], [0, 0.03, 0], () => (suit === 'field' ? col.pants : col.suit), (P) => X.shade(P, [0, -1, 0]));
   const top = [0, 0.53, 0];
   fan(m, rings[rings.length - 1], top, [0, 0.45, 0], (P) => X.skinAt(P), (P) => X.shade(P, [0, 1, 0]));
   /* neck, up to the head pivot; the head part carries its own stub of the same radius */

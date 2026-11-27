@@ -696,6 +696,8 @@ export function createUI(ctx) {
         body = `${kv('Cash', money(fm.cash))}${kv('Net worth', money(fm.netWorth))}${kv('Quests', `${qm.claimed}/${qm.total} (${qm.claimable} ready)`)}<div class="row" style="margin-top:6px"><button class="on" data-openpanel="finance:0">Finance &amp; Quests (5)</button><button data-openpanel="save:0">Save / Load</button></div>`;
       } else if (kind === 'forecast') {
         body = `${kv('Spot price', `$${num(snap.market.price, 1)}/MWh`)}<div class="row" style="margin-top:6px"><button data-openpanel="operate:0">24 h Forecast (1)</button><button data-openpanel="automation:0">Rules (3)</button></div>`;
+      } else if (kind === 'slide') {
+        body = `<p class="muted" style="font-size:12px;margin:0 0 6px">Chute down to the lower lake. Click Ride to hop in!</p><div class="row"><button class="on" data-rideslide>Ride water slide!</button><button data-openpanel="world:0">Stations (6)</button></div>`;
       } else {
         body = `${kv('Upper / Lower lake', `${pct(ps.upPct)} / ${pct(ps.loPct)}`)}${kind === 'lower' ? `<button ${J({ type: 'EXCAVATE' })} style="margin-top:6px">Excavate lower basin</button>` : ''}`;
       }
@@ -902,6 +904,7 @@ export function createUI(ctx) {
       return;
     }
     if (d.goto && ctx.player) { const r = ctx.player.goTo(d.goto); if (r && r.ok) closePanel(); return; }
+    if (d.rideslide !== undefined && ctx.player) { ctx.player.startSlide(); UI.card = null; renderCard(true); return; }
     if (d.overview !== undefined && ctx.player) { ctx.player.camera.toggleOverview(); renderPanel(true); return; }
     if (d.qbtn) { world.quality = d.qbtn; renderPanel(true); return; }
     if (d.themebtn) { UI.settings.theme = d.themebtn === 'brass' ? 'brass' : 'field'; applySettings(); renderPanel(true); return; }
@@ -980,13 +983,17 @@ export function createUI(ctx) {
   $('pClose').onclick = closePanel;
   $('dClose').onclick = () => openDrawer(false);
   $('bScada').onclick = () => openDrawer();
+  const setSpeed = (idx) => {
+    if (clock.mode === 'alert') clock.acknowledge(game.state);
+    clock.setSpeedIndex(idx);
+  };
   $('bPause').onclick = () => {
-    if (clock.mode === 'pause') clock.resume();
+    if (clock.mode === 'pause') { clock.resume(); if (clock.mode === 'alert') clock.acknowledge(game.state); }
     else clock.pause();
   };
-  $('bSlower').onclick = () => clock.setSpeedIndex(clock.speedIndex - 1);
-  $('bFaster').onclick = () => clock.setSpeedIndex(clock.speedIndex + 1);
-  root.querySelectorAll('[data-speed]').forEach(b => { b.onclick = () => clock.setSpeedIndex(+b.dataset.speed); });
+  $('bSlower').onclick = () => setSpeed(clock.speedIndex - 1);
+  $('bFaster').onclick = () => setSpeed(clock.speedIndex + 1);
+  root.querySelectorAll('[data-speed]').forEach(b => { b.onclick = () => setSpeed(+b.dataset.speed); });
   $('bBell').onclick = () => { $('alerts').hidden = !$('alerts').hidden; renderAlerts(); };
   $('siteSel').onchange = (e) => { doAct({ type: 'SET_ACTIVE', site: +e.target.value }); bus.emit('game:loaded', {}); };
   $('scadaSite').onchange = (e) => { UI.scadaSite = e.target.value; renderDrawer(); };
@@ -1017,12 +1024,12 @@ export function createUI(ctx) {
     if (k >= '1' && k <= '6' && !e.ctrlKey && !e.metaKey && !e.altKey) {
       e.preventDefault(); openPanel(MENUS[+k - 1]); return;
     }
-    if (k === '-' || k === '_') { e.preventDefault(); clock.setSpeedIndex(clock.speedIndex - 1); return; }
-    if (k === '=' || k === '+') { e.preventDefault(); clock.setSpeedIndex(clock.speedIndex + 1); return; }
+    if (k === '-' || k === '_') { e.preventDefault(); setSpeed(clock.speedIndex - 1); return; }
+    if (k === '=' || k === '+') { e.preventDefault(); setSpeed(clock.speedIndex + 1); return; }
     if (k === '0' || k === ' ') {
       if (tag === 'BUTTON') return;
       e.preventDefault();
-      if (clock.mode === 'pause') clock.resume(); else clock.pause();
+      if (clock.mode === 'pause') { clock.resume(); if (clock.mode === 'alert') clock.acknowledge(game.state); } else clock.pause();
     }
   });
 
@@ -1073,7 +1080,8 @@ export function createUI(ctx) {
     const s = activeSite(snap);
     const [seas, em] = seasonOf(snap.doy);
     $('tSeason').textContent = `${em} ${seas} · Day ${snap.day + 1}`;
-    $('tClock').textContent = hourLabel(snap.hour);
+    const mm = String(Math.floor((snap.secInHour || 0) / 60)).padStart(2, '0');
+    $('tClock').textContent = `${String(snap.hour).padStart(2, '0')}:${mm}`;
     $('tCash').textContent = money(snap.cash);
     $('tProfit').textContent = money(snap.fin.profitToday, { sign: true });
     $('tPrice').textContent = `$${num(snap.market.price, 0)}/MWh`;
@@ -1086,7 +1094,7 @@ export function createUI(ctx) {
     $('pauseTx').textContent = paused ? 'Play' : 'Pause';
     $('bPause').setAttribute('aria-pressed', String(!paused));
     const spIdx = clock.speedIndex;
-    $('speedLbl').textContent = clock.mode === 'wait' ? 'Waiting' : paused ? 'Paused' : C.time.labels[spIdx] || '1 min/s';
+    $('speedLbl').textContent = clock.mode === 'wait' ? 'Waiting' : paused ? 'Paused' : clock.mode === 'alert' ? 'Alert · 1m/s' : C.time.labels[spIdx] || '1 min/s';
     $('bSlower').disabled = spIdx <= 0;
     $('bFaster').disabled = spIdx >= C.time.labels.length - 1;
     root.querySelectorAll('[data-speed]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.speed === spIdx)));

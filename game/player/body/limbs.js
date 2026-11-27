@@ -7,7 +7,7 @@ const frame = (ax) => { const a = nrm(ax); let u = cross(a, Math.abs(a[1]) > 0.9
 const domeRows = (R) => [[0.87, 0.5], [0.5, 0.87]].map(([h, r]) => [h * R, r * R]);
 
 export function buildThigh(X) {
-  const { thR, legL, hx, lr } = X, H = [hx, 0, X.hipZ], K = X.K, N = 12;
+  const { thR, legL, hx, lr, col, Bd } = X, H = [hx, 0, X.hipZ], K = X.K, N = 12, field = Bd.suit === 'field';
   const U = [1, 0, 0], V = [0, 0, 1], Rh = 0.097 * thR, Rk = 0.049 * lr;
   const at = (t) => [lerp(H[0], K[0], t), lerp(H[1], K[1], t), lerp(H[2], K[2], t)];
   const rows = [];   // [centre, rx, rf, rb]
@@ -18,26 +18,28 @@ export function buildThigh(X) {
   for (const [h, r] of domeRows(Rk).reverse()) rows.push([add(K, [0, -h, 0]), r, r, r]);
   const rings = rows.map(([c, rx, rf, rb]) => ring(c, U, V, rx, rf, rb, N));
   const m = new Mesh();
-  loft(m, rings, { ref: (i) => rows[i][0], col: (i, k, P) => X.skinAt(P), vm: (i, k, P, n) => X.shade(P, n) });
-  fan(m, rings[0], add(H, [0, Rh, 0]), H, (P) => X.skinAt(P), null);
+  const cfn = (P) => (field ? col.pants : X.skinAt(P));
+  loft(m, rings, { ref: (i) => rows[i][0], col: (i, k, P) => cfn(P), vm: (i, k, P, n) => X.shade(P, n) });
+  fan(m, rings[0], add(H, [0, Rh, 0]), H, cfn, null);
   const last = rings.length - 1;
-  fan(m, rings[last], add(K, [0, -Rk, 0]), K, (P) => X.skinAt(P), (P) => X.shade(P, [0, -1, 0]));
+  fan(m, rings[last], add(K, [0, -Rk, 0]), K, cfn, (P) => X.shade(P, [0, -1, 0]));
   return m;
 }
 
 export function buildShin(X) {
-  const { legL, lr, fsz, K, A, sd } = X, N = 12, U = [1, 0, 0], V = [0, 0, 1], Rk = 0.049 * lr, L = 0.39 * legL;
+  const { legL, lr, fsz, K, A, sd, col, Bd } = X, N = 12, U = [1, 0, 0], V = [0, 0, 1], Rk = 0.049 * lr, L = 0.39 * legL, field = Bd.suit === 'field';
   const at = (u) => add(K, mul(sd, L * u));
   const rows = [];
   for (const [h, r] of domeRows(Rk)) rows.push([add(K, [0, h, 0]), r, r, r]);
-  const T = [[0, 0.047, 0.05, 0.047], [0.1, 0.046, 0.048, 0.05], [0.24, 0.045, 0.046, 0.056], [0.38, 0.047, 0.045, 0.063], [0.55, 0.042, 0.04, 0.052], [0.75, 0.032, 0.032, 0.036], [0.9, 0.027, 0.027, 0.029], [1.0, 0.026, 0.024, 0.027]];
+  const T = [[0, 0.047, 0.05, 0.047], [0.1, 0.046, 0.048, 0.05], [0.24, 0.045, 0.046, 0.056], [0.38, 0.047, 0.045, 0.063], [0.55, 0.042, 0.04, 0.052], [0.75, 0.036, 0.036, 0.040], [0.9, 0.032, 0.032, 0.034], [1.0, 0.030, 0.029, 0.031]];
   for (const [u, a, f, b] of T) rows.push([at(u), a * lr, f * lr, b * lr]);
   const rings = rows.map(([c, rx, rf, rb]) => ring(c, U, V, rx, rf, rb, N));
   const m = new Mesh();
-  loft(m, rings, { ref: (i) => rows[i][0], col: (i, k, P) => X.skinAt(P), vm: (i, k, P, n) => X.shade(P, n) });
-  fan(m, rings[0], add(K, [0, Rk, 0]), K, (P) => X.skinAt(P), null);
-  fan(m, rings[rings.length - 1], add(A, mul(sd, 0.01)), A, (P) => X.skinAt(P), null);
-  /* foot: flat-soled loft along +z with an 8-point cross-section; the sole is 0.075 fsz under the ankle, as before */
+  const shinCol = (i, P) => (!field ? X.skinAt(P) : i >= rows.length - 2 ? col.boot : col.pants);
+  loft(m, rings, { ref: (i) => rows[i][0], col: (i, k, P) => shinCol(i, P), vm: (i, k, P, n) => X.shade(P, n) });
+  fan(m, rings[0], add(K, [0, Rk, 0]), K, (P) => (field ? col.pants : X.skinAt(P)), null);
+  fan(m, rings[rings.length - 1], add(A, mul(sd, 0.01)), A, (P) => (field ? col.boot : X.skinAt(P)), null);
+  /* foot / hiking boot: flat-soled loft along +z with an 8-point cross-section; the sole is 0.075 fsz under the ankle, as before */
   const sole = A[1] - 0.075 * fsz, sf = fsz;
   const FS = [[-0.062, 0.02, 0.045], [-0.05, 0.031, 0.075], [-0.02, 0.033, 0.088], [0.025, 0.036, 0.062], [0.07, 0.043, 0.04], [0.11, 0.042, 0.028], [0.145, 0.034, 0.017]];
   const out = 0.05;
@@ -46,27 +48,29 @@ export function buildShin(X) {
     return [[-0.8, 0], [0.8, 0], [1, 0.35], [0.8, 0.8], [0.35, 1], [-0.35, 1], [-0.8, 0.8], [-1, 0.35]].map(([px, py]) => [cx + px * ww, sole + py * hh, cz]);
   });
   const fcen = (i) => [A[0] + out * FS[i][0] * sf, sole + FS[i][2] * sf * 0.4, A[2] + FS[i][0] * sf];
+  const bootCol = (i, k, P) => (!field ? X.skinAt(P, i >= 5 ? [1.03, 1.0, 0.98] : null) : (k <= 1 || k >= 7) ? col.sole : col.boot);
   loft(m, frs, {
-    ref: fcen, col: (i, k, P) => X.skinAt(P, i >= 5 ? [1.03, 1.0, 0.98] : null),
+    ref: fcen, col: bootCol,
     vm: (i, k, P, n) => X.shade(P, n) * (i === 5 && k > 1 && k < 6 ? 0.93 : 1)
   });
-  fan(m, frs[0], [frs[0][0][0], sole + 0.02 * sf, A[2] - 0.068 * sf], fcen(0), (P) => X.skinAt(P), (P) => X.shade(P, [0, -0.5, -1]));
-  fan(m, frs[frs.length - 1], [A[0] + out * 0.152 * sf, sole + 0.008 * sf, A[2] + 0.152 * sf], fcen(6), (P) => X.skinAt(P), null);
+  fan(m, frs[0], [frs[0][0][0], sole + 0.02 * sf, A[2] - 0.068 * sf], fcen(0), (P) => (field ? col.boot : X.skinAt(P)), (P) => X.shade(P, [0, -0.5, -1]));
+  fan(m, frs[frs.length - 1], [A[0] + out * 0.152 * sf, sole + 0.008 * sf, A[2] + 0.152 * sf], fcen(6), (P) => (field ? col.boot : X.skinAt(P)), null);
   return m;
 }
 
 export function buildArm(X) {
-  const { ar, armL, fsz, S, E, ua, fa, lr } = X, N = 10, U = [0, 1, 0], V = [0, 0, 1], Ra = 0.054 * ar;
+  const { ar, armL, fsz, S, E, ua, fa, col, Bd } = X, N = 10, U = [0, 1, 0], V = [0, 0, 1], Ra = 0.057 * ar, field = Bd.suit === 'field';
   const at = (d) => (d <= 0.28 * armL ? add(S, mul(ua, d)) : add(E, mul(fa, d - 0.28 * armL)));
   const rows = [];
   for (const [h, r] of domeRows(Ra)) rows.push([add(S, mul(ua, -h)), r, r, r]);
-  const T = [[0, 0.054, 0.054, 0.052], [0.05, 0.056, 0.057, 0.054], [0.1, 0.054, 0.056, 0.052], [0.17, 0.05, 0.052, 0.048], [0.24, 0.043, 0.045, 0.043], [0.28, 0.037, 0.036, 0.04],
-    [0.34, 0.037, 0.038, 0.037], [0.41, 0.031, 0.031, 0.03], [0.48, 0.025, 0.025, 0.024], [0.53, 0.021, 0.021, 0.021]];
-  for (const [d, a, f, b] of T) { const s = d === 0 ? 1 : 1; rows.push([at(d * armL), a * ar * s, f * ar, b * ar]); }
+  const T = [[0, 0.058, 0.058, 0.056], [0.05, 0.059, 0.060, 0.057], [0.1, 0.056, 0.058, 0.054], [0.17, 0.052, 0.054, 0.050], [0.24, 0.045, 0.047, 0.045], [0.28, 0.040, 0.039, 0.042],
+    [0.34, 0.039, 0.040, 0.039], [0.41, 0.033, 0.033, 0.032], [0.48, 0.028, 0.028, 0.027], [0.53, 0.021, 0.021, 0.021]];
+  for (const [d, a, f, b] of T) { rows.push([at(d * armL), a * ar, f * ar, b * ar]); }
   const rings = rows.map(([c, ry, rf, rb]) => ring(c, U, V, ry, rf, rb, N));
   const m = new Mesh();
-  loft(m, rings, { ref: (i) => rows[i][0], col: (i, k, P) => X.skinAt(P), vm: (i, k, P, n) => X.shade(P, n) });
-  fan(m, rings[0], add(S, mul(ua, -Ra)), S, (P) => X.skinAt(P), null);
+  const armCol = (i, P) => (!field ? X.skinAt(P) : i === rows.length - 2 ? col.trim : i < rows.length - 1 ? col.suit : X.skinAt(P));
+  loft(m, rings, { ref: (i) => rows[i][0], col: (i, k, P) => armCol(i, P), vm: (i, k, P, n) => X.shade(P, n) });
+  fan(m, rings[0], add(S, mul(ua, -Ra)), S, (P) => (field ? col.suit : X.skinAt(P)), null);
   /* hand: a flat mitten (6-sided loft along the forearm) plus a thumb on the front edge */
   const Hs = sub(X.Wr, mul(fa, 0.02)), Lh = armL, hand = [[0, 0.016, 0.026], [0.05, 0.017, 0.027], [0.085, 0.016, 0.027], [0.11, 0.013, 0.024], [0.13, 0.01, 0.017]];
   const hr = hand.map(([d, th, w]) => ring(add(Hs, mul(fa, d * Lh)), U, V, th * fsz, w * fsz, w * fsz, 6));

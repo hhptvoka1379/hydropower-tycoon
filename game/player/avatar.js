@@ -37,6 +37,12 @@ export function createAvatar(opts = {}) {
       const sn = Math.sin(s.yaw), cs = Math.cos(s.yaw);   // the body faces +Z rotated by yaw (Ry): forward = (sin yaw, cos yaw)
       hand.x = s.x + sn * 0.35; hand.z = s.z + cs * 0.35; hand.y = s.y + 0.95;
     },
+    updatePreset(s, poseId = 1) {
+      if (body.posePreset) body.posePreset(body.rig, poseId, { x: s.x, y: s.y, z: s.z, yaw: s.yaw }, mats);
+      for (const name of body.partNames) { meshes[name].matrix.fromArray(mats[name]); meshes[name].matrixWorldNeedsUpdate = true; }
+      const sn = Math.sin(s.yaw), cs = Math.cos(s.yaw);
+      hand.x = s.x + sn * 0.35; hand.z = s.z + cs * 0.35; hand.y = s.y + 0.65;
+    },
     setVisible(v) { group.visible = !!v; },
     dispose() { for (const g of geos) g.dispose(); mat.dispose(); if (group.parent) group.parent.remove(group); }
   };
