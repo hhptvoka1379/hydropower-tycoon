@@ -27,13 +27,3 @@ The full spec (`../Hydropower Tycoon Final Prompt (Working Draft).md`) is split 
 | Reviewer | the chunks of the module under review | the matching rows |
 
 `s12-self-test-protocol.md` is one table: read the intro rules plus only your rows.
-
-## In doubt? Ask mom
-
-Any agent (orchestrator or subagent) unsure about a formula, unit, test value, spec gap or scope rule asks the strict independent judge instead of guessing:
-
-```bash
-.claude/mom-ask.sh "Does the cap pass of §2.6 recompute H_f once or iterate?" spec/s02-core-hydraulics.md src/sim/hydraulics.js
-```
-
-Pass only the chunks the question is about. Act on the first line: `ANSWER` follow it; `SPEC-GAP` follow it and log it in `decisions/<agent>.md`; `CONFLICT` stop and report to the orchestrator; `REFUSE` don't do it. Answers are logged in `.claude/mom/consult.jsonl`. Permission requests that the allow and deny lists don't cover are judged by `.claude/mom.sh` automatically.

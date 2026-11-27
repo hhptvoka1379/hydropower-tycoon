@@ -3,5 +3,4 @@ node_modules/
 dist/
 other model's attempts/
 .claude/mom/log.jsonl
-.claude/mom.sh
 .claude/settings.json

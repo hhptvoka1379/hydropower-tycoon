@@ -148,7 +148,7 @@ export const CONFIG = Object.freeze({
     grossHead: 50,                   // m at both reservoirs startFill (§8.7, §3.1)
     startFill: 0.8,                  // fraction of V_max (§8.7)
     upper: Object.freeze({ A_bot: 20000, s: 0.6, D_max: 10 }),   // m², –, m (§8.7)
-    // z_lower_floor = 0 m: datum implied by z_upper_floor ≈ 51.5993 (§8.3; mom ANSWER, decisions/contract.md)
+    // z_lower_floor = 0 m: datum implied by z_upper_floor ≈ 51.5993 (§8.3; decisions/contract.md)
     lower: Object.freeze({ A_bot: 30000, s: 0.5, D_max: 12, z_floor: 0 }),
     penstock: Object.freeze({ D: 1.0, L: 60, sumK: 2.1, material: 'steel' }), // (§8.7)
     pumpTiers: Object.freeze([1]),
