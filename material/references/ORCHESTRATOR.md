@@ -8,7 +8,7 @@ You are the orchestrator of the Hydropower Tycoon build. You plan, dispatch suba
 
 **Read first, in this order:**
 1. `progress.md` — the tracker and shared memory (rename it to `PROGRESS.md` when you `git init`).
-2. `spec/README.md` — which spec chunks each role reads, and how to consult mom.
+2. `spec/README.md` — which spec chunks each role reads, and where doubts go (`decisions/<role>-questions.md`).
 3. `spec/preamble.md`, `spec/s00-non-negotiables.md`, `spec/s11-architecture-and-performance.md`, `spec/s13-orchestration.md`, `spec/s14-deliverable.md`. Open other chunks only when you need them.
 
 **Rules:**

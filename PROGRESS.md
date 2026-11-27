@@ -80,7 +80,7 @@ Stages (§13.1); a stage starts only when the previous one passes its tests. Tag
 
 | Stage | Module(s) | Owner (default model) | Tests | Status |
 | --- | --- | --- | --- | --- |
-| 0 | Mom installed in .claude, git init, vendored Three + esbuild, bundle skeleton | Orchestrator | — | passing |
+| 0 | git init, vendored Three + esbuild, bundle skeleton | Orchestrator | — | passing |
 | 1 | `config.js`, `state.js`, `rng.js`, action list, audit skeleton | Contract (Opus low) | 11 (values) | passing (orchestrator ran tools/contract-check.mjs) |
 | 2 | `hydraulics`, `reservoirs`, `wear`, `plant` | Physics (Opus low) | 1, 2, 3, 4, 8, 11, 14 | passing (62/62, orchestrator ran) |
 | 2 | `climate`, `renewables`, `market` | Climate & market (Opus low) | 5, 6, 7, 9, 13 | passing (61/61, orchestrator ran); Test 7 band ruled event-free days only |
@@ -139,13 +139,9 @@ I recomputed the core starting-state numbers with Node (frustum + inversion):
 2. `npm init -y && npm i -D esbuild three@<pinned>`; build `vendor/three.iife.js` (tree-shaken, MIT header kept); record versions above. Tag `stage-0-setup`.
 3. Get J's answer on finding #1 (and ideally #2), then dispatch the Contract agent.
 
-## 9. Mom: the strict independent judge (adapted from screemac-opus)
+## 9. Mom (removed from the repo)
 
-Staged in `tools/mom/`. **J installs it by hand** (Claude was not allowed to modify its own settings).
-
-The consult agent and its settings template were removed from the repo; agents ask in `decisions/<name>-questions.md` instead.
-
-- `.claude/mom.sh`: a **PermissionRequest hook**. Opus judges every permission request that the allow and deny lists don't cover, for the orchestrator and every subagent. The scope is adapted to this project: writes only inside the repo; `spec/` and `.claude/` are protected; only the main session may edit the contract and progress.md; subagents get no network, no installs and no git writes; the main session may init, commit and tag, and nobody pushes. `touch .claude/mom/NIGHT` turns unsure verdicts into deny for unattended runs; `rm` it when you're back.
+The judge hook and its consult agent were removed from the repo. Agents write doubts to `decisions/<name>-questions.md`.
 
 ## 10. Build order decision
 
