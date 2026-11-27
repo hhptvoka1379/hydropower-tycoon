@@ -141,15 +141,11 @@ I recomputed the core starting-state numbers with Node (frustum + inversion):
 
 ## 9. Mom: the strict independent judge (adapted from screemac-opus)
 
-Staged in `tools/mom/`. **J installs it by hand** (Claude was not allowed to modify its own settings):
+Staged in `tools/mom/`. **J installs it by hand** (Claude was not allowed to modify its own settings).
 
-```bash
-mkdir -p .claude/mom && cp tools/mom/mom.sh tools/mom/mom-ask.sh .claude/ && cp tools/mom/settings.json .claude/settings.json
-```
+The consult agent and its settings template were removed from the repo; agents ask in `decisions/<name>-questions.md` instead.
 
 - `.claude/mom.sh`: a **PermissionRequest hook**. Opus judges every permission request that the allow and deny lists don't cover, for the orchestrator and every subagent. The scope is adapted to this project: writes only inside the repo; `spec/` and `.claude/` are protected; only the main session may edit the contract and progress.md; subagents get no network, no installs and no git writes; the main session may init, commit and tag, and nobody pushes. `touch .claude/mom/NIGHT` turns unsure verdicts into deny for unattended runs; `rm` it when you're back.
-- `.claude/mom-ask.sh "question" spec/sNN… src/…`: the **consult agent** any agent calls when it has a doubt. It gives one of ANSWER / SPEC-GAP / CONFLICT / REFUSE, citing sections. It's logged to `.claude/mom/consult.jsonl`. Usage rules are in `spec/README.md`.
-- The orchestrator puts this line in every subagent brief: *"In doubt about the spec, a formula, a test value or your scope, run `.claude/mom-ask.sh` with your chunks before guessing."*
 
 ## 10. Build order decision
 

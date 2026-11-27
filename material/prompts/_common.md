@@ -16,7 +16,6 @@ You are one agent in a team building **Hydropower Tycoon**, a single-file offlin
 - No file above about 500 lines.
 - Code runs as ES modules (`src/package.json` sets `"type":"module"`); test scripts are `.mjs` and run with plain `node`.
 - If the spec is silent, ambiguous or contradicts a test value: do not invent. Append the question to `decisions/<name>-questions.md` (what you read, what you need, the options you see) and either continue on an unaffected part or stop and say so in the PR. A real spec error is reported, not patched.
-- Optional: if `.claude/mom-ask.sh` works in your environment, you may use it for doubts: `.claude/mom-ask.sh "<question>" <your chunks> <your files>`; act on its first line (ANSWER / SPEC-GAP / CONFLICT / REFUSE). If it does not work, use the questions file above.
 
 ## Working method
 - Work one module at a time. Save each function to disk as written. After each module: run its tests, append a short entry to `decisions/<name>.md` (non-obvious choices only: what chosen, what else considered, why) and keep a `## Resume` section at the top of that file (files done and tested with actual numbers, file in progress, next step, open questions). A fresh agent must be able to resume from it.
