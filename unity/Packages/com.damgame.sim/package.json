@@ -1,0 +1,7 @@
+{
+  "name": "com.damgame.sim",
+  "version": "0.1.0",
+  "displayName": "DamGame Simulation",
+  "description": "Engine-free C# port of the dam game simulation (hydraulics).",
+  "unity": "2022.3"
+}
